@@ -111,6 +111,17 @@ docs/                 # DOCUMENTATION
 python3 -m unittest discover -s cmd/terminal_game/tests
 ```
 
+### Testing Best Practices
+
+When writing tests for Neon Dominance, follow these guidelines:
+
+1. Each test should be independent and not rely on state from other tests
+2. Use descriptive test names that indicate what is being tested
+3. Include both positive and negative test cases
+4. Use deterministic random seeds for reproducible test results
+5. Test edge cases and boundary conditions
+6. Keep tests fast and focused on specific functionality
+
 ### Development Guidelines
 
 - See [CHANGELOG.md](CHANGELOG.md) for version history and planned features
