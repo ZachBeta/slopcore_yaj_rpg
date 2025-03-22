@@ -13,12 +13,20 @@ var corp_discard: Array[Card] = []
 const DEFAULT_RUNNER_DECK_SIZE = 40
 const DEFAULT_CORP_DECK_SIZE = 45
 
+# Random seed for deterministic tests
+var random_seed: int = 0
+
 # Reference to card definitions
 var card_definitions: Dictionary = {}
 
 func _init() -> void:
 	# Load card definitions from JSON files when initialized
 	load_card_definitions()
+
+# Set a random seed for deterministic testing
+func set_random_seed(seed_value: int) -> void:
+	random_seed = seed_value
+	print("Deck Manager: Random seed set to " + str(seed_value))
 
 # Load all card definitions from JSON files
 func load_card_definitions() -> void:
@@ -240,10 +248,22 @@ func shuffle_deck(deck: Array[Card]) -> void:
 	var shuffled_deck: Array[Card] = []
 	var temp_deck = deck.duplicate()
 	
+	# Create a seeded random number generator
+	var rng = RandomNumberGenerator.new()
+	if random_seed != 0:
+		rng.seed = random_seed
+	else:
+		rng.randomize()
+	
 	while not temp_deck.is_empty():
-		var random_index = randi() % temp_deck.size()
+		var random_index = rng.randi_range(0, temp_deck.size() - 1)
 		shuffled_deck.append(temp_deck[random_index])
 		temp_deck.remove_at(random_index)
+		
+		# Increment seed slightly for next number to ensure variety
+		# while still maintaining deterministic sequence
+		if random_seed != 0:
+			random_seed += 1
 	
 	deck.clear()
 	deck.append_array(shuffled_deck)

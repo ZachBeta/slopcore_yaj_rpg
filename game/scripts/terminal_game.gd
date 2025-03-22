@@ -7,6 +7,7 @@ var memory_units_available: int = 4
 var memory_units_used: int = 0
 var player_side: String = "runner"  # or "corp"
 var opponent_side: String = "corp"  # or "runner"
+var random_seed: int = 0  # Seed for deterministic randomness
 
 # Game phases and turns
 enum GamePhase {SETUP, START_TURN, ACTION, DISCARD, END_TURN, GAME_OVER}
@@ -170,6 +171,11 @@ var command_man_pages = {
 @onready var prompt_label = %PromptLabel
 @onready var header_label = %HeaderLabel
 
+# Function to set a specific random seed for deterministic tests
+func set_random_seed(seed_value: int) -> void:
+	random_seed = seed_value
+	print("Terminal Game: Random seed set to " + str(seed_value))
+
 func _ready():
 	# Set up the command input
 	command_input.text = ""
@@ -182,6 +188,10 @@ func _ready():
 	# Debug output to verify things are working
 	print("Terminal game ready, command input connected: ", command_input.text_submitted.is_connected(_on_command_submitted))
 	
+	# Initialize with a random seed if one isn't set
+	if random_seed == 0:
+		random_seed = randi()
+		
 	# Show a welcome message
 	_initialize_terminal()
 	
@@ -212,6 +222,17 @@ func _initialize_terminal():
 	output_text.append_text("[color=#00ff00]Type commands in the input field below[/color]\n")
 	output_text.append_text("[color=#00ff00]Type 'help' for available commands[/color]\n")
 	output_text.append_text("[color=#00aa00]-----------------------------------[/color]\n\n")
+	
+	# Create and initialize deck manager
+	deck_manager = DeckManager.new()
+	
+	# Apply random seed to deck manager if set
+	if random_seed != 0:
+		deck_manager.set_random_seed(random_seed)
+	
+	# Create default decks
+	deck_manager.create_default_runner_deck()
+	deck_manager.create_default_corp_deck()
 
 func _update_status_bar():
 	var phase_text = ""
@@ -241,6 +262,9 @@ func start_game():
 	runner_agenda_points = 0
 	corp_agenda_points = 0
 	turn_number = 0
+	memory_units_used = 0
+	played_cards = []
+	hand_cards = []
 	
 	# Initial setup
 	active_player = player_side
@@ -314,6 +338,9 @@ func _on_command_submitted(command: String):
 	
 	# Scroll to bottom
 	output_text.scroll_to_line(output_text.get_line_count())
+	
+	# Make sure focus returns to the input field after command processing
+	command_input.grab_focus()
 
 func _process_command(command: String):
 	if command == "":
@@ -447,7 +474,7 @@ func _cmd_hand():
 		
 		# Add additional information based on card type
 		if card.card_type.to_lower() in ["program", "icebreaker"]:
-			output_text.append_text(" (Mem: " + str(card.memory_cost) + ", Cost: " + str(card.cost) + ")")
+			output_text.append_text(" (Mem: " + str(card.memory_units) + ", Cost: " + str(card.cost) + ")")
 		elif card.card_type.to_lower() == "event":
 			output_text.append_text(" (Cost: " + str(card.cost) + ")")
 		
@@ -507,7 +534,7 @@ func _cmd_install(args: Array):
 		return
 	
 	# Check if player has enough memory (for programs)
-	var mem_cost = card.get("memory_cost", 0)
+	var mem_cost = card.get("memory_units", 0)
 	if card.card_type.to_lower() in ["program", "icebreaker"] and memory_units_used + mem_cost > memory_units_available:
 		output_text.append_text("[color=#ff5555]ERROR: Insufficient memory. Need " + str(mem_cost) + ", have " + str(memory_units_available - memory_units_used) + " available[/color]\n")
 		return
@@ -569,7 +596,9 @@ func _cmd_run(args: Array):
 	await get_tree().create_timer(0.7).timeout
 	
 	# Randomly determine success/failure for now
-	if randf() > 0.5:
+	var random = RandomNumberGenerator.new()
+	random.seed = random_seed
+	if random.randf() > 0.5:
 		output_text.append_text("[color=#00ff00]RUN SUCCESSFUL![/color]\n")
 		output_text.append_text("Breached " + server.to_upper() + " security. Accessing data...\n")
 		
@@ -683,7 +712,7 @@ func _cmd_installed():
 		
 		# Add additional information based on card type
 		if card.card_type.to_lower() in ["program", "icebreaker"]:
-			output_text.append_text(" (Mem: " + str(card.memory_cost) + ", STR: " + str(card.get("strength", 0)) + ")")
+			output_text.append_text(" (Mem: " + str(card.memory_units) + ", STR: " + str(card.get("strength", 0)) + ")")
 		
 		output_text.append_text("\n")
 
@@ -703,7 +732,7 @@ func _cmd_memory():
 		var total_memory = 0
 		for card in played_cards:
 			if card.card_type.to_lower() in ["program", "icebreaker"]:
-				var mem_cost = card.get("memory_cost", 0)
+				var mem_cost = card.get("memory_units", 0)
 				total_memory += mem_cost
 				output_text.append_text("    - " + card.name + ": [color=#ffff00]" + str(mem_cost) + "[/color] units\n")
 		output_text.append_text("  Total Used: [color=#ffff00]" + str(total_memory) + "[/color] units\n")

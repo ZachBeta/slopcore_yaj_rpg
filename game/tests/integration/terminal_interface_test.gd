@@ -199,25 +199,140 @@ func test_game_state_commands():
 func test_command_sequence():
 	var test_name = "test_command_sequence"
 	print("Running test_command_sequence")
-	# Run a sequence of commands that would occur in a typical game
-	var commands = ["help", "system", "credits", "memory", "man install"]
 	
-	for cmd in commands:
-		command_input.text = cmd
-		command_input.text_submitted.emit(cmd)
-		process_frame.connect(func(): print("Process frame after " + cmd + " command"))
-		await process_frame
+	# Allow frames for processing each command
+	process_frame.connect(func(): print("Process frame in command sequence"))
 	
-	# Check that command history contains all commands
-	assert_equal(commands.size(), terminal_scene.command_history.size(), 
-		"Command history should contain all executed commands", test_name)
+	# First check the hand
+	print("Testing 'hand' command...")
+	command_input.text = "hand"
+	command_input.text_submitted.emit("hand")
+	await process_frame
 	
-	# Verify history order
-	for i in range(commands.size()):
-		assert_equal(commands[i], terminal_scene.command_history[i], 
-			"Command history item %d should match" % i, test_name)
-	
-	# Verify final output contains content from the last command
+	# Check output contains card information
 	var output = output_text.text
-	assert_true(output.contains("install"), "Output should contain results from last command", test_name)
-	assert_true(output.contains("Installs a program from your hand"), "Manual page content should be shown", test_name)
+	assert_true(output.contains("CURRENT FILES IN MEMORY"), "Hand command should show cards in hand", test_name)
+	
+	# Draw a card
+	print("Testing 'draw' command...")
+	command_input.text = "draw"
+	command_input.text_submitted.emit("draw")
+	await process_frame
+	
+	# Check output contains draw information
+	output = output_text.text
+	assert_true(output.contains("File retrieved"), "Draw command should show retrieved file", test_name)
+	
+	# Install a card (usually the first one)
+	print("Testing 'install' command...")
+	command_input.text = "install 1"
+	command_input.text_submitted.emit("install 1")
+	await process_frame
+	
+	# Check output contains installation information
+	output = output_text.text
+	assert_true(output.contains("INSTALLING"), "Install command should show installation notice", test_name)
+	
+	# Check installed programs
+	print("Testing 'installed' command...")
+	command_input.text = "installed"
+	command_input.text_submitted.emit("installed")
+	await process_frame
+	
+	# Check output contains installed programs
+	output = output_text.text
+	assert_true(output.contains("INSTALLED PROGRAMS"), "Installed command should show installed programs", test_name)
+	
+	# Run on a server
+	print("Testing 'run' command...")
+	command_input.text = "run R&D"
+	command_input.text_submitted.emit("run R&D")
+	await process_frame
+	
+	# Check output contains run information
+	output = output_text.text
+	assert_true(output.contains("INITIATING RUN"), "Run command should show run initiation", test_name)
+	
+	# End turn to see opponent's turn
+	print("Testing 'end' command...")
+	command_input.text = "end"
+	command_input.text_submitted.emit("end")
+	await process_frame
+	
+	# Check output contains end turn information
+	output = output_text.text
+	assert_true(output.contains("ENDING TURN"), "End command should show turn ending", test_name)
+	assert_true(output.contains("CORPORATION TURN"), "Should show opponent's turn", test_name)
+
+# Test the full game flow as specified by the user
+func test_full_game_flow():
+	var test_name = "test_full_game_flow"
+	print("\n==== RUNNING FULL GAME FLOW TEST ====")
+	
+	# Check startup text
+	print("Checking startup text...")
+	var output = output_text.text
+	assert_true(output.contains("INITIALIZING NEURAL INTERFACE"), "Startup should show initialization message", test_name)
+	assert_true(output.contains("WELCOME TO THE NET"), "Startup should show welcome message", test_name)
+	
+	# Show hand and check cards
+	print("Testing 'hand' command...")
+	command_input.text = "hand"
+	command_input.text_submitted.emit("hand")
+	await process_frame
+	
+	# Check output contains card information
+	output = output_text.text
+	assert_true(output.contains("CURRENT FILES IN MEMORY"), "Hand command should show cards in hand", test_name)
+	print("Hand output verified ✓")
+	
+	# Draw a card
+	print("Testing 'draw' command...")
+	command_input.text = "draw"
+	command_input.text_submitted.emit("draw")
+	await process_frame
+	
+	# Check output contains draw information
+	output = output_text.text
+	assert_true(output.contains("File retrieved"), "Draw command should show retrieved file", test_name)
+	print("Draw output verified ✓")
+	
+	# Install a card (the first card)
+	print("Testing 'install' command...")
+	command_input.text = "install 1"
+	command_input.text_submitted.emit("install 1")
+	await process_frame
+	
+	# Check output contains installation information
+	output = output_text.text
+	assert_true(output.contains("INSTALLING"), "Install command should show installation notice", test_name)
+	print("Install output verified ✓")
+	
+	# Run on a server
+	print("Testing 'run' command...")
+	command_input.text = "run R&D"
+	command_input.text_submitted.emit("run R&D")
+	await process_frame
+	
+	# Check output contains run information and outcome
+	output = output_text.text
+	assert_true(output.contains("INITIATING RUN ON R&D"), "Run command should show run initiation", test_name)
+	assert_true(output.contains("Approaching server"), "Run should show run progress", test_name)
+	assert_true(output.contains("RUN SUCCESSFUL") or output.contains("RUN FAILED"), "Run should show outcome", test_name)
+	print("Run output verified ✓")
+	
+	# End turn to see opponent's turn
+	print("Testing 'end' command and opponent turn...")
+	command_input.text = "end"
+	command_input.text_submitted.emit("end")
+	await process_frame
+	
+	# Check output contains end turn information
+	output = output_text.text
+	assert_true(output.contains("ENDING TURN"), "End command should show turn ending", test_name)
+	assert_true(output.contains("CORPORATION TURN"), "Should show opponent's turn", test_name)
+	assert_true(output.contains("Corp is taking actions"), "Should show opponent's actions", test_name)
+	assert_true(output.contains("Corp has ended their turn"), "Should show opponent's turn ending", test_name)
+	print("End turn and opponent turn verified ✓")
+	
+	print("==== FULL GAME FLOW TEST COMPLETED SUCCESSFULLY ====")

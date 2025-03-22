@@ -1,4 +1,4 @@
-class_name Card
+class_name CardSimple
 extends Resource
 
 @export var card_name: String
