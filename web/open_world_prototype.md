@@ -23,7 +23,7 @@ A multiplayer web-based open world game where players can move around a shared e
 - Player movement with keyboard controls (WASD + Space)
 - Player rotation with keyboard controls (IJKL)
 - Simple physics (gravity, collisions with ground)
-- Mock multiplayer with simulated players
+- Real-time multiplayer with Socket.io
 - Player collision detection and bounce effect
 - Visual feedback on collision
 - World environment with ground, obstacles, and skybox
@@ -33,12 +33,11 @@ A multiplayer web-based open world game where players can move around a shared e
 ### In Progress 🚀
 - Testing and debugging the implemented features
 - Optimization for better performance
+- Chat system implementation
 
 ### Pending 🔜
-- Real server-side implementation with Socket.io
 - Enhanced environment with more interesting objects
 - Improved player models and animations
-- Chat system implementation
 
 ## Implementation Details
 
@@ -46,9 +45,9 @@ A multiplayer web-based open world game where players can move around a shared e
 ```
 web/src/open-world/
 ├── open-world.ts       # Main game controller
-├── player.ts           # Player class for movement and rendering
-├── world-manager.ts    # World environment management
-└── network-manager.ts  # Multiplayer functionality
+├── player.ts          # Player class for movement and rendering
+├── world-manager.ts   # World environment management
+└── network-manager.ts # Socket.io multiplayer implementation
 ```
 
 ### Player Controls
@@ -63,14 +62,13 @@ web/src/open-world/
 - Space: Jump
 
 ### Multiplayer Implementation
-Currently using a mock implementation that simulates other players moving randomly. Future implementation will use Socket.io for real-time communication between players.
+Using Socket.io for real-time communication between players. Features include:
+- Player join/leave notifications
+- Real-time position and rotation updates
+- Player collision detection
+- Chat system (in progress)
 
 ## Next Steps
-
-### Real Multiplayer Implementation
-1. Set up an Express server with Socket.io
-2. Replace the mock network manager with real Socket.io implementation
-3. Implement server-side player tracking and synchronization
 
 ### Environment Enhancements
 1. Add more varied terrain with hills and valleys
@@ -84,8 +82,14 @@ Currently using a mock implementation that simulates other players moving random
 
 ### UI/UX Improvements
 1. Add in-game HUD showing player info
-2. Implement a simple chat system for players to communicate
+2. Complete chat system implementation
 3. Add minimap for navigation
 
 ## Running the Prototype
-The prototype can be accessed through the main menu by clicking the "Open World" button. To return to the main menu, use the "Back to Menu" button in the top-left corner of the screen. 
+The prototype can be accessed through the main menu by clicking the "Open World" button. To return to the main menu, use the "Back to Menu" button in the top-left corner of the screen.
+
+### Server Setup
+1. Navigate to the `web/server` directory
+2. Run `npm install` to install dependencies
+3. Start the server with `npm run dev` for development
+4. The server will run on port 3000 by default 
