@@ -5,6 +5,26 @@ All notable changes to the Neon Dominance project will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2025-03-21
+
+### Added
+- Minimalist card game UI implementation with fully functional gameplay loop
+- Complete game phase system (setup, start turn, action, discard, end turn, game over)
+- Resource management system (credits and memory units)
+- Action point management using click system
+- Win conditions implementation:
+  - Agenda points accumulation
+  - Deck depletion mechanics
+- Hand limit enforcement with discard phase
+- Phase-based button state management
+- Visual phase indication with colored labels
+
+### Changed
+- Updated UI elements to show click costs for actions
+- Improved game state display with comprehensive information
+- Enhanced card details display with type-specific attributes
+- Restructured scene file to accommodate new gameplay elements
+
 ## [0.2.0] - 2025-03-21
 
 ### Added

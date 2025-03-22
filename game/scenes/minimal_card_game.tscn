@@ -1,0 +1,165 @@
+[gd_scene load_steps=2 format=3 uid="uid://dlbovpjc0sbaj"]
+
+[ext_resource type="Script" path="res://game/scripts/minimal_card_game.gd" id="1_o5nqh"]
+
+[node name="MinimalCardGame" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_o5nqh")
+
+[node name="VSplitContainer" type="VSplitContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+split_offset = 300
+
+[node name="GameArea" type="VBoxContainer" parent="VSplitContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="GameStatePanel" type="PanelContainer" parent="VSplitContainer/GameArea"]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="VSplitContainer/GameArea/GameStatePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VSplitContainer/GameArea/GameStatePanel/MarginContainer"]
+layout_mode = 2
+
+[node name="PhaseLabel" type="Label" parent="VSplitContainer/GameArea/GameStatePanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0, 1)
+theme_override_font_sizes/font_size = 16
+text = "SETUP PHASE"
+horizontal_alignment = 1
+
+[node name="GameStateInfo" type="Label" parent="VSplitContainer/GameArea/GameStatePanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Runner Credits: 5 | Memory Units: 4 | Cards in Hand: 5 | Cards in Deck: 35"
+horizontal_alignment = 1
+
+[node name="HSplitContainer" type="HSplitContainer" parent="VSplitContainer/GameArea"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="GameZones" type="VBoxContainer" parent="VSplitContainer/GameArea/HSplitContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+
+[node name="PlayedCardsLabel" type="Label" parent="VSplitContainer/GameArea/HSplitContainer/GameZones"]
+layout_mode = 2
+text = "INSTALLED PROGRAMS"
+
+[node name="PlayedCardsArea" type="PanelContainer" parent="VSplitContainer/GameArea/HSplitContainer/GameZones"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="VSplitContainer/GameArea/HSplitContainer/GameZones/PlayedCardsArea"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="PlayedCardsList" type="ItemList" parent="VSplitContainer/GameArea/HSplitContainer/GameZones/PlayedCardsArea/MarginContainer"]
+layout_mode = 2
+allow_search = false
+auto_height = true
+item_count = 1
+item_0/text = "[No cards installed]"
+
+[node name="HandLabel" type="Label" parent="VSplitContainer/GameArea/HSplitContainer/GameZones"]
+layout_mode = 2
+text = "HAND"
+
+[node name="HandArea" type="PanelContainer" parent="VSplitContainer/GameArea/HSplitContainer/GameZones"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.5
+
+[node name="MarginContainer" type="MarginContainer" parent="VSplitContainer/GameArea/HSplitContainer/GameZones/HandArea"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="HandCardsList" type="ItemList" parent="VSplitContainer/GameArea/HSplitContainer/GameZones/HandArea/MarginContainer"]
+layout_mode = 2
+allow_search = false
+auto_height = true
+
+[node name="ActionPanel" type="PanelContainer" parent="VSplitContainer/GameArea/HSplitContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="VSplitContainer/GameArea/HSplitContainer/ActionPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VSplitContainer/GameArea/HSplitContainer/ActionPanel/MarginContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VSplitContainer/GameArea/HSplitContainer/ActionPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "ACTIONS"
+horizontal_alignment = 1
+
+[node name="DrawCardButton" type="Button" parent="VSplitContainer/GameArea/HSplitContainer/ActionPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Draw Card (1 Click)"
+
+[node name="PlayCardButton" type="Button" parent="VSplitContainer/GameArea/HSplitContainer/ActionPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Play Selected Card (1 Click)"
+
+[node name="DiscardCardButton" type="Button" parent="VSplitContainer/GameArea/HSplitContainer/ActionPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Discard Selected Card (1 Click)"
+
+[node name="HSeparator" type="HSeparator" parent="VSplitContainer/GameArea/HSplitContainer/ActionPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="EndTurnButton" type="Button" parent="VSplitContainer/GameArea/HSplitContainer/ActionPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "End Turn"
+
+[node name="CardDetailsPanel" type="PanelContainer" parent="VSplitContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="VSplitContainer/CardDetailsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VSplitContainer/CardDetailsPanel/MarginContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VSplitContainer/CardDetailsPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "CARD DETAILS"
+horizontal_alignment = 1
+
+[node name="CardDetailsRichText" type="RichTextLabel" parent="VSplitContainer/CardDetailsPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+text = "[center][b]Select a card to view details[/b][/center]"
