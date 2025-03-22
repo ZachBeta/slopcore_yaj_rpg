@@ -1,5 +1,11 @@
 # Neon Dominance Project Rules
 
+## Testing
+* Prefer realistic system tests: Avoid using mocks, use real objects wherever possible in tests
+* Use deterministic random seeds in tests for reproducible results
+* Terminal-based implementation should be used for testing core gameplay mechanics
+* Godot-based implementation should be used for testing UI and rendering features
+
 ## Versioning
 
 - Follow [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html): MAJOR.MINOR.PATCH
@@ -7,11 +13,6 @@
 - Keep CHANGELOG.md updated with every version
 - Before release, check existing tags with `git tag -l`
 
-## Testing
-* Avoid using mocks, use real objects wherever possible in tests
-* Use deterministic random seeds in tests for reproducible results
-* Terminal-based implementation should be used for testing core gameplay mechanics
-* Godot-based implementation should be used for testing UI and rendering features
 
 ## Development
 * CLI terminal game implementation should mirror the Godot terminal game interface
