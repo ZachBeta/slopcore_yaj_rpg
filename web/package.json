@@ -1,0 +1,31 @@
+{
+  "name": "slopcore-yaj-rpg-web",
+  "version": "0.1.0",
+  "description": "Web version of Slopcore YAJ RPG using TypeScript and Three.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack --mode production",
+    "dev": "webpack serve --mode development --open"
+  },
+  "keywords": [
+    "rpg",
+    "threejs",
+    "typescript",
+    "game"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "three": "^0.159.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.159.0",
+    "html-webpack-plugin": "^5.5.3",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1"
+  }
+}

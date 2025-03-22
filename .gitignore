@@ -25,3 +25,7 @@ mono_crash.*.json
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Web specific
+node_modules/
+dist/
