@@ -4,7 +4,7 @@ A cyberpunk card game where you play as a hacker (Runner) breaking into corporat
 
 ## Current Version
 
-**v0.6.0** - Terminal Implementation with Enhanced Card Abilities
+**v0.6.1** - Web Enhancements with Three.js Integration
 
 ## Game Overview
 
@@ -19,6 +19,7 @@ Neon Dominance is an asymmetric deckbuilder set in a cyberpunk world. You play a
 - **Server Runs**: Make runs on different servers, handle ICE encounters
 - **Jack Out Mechanics**: Strategic choices during runs
 - **ASCII Art Interface**: Visual feedback with colored text
+- **3D Web Version**: Three.js integration with interactive elements and easter eggs
 
 ## Getting Started
 
@@ -32,7 +33,7 @@ Run the game directly from the root folder:
 
 ### Web Version
 
-The web version of the game can be run using Docker:
+The web version of the game features a modern interface with Three.js integration:
 
 ```bash
 # Navigate to the web directory
@@ -44,6 +45,11 @@ docker-compose up app
 # Or run the development version with hot-reloading
 docker-compose up dev
 ```
+
+Special features in the web version:
+- Interactive spinning cube in the background
+- Semi-transparent cyberpunk UI
+- Hidden d20 easter egg (try to find the HACK button!)
 
 For more details, see the [Web README](web/README.md).
 

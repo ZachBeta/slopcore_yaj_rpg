@@ -1,6 +1,15 @@
-# Slopcore YAJ RPG - Web Version
+# Neon Dominance - Web Version
 
-This is the web implementation of Slopcore YAJ RPG using TypeScript and Three.js for rendering.
+This is the web implementation of Neon Dominance (formerly Slopcore YAJ RPG) using TypeScript and Three.js for rendering.
+
+## Features
+
+- 3D rendering with Three.js including interactive spinning cube
+- Semi-transparent cyberpunk-styled UI
+- Hidden d20 easter egg (try to find the HACK button!)
+- Browser console-based gameplay
+- TypeScript for type safety
+- Docker deployment for both production and development
 
 ## Getting Started
 
@@ -73,21 +82,13 @@ The development server will be available at http://localhost:8080 with live relo
 
 - `public/` - Static assets and HTML template
 - `src/` - TypeScript source code
+  - `src/terminal-game/` - Core game logic
+  - `src/three-scene.ts` - Three.js rendering
 - `dist/` - Production build output (created when building)
 
-## Features
+## Development Roadmap
 
-- 3D rendering with Three.js
-- TypeScript for type safety
-- Modern web development workflow with Webpack
-
-## Development
-
-The project follows the same principles as the main Slopcore YAJ RPG project:
-
-- Following semantic versioning
-- Keeping core game logic separate from rendering concerns
-- Maintaining feature parity with other implementations
+See the [hack_the_planet.md](hack_the_planet.md) file for current development status and upcoming features.
 
 ## License
 
