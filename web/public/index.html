@@ -11,6 +11,7 @@
       overflow: hidden;
       font-family: 'Arial', sans-serif;
       color: #f0f0f0;
+      background-color: #121212;
     }
     #canvas-container {
       position: fixed;
@@ -26,39 +27,66 @@
       left: 50%;
       transform: translate(-50%, -50%);
       text-align: center;
-      padding: 2rem;
-      background-color: rgba(0, 0, 0, 0.7);
+      padding: 3rem;
+      background-color: rgba(20, 20, 30, 0.95);
       border-radius: 10px;
-      max-width: 500px;
+      max-width: 550px;
+      box-shadow: 0 0 30px rgba(0, 170, 255, 0.3);
+      border: 1px solid rgba(0, 200, 255, 0.2);
     }
     h1 {
-      font-size: 2.5rem;
-      margin-bottom: 1rem;
-      color: #5df3ff;
-      text-shadow: 0 0 10px #00a2ff;
+      font-size: 3rem;
+      margin-bottom: 1.5rem;
+      color: #00ffff;
+      text-shadow: 0 0 15px rgba(0, 200, 255, 0.8);
+      font-weight: bold;
+    }
+    p {
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+      color: #ffffff;
+    }
+    .menu-buttons {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
     }
     .btn {
-      background-color: #0066cc;
+      background-color: #0088dd;
       color: white;
       border: none;
-      padding: 0.75rem 1.5rem;
+      padding: 1rem 2rem;
       margin: 0.5rem;
-      font-size: 1rem;
-      border-radius: 5px;
+      font-size: 1.3rem;
+      border-radius: 6px;
       cursor: pointer;
       transition: all 0.3s ease;
+      width: 80%;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-transform: uppercase;
     }
     .btn:hover {
-      background-color: #0099ff;
+      background-color: #00aaff;
       transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(0, 170, 255, 0.5);
+    }
+    #start-game {
+      background-color: #00aa88;
+    }
+    #start-game:hover {
+      background-color: #00cc99;
+      box-shadow: 0 0 20px rgba(0, 204, 153, 0.6);
     }
   </style>
 </head>
 <body>
   <div id="canvas-container"></div>
   <div class="menu-container">
-    <h1>Slopcore YAJ RPG</h1>
-    <p>Welcome to the web version of Slopcore YAJ RPG!</p>
+    <h1>Neon Dominance</h1>
+    <p>Welcome to the cyberpunk hacking adventure! Play as an elite runner infiltrating corporate servers in this console-based card game.</p>
     <div class="menu-buttons">
       <button class="btn" id="start-game">Start Game</button>
       <button class="btn" id="options">Options</button>
