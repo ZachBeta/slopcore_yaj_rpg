@@ -1,11 +1,11 @@
 # in flight
 
 # next 
-* [ ] reintroduce the threejs spinning cube on the main page, hide a teapot somewhere
-* [ ] make the game screen more responsive - suggest the console run side-by-side on a computer, deal with mobile later
-
+* iterate on gameplay mechanics
 
 # soon
+* [ ] make the game screen more responsive - suggest the console run side-by-side on a computer, deal with mobile later
+* [ ] reintroduce the threejs spinning cube on the main page, hide a teapot somewhere
 * [ ] handle deprecation warnings
 * rename across the board for "neon dominance"
 * more iteration on demo mode
