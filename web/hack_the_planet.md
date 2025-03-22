@@ -2,11 +2,10 @@
 * iterate on gameplay mechanics
 
 # next 
+* [x] teapot to be changed to a d20 
 * [ ] handle deprecation warnings
-* [x] make main menu screen semi transparent so background cube can be seen
 
 # soon
-* [x] reintroduce the threejs spinning cube on the main page, hide a teapot somewhere
 * [ ] optimize webpack bundle size (code splitting, lazy loading)
 * rename across the board for "neon dominance"
 * more iteration on demo mode

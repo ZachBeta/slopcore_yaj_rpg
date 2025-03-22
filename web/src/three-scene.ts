@@ -1,6 +1,6 @@
 /**
  * Three.js Scene Manager for Neon Dominance game
- * Handles 3D scene with spinning cube and hidden teapot
+ * Handles 3D scene with spinning cube and hidden d20 die
  */
 import * as THREE from 'three';
 
@@ -9,8 +9,9 @@ export class ThreeScene {
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private cube: THREE.LineSegments;
-  private teapot: THREE.Mesh;
+  private d20: THREE.Mesh;
   private animating: boolean = false;
+  private d20FollowingMouse: boolean = false;
   private controls: { mouseX: number; mouseY: number; lastX: number; lastY: number; isRotating: boolean } = {
     mouseX: 0,
     mouseY: 0,
@@ -104,21 +105,32 @@ export class ThreeScene {
     spotlight.penumbra = 0.3;
     this.scene.add(spotlight);
 
-    // Create a hidden teapot
-    // We'll use a simplified proxy geometry since the TeapotGeometry requires extra imports
-    const teapotGeometry = new THREE.SphereGeometry(0.5, 16, 16);
-    const teapotMaterial = new THREE.MeshPhongMaterial({
+    // Create a hidden d20 die (icosahedron)
+    const d20Geometry = new THREE.IcosahedronGeometry(0.7);
+    const d20Material = new THREE.MeshPhongMaterial({
       color: 0xff00ff,
       emissive: 0x330033,
       shininess: 100,
       transparent: true,
+      opacity: 0.1,
+      flatShading: true
+    });
+    this.d20 = new THREE.Mesh(d20Geometry, d20Material);
+    
+    // Add wireframe overlay to make it look like a d20
+    const wireframeMaterial = new THREE.LineBasicMaterial({
+      color: 0xff88ff,
+      transparent: true,
       opacity: 0.1
     });
-    this.teapot = new THREE.Mesh(teapotGeometry, teapotMaterial);
-    // Hide the teapot somewhere in the scene
-    this.teapot.position.set(15, 5, -10);
-    this.teapot.scale.set(0.5, 0.5, 0.5);
-    this.scene.add(this.teapot);
+    const wireframeGeometry = new THREE.WireframeGeometry(d20Geometry);
+    const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
+    this.d20.add(wireframe);
+    
+    // Hide the d20 somewhere in the scene
+    this.d20.position.set(15, 5, -10);
+    this.d20.scale.set(0.5, 0.5, 0.5);
+    this.scene.add(this.d20);
 
     // Add particle system for cyberpunk effect
     this.addParticles();
@@ -131,7 +143,7 @@ export class ThreeScene {
     document.addEventListener('mousemove', this.onMouseMove.bind(this));
     document.addEventListener('mouseup', this.onMouseUp.bind(this));
 
-    // Add easter egg - "hack" button to reveal teapot
+    // Add easter egg - "hack" button to reveal d20
     this.addHackButton();
   }
 
@@ -169,7 +181,7 @@ export class ThreeScene {
   }
 
   /**
-   * Add a hidden "hack" button to reveal the teapot
+   * Add a hidden "hack" button to reveal the d20
    */
   private addHackButton(): void {
     const hackButton = document.createElement('button');
@@ -188,57 +200,121 @@ export class ThreeScene {
     hackButton.textContent = 'HACK';
     
     hackButton.addEventListener('click', () => {
-      // Reveal the teapot by animating it to center
-      const revealTeapot = () => {
-        if (!this.teapot) return;
-        
-        // Change material to make it visible
-        (this.teapot.material as THREE.MeshPhongMaterial).opacity = 0.9;
-        (this.teapot.material as THREE.MeshPhongMaterial).color.set(0xff00ff);
-        (this.teapot.material as THREE.MeshPhongMaterial).emissive.set(0x330033);
-        
-        // Animate it to a visible position
-        const targetPosition = new THREE.Vector3(0, 0, 0);
-        const duration = 2000; // ms
-        const startPosition = this.teapot.position.clone();
-        const startTime = Date.now();
-        
-        const animateTeapot = () => {
-          const elapsed = Date.now() - startTime;
-          const progress = Math.min(elapsed / duration, 1);
-          
-          // Use easing function for smooth motion
-          const easedProgress = 1 - Math.pow(1 - progress, 3);
-          
-          this.teapot.position.lerpVectors(
-            startPosition,
-            targetPosition,
-            easedProgress
-          );
-          
-          this.teapot.rotation.x += 0.05;
-          this.teapot.rotation.y += 0.05;
-          
-          if (progress < 1) {
-            requestAnimationFrame(animateTeapot);
-          }
-        };
-        
-        // Start animation
-        requestAnimationFrame(animateTeapot);
-        
-        // Display message
-        console.log("%cYou found the hidden teapot! Neon Dominance easter egg unlocked!", 
-          "color: #ff00ff; font-weight: bold; font-size: 16px;");
-      };
-      
-      revealTeapot();
+      // Reveal the d20 and make it follow the mouse
+      this.revealD20();
       
       // Remove the button after click
       document.body.removeChild(hackButton);
     });
     
     document.body.appendChild(hackButton);
+    
+    // Add click handler to document to stop d20 from following
+    document.addEventListener('click', (event) => {
+      // Only respond if the d20 is currently following
+      if (this.d20FollowingMouse) {
+        // Make sure we're not clicking on any important UI elements
+        const target = event.target as HTMLElement;
+        if (target.tagName !== 'BUTTON' && !target.closest('.menu-container')) {
+          this.d20FollowingMouse = false;
+          
+          // Fix the d20 in its current position
+          // Add a small bounce effect
+          const currentY = this.d20.position.y;
+          const bounceAnimation = () => {
+            const startTime = Date.now();
+            const duration = 1000; // ms
+            const startPosition = this.d20.position.clone();
+            
+            const animateBounce = () => {
+              const elapsed = Date.now() - startTime;
+              const progress = Math.min(elapsed / duration, 1);
+              
+              if (progress < 1) {
+                // Simple bounce using sine function
+                const bounce = Math.sin(progress * Math.PI * 4) * (1 - progress) * 0.5;
+                this.d20.position.y = currentY + bounce;
+                
+                // Continue rotation
+                this.d20.rotation.x += 0.01;
+                this.d20.rotation.y += 0.01;
+                this.d20.rotation.z += 0.01;
+                
+                requestAnimationFrame(animateBounce);
+              }
+            };
+            
+            requestAnimationFrame(animateBounce);
+          };
+          
+          bounceAnimation();
+          
+          // Roll the d20 and show a random number
+          const randomRoll = Math.floor(Math.random() * 20) + 1;
+          
+          // Log message about capturing the d20
+          console.log(`%cD20 captured! You rolled a ${randomRoll}!`, 
+            "color: #ff00ff; font-weight: bold; font-size: 16px;");
+        }
+      }
+    });
+  }
+
+  /**
+   * Reveal the d20 by animating it to follow the mouse
+   */
+  private revealD20(): void {
+    if (!this.d20) return;
+    
+    // Change material to make it visible
+    (this.d20.material as THREE.MeshPhongMaterial).opacity = 0.9;
+    (this.d20.material as THREE.MeshPhongMaterial).color.set(0xff00ff);
+    (this.d20.material as THREE.MeshPhongMaterial).emissive.set(0x330033);
+    
+    // Make wireframe visible too
+    if (this.d20.children.length > 0) {
+      const wireframe = this.d20.children[0] as THREE.LineSegments;
+      (wireframe.material as THREE.LineBasicMaterial).opacity = 0.7;
+      (wireframe.material as THREE.LineBasicMaterial).color.set(0xff88ff);
+    }
+    
+    // Animate it from its hidden position to the center first
+    const targetPosition = new THREE.Vector3(0, 0, 0);
+    const duration = 2000; // ms
+    const startPosition = this.d20.position.clone();
+    const startTime = Date.now();
+    
+    const animateD20 = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Use easing function for smooth motion
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      
+      this.d20.position.lerpVectors(
+        startPosition,
+        targetPosition,
+        easedProgress
+      );
+      
+      this.d20.rotation.x += 0.05;
+      this.d20.rotation.y += 0.05;
+      this.d20.rotation.z += 0.03;
+      
+      if (progress < 1) {
+        requestAnimationFrame(animateD20);
+      } else {
+        // Once the d20 reaches the center, make it follow the mouse
+        this.d20FollowingMouse = true;
+      }
+    };
+    
+    // Start animation
+    requestAnimationFrame(animateD20);
+    
+    // Display message
+    console.log("%cYou found the hidden d20! It will follow your mouse until you click to capture it and roll.", 
+      "color: #ff00ff; font-weight: bold; font-size: 16px;");
   }
 
   /**
@@ -262,23 +338,43 @@ export class ThreeScene {
    */
   private animate(): void {
     if (!this.animating) return;
-
+    
     requestAnimationFrame(this.animate.bind(this));
-
+    
     // Rotate the cube
-    this.cube.rotation.x += 0.01;
-    this.cube.rotation.y += 0.01;
-
-    // Add a subtle pulsating effect
-    const time = Date.now() * 0.001; // time in seconds
-    this.cube.scale.x = 1 + 0.05 * Math.sin(time * 2);
-    this.cube.scale.y = 1 + 0.05 * Math.sin(time * 2);
-    this.cube.scale.z = 1 + 0.05 * Math.sin(time * 2);
-
-    // Slowly rotate the teapot
-    this.teapot.rotation.x += 0.01;
-    this.teapot.rotation.y += 0.01;
-
+    if (this.cube) {
+      this.cube.rotation.x += 0.005;
+      this.cube.rotation.y += 0.01;
+    }
+    
+    // If d20 is revealed and following mouse, update its position
+    if (this.d20FollowingMouse && this.d20) {
+      // Convert mouse coordinates to 3D space
+      const vector = new THREE.Vector3();
+      vector.set(
+        (this.controls.mouseX / window.innerWidth) * 2 - 1,
+        -(this.controls.mouseY / window.innerHeight) * 2 + 1,
+        0.5
+      );
+      
+      vector.unproject(this.camera);
+      const dir = vector.sub(this.camera.position).normalize();
+      const distance = -this.camera.position.z / dir.z;
+      const pos = this.camera.position.clone().add(dir.multiplyScalar(distance));
+      
+      // Limit how close the d20 can get to the edges
+      pos.x = Math.max(-5, Math.min(5, pos.x));
+      pos.y = Math.max(-3, Math.min(3, pos.y));
+      
+      // Smooth transition to new position
+      this.d20.position.lerp(new THREE.Vector3(pos.x, pos.y, 0), 0.05);
+      
+      // Make d20 rotate continuously while following
+      this.d20.rotation.x += 0.01;
+      this.d20.rotation.y += 0.02;
+      this.d20.rotation.z += 0.01;
+    }
+    
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -301,23 +397,25 @@ export class ThreeScene {
   }
 
   /**
-   * Handle mouse move event
+   * Handle mouse move events
+   * @param event Mouse event
    */
   private onMouseMove(event: MouseEvent): void {
-    if (!this.controls.isRotating) return;
-
-    const deltaX = event.clientX - this.controls.lastX;
-    const deltaY = event.clientY - this.controls.lastY;
-
-    this.controls.lastX = event.clientX;
-    this.controls.lastY = event.clientY;
-
-    this.controls.mouseX += deltaX * 0.01;
-    this.controls.mouseY += deltaY * 0.01;
-
-    // Update the cube rotation based on mouse movement
-    this.cube.rotation.y = this.controls.mouseX;
-    this.cube.rotation.x = this.controls.mouseY;
+    // Always update the mouse position for d20 following
+    this.controls.mouseX = event.clientX;
+    this.controls.mouseY = event.clientY;
+    
+    // Handle cube rotation if mouse is down
+    if (this.controls.isRotating) {
+      const deltaX = event.clientX - this.controls.lastX;
+      const deltaY = event.clientY - this.controls.lastY;
+      
+      this.cube.rotation.y += deltaX * 0.01;
+      this.cube.rotation.x += deltaY * 0.01;
+      
+      this.controls.lastX = event.clientX;
+      this.controls.lastY = event.clientY;
+    }
   }
 
   /**
@@ -348,13 +446,25 @@ export class ThreeScene {
       }
     }
     
-    if (this.teapot) {
-      if (this.teapot.geometry) this.teapot.geometry.dispose();
-      if (this.teapot.material) {
-        if (Array.isArray(this.teapot.material)) {
-          this.teapot.material.forEach(material => material.dispose());
+    if (this.d20) {
+      if (this.d20.geometry) this.d20.geometry.dispose();
+      if (this.d20.material) {
+        if (Array.isArray(this.d20.material)) {
+          this.d20.material.forEach(material => material.dispose());
         } else {
-          this.teapot.material.dispose();
+          this.d20.material.dispose();
+        }
+      }
+      // Dispose of wireframe child
+      if (this.d20.children.length > 0) {
+        const wireframe = this.d20.children[0] as THREE.LineSegments;
+        if (wireframe.geometry) wireframe.geometry.dispose();
+        if (wireframe.material) {
+          if (Array.isArray(wireframe.material)) {
+            wireframe.material.forEach(material => material.dispose());
+          } else {
+            wireframe.material.dispose();
+          }
         }
       }
     }
