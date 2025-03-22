@@ -38,6 +38,37 @@ npm run build
 
 The built files will be available in the `dist` directory.
 
+### Docker
+
+#### Running with Docker
+
+The application can be run using Docker, with both production and development environments available.
+
+#### Production
+
+To build and run the production version:
+
+```bash
+# Build and start the production container
+docker-compose up app
+
+# Or in detached mode
+docker-compose up -d app
+```
+
+The application will be available at http://localhost:8080
+
+#### Development with Hot-Reloading
+
+For development with hot-reloading:
+
+```bash
+# Build and start the development container
+docker-compose up dev
+```
+
+The development server will be available at http://localhost:8080 with live reloading enabled.
+
 ## Project Structure
 
 - `public/` - Static assets and HTML template

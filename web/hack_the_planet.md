@@ -3,7 +3,7 @@
   * [ ] handle deprecation warnings
 
 # next 
-* [ ] dockerize the node app
+* [x] dockerize the node app
 * [ ] reroll the inline card ascii art into the card data
 * [ ] reintroduce the threejs spinning cube on the main page, hide a teapot somewhere
 * [ ] make the game screen more responsive - suggest the console run side-by-side on a computer, deal with mobile later

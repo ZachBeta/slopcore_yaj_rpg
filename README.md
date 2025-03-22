@@ -30,6 +30,23 @@ Run the game directly from the root folder:
 ./run_game.sh
 ```
 
+### Web Version
+
+The web version of the game can be run using Docker:
+
+```bash
+# Navigate to the web directory
+cd web
+
+# Run the production version
+docker-compose up app
+
+# Or run the development version with hot-reloading
+docker-compose up dev
+```
+
+For more details, see the [Web README](web/README.md).
+
 ### Command-Line Options
 
 ```bash

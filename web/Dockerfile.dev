@@ -1,0 +1,15 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package.json and package-lock.json
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Expose port for webpack-dev-server
+EXPOSE 8080
+
+# Run dev server with webpack
+CMD ["npm", "run", "dev"] 
