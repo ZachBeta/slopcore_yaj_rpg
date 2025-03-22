@@ -919,4 +919,9 @@ export class TerminalGame {
       servers: this.servers
     };
   }
+
+  // Public getter for the renderer
+  public getRenderer(): ConsoleRenderer {
+    return this.renderer;
+  }
 } 

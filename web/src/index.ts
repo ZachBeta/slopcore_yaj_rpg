@@ -1,10 +1,17 @@
 import { TerminalGame } from './terminal-game/terminal-game';
 
+// Define the global interface for the window object
+declare global {
+  interface Window {
+    processCommand: (command: string) => void;
+  }
+}
+
 // Variable to store the game instance
 let game: TerminalGame | null = null;
 
 // Function to initialize and start the game
-function initializeGame() {
+function initializeGame(): void {
   // Clear console before starting
   console.clear();
 
@@ -27,7 +34,7 @@ function initializeGame() {
 }
 
 // Create a function to handle console input
-(window as any).processCommand = function(command: string) {
+window.processCommand = function(command: string): void {
   if (game && command && typeof command === 'string') {
     game.processCommand(command);
   } else {
@@ -43,8 +50,8 @@ document.addEventListener('DOMContentLoaded', () => {
     startButton.addEventListener('click', () => {
       // Hide the menu container
       const menuContainer = document.querySelector('.menu-container');
-      if (menuContainer) {
-        (menuContainer as HTMLElement).style.display = 'none';
+      if (menuContainer instanceof HTMLElement) {
+        menuContainer.style.display = 'none';
       }
       
       // Initialize the game
@@ -71,8 +78,8 @@ document.addEventListener('DOMContentLoaded', () => {
   demoButton.addEventListener('click', () => {
     // Hide the menu container
     const menuContainer = document.querySelector('.menu-container');
-    if (menuContainer) {
-      (menuContainer as HTMLElement).style.display = 'none';
+    if (menuContainer instanceof HTMLElement) {
+      menuContainer.style.display = 'none';
     }
     
     // Initialize the game
@@ -83,8 +90,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Start the demo mode after a short delay
     setTimeout(() => {
-      if (game && (game as any).renderer) {
-        (game as any).renderer.startDemoMode();
+      // Access the renderer through the game's public API
+      if (game && game.getRenderer && typeof game.getRenderer === 'function') {
+        const renderer = game.getRenderer();
+        if (renderer && typeof renderer.startDemoMode === 'function') {
+          renderer.startDemoMode();
+        }
       }
     }, 2000);
   });
@@ -106,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Function to create game instructions panel
-function createGameInstructions() {
+function createGameInstructions(): void {
   const container = document.createElement('div');
   container.id = 'game-instructions';
   container.style.padding = '30px';
@@ -131,13 +142,55 @@ function createGameInstructions() {
   instructions.style.fontSize = '16px';
   instructions.style.lineHeight = '1.6';
   instructions.style.marginBottom = '30px';
-  instructions.innerHTML = `
-    <strong style="color: #00ffff; font-size: 20px;">This game runs in your browser console!</strong><br><br>
-    1. Open your browser's Developer Tools (<strong>F12</strong> or <strong>Ctrl+Shift+I</strong> / <strong>Cmd+Option+I</strong>)<br>
-    2. Navigate to the "<strong style="color: #00ffff;">Console</strong>" tab<br>
-    3. The game has already started in the console<br>
-    4. Use the console to enter commands like: <code style="background: #333; padding: 2px 6px; border-radius: 4px;">processCommand('help')</code>
-  `;
+  
+  // Create DOM elements instead of using innerHTML for better security
+  const instructionsText = document.createTextNode('This game runs in your browser console!');
+  const strongText = document.createElement('strong');
+  strongText.style.color = '#00ffff';
+  strongText.style.fontSize = '20px';
+  strongText.appendChild(instructionsText);
+  
+  instructions.appendChild(strongText);
+  instructions.appendChild(document.createElement('br'));
+  instructions.appendChild(document.createElement('br'));
+  
+  // Add instruction steps
+  const steps = [
+    '1. Open your browser\'s Developer Tools (',
+    'F12',
+    ' or ',
+    'Ctrl+Shift+I',
+    ' / ',
+    'Cmd+Option+I',
+    ')',
+    '2. Navigate to the "',
+    'Console',
+    '" tab',
+    '3. The game has already started in the console',
+    '4. Use the console to enter commands like: ',
+    'processCommand(\'help\')'
+  ];
+  
+  for (let i = 0; i < steps.length; i++) {
+    if (i === 1 || i === 3 || i === 5 || i === 8 || i === 12) {
+      const strong = document.createElement('strong');
+      if (i === 8) strong.style.color = '#00ffff';
+      strong.textContent = steps[i];
+      instructions.appendChild(strong);
+    } else if (i === 6 || i === 9 || i === 10 || i === 11) {
+      instructions.appendChild(document.createTextNode(steps[i]));
+      instructions.appendChild(document.createElement('br'));
+    } else if (i === 12) {
+      const code = document.createElement('code');
+      code.style.background = '#333';
+      code.style.padding = '2px 6px';
+      code.style.borderRadius = '4px';
+      code.textContent = steps[i];
+      instructions.appendChild(code);
+    } else {
+      instructions.appendChild(document.createTextNode(steps[i]));
+    }
+  }
   
   const examples = document.createElement('div');
   examples.style.marginTop = '20px';
@@ -148,13 +201,35 @@ function createGameInstructions() {
   examples.style.fontSize = '16px';
   examples.style.lineHeight = '1.8';
   
-  examples.innerHTML = `
-    <strong style="color: #00ffff; font-size: 18px;">Example commands:</strong><br>
-    <code style="display: block; margin: 10px 0; background: #222; padding: 8px; border-radius: 4px;">processCommand('help')</code> - List all available commands<br>
-    <code style="display: block; margin: 10px 0; background: #222; padding: 8px; border-radius: 4px;">processCommand('draw')</code> - Draw a card<br>
-    <code style="display: block; margin: 10px 0; background: #222; padding: 8px; border-radius: 4px;">processCommand('hand')</code> - View your hand<br>
-    <code style="display: block; margin: 10px 0; background: #222; padding: 8px; border-radius: 4px;">processCommand('install 0')</code> - Install the first card from your hand
-  `;
+  // Create examples using DOM methods instead of innerHTML
+  const examplesTitle = document.createElement('strong');
+  examplesTitle.style.color = '#00ffff';
+  examplesTitle.style.fontSize = '18px';
+  examplesTitle.textContent = 'Example commands:';
+  examples.appendChild(examplesTitle);
+  examples.appendChild(document.createElement('br'));
+  
+  // Create example commands
+  const exampleCommands = [
+    { cmd: 'processCommand(\'help\')', desc: ' - List all available commands' },
+    { cmd: 'processCommand(\'draw\')', desc: ' - Draw a card' },
+    { cmd: 'processCommand(\'hand\')', desc: ' - View your hand' },
+    { cmd: 'processCommand(\'install 0\')', desc: ' - Install the first card from your hand' }
+  ];
+  
+  exampleCommands.forEach(example => {
+    const code = document.createElement('code');
+    code.style.display = 'block';
+    code.style.margin = '10px 0';
+    code.style.background = '#222';
+    code.style.padding = '8px';
+    code.style.borderRadius = '4px';
+    code.textContent = example.cmd;
+    
+    examples.appendChild(code);
+    examples.appendChild(document.createTextNode(example.desc));
+    examples.appendChild(document.createElement('br'));
+  });
   
   // Add a reminder button to open console
   const consoleButton = document.createElement('button');
