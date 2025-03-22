@@ -157,21 +157,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
-  // Add a demo mode button
-  const existingDemoButton = document.getElementById('demo-mode');
-  if (!existingDemoButton) {
-    const demoButton = document.createElement('button');
-    demoButton.className = 'btn';
-    demoButton.id = 'demo-mode';
-    demoButton.textContent = 'Demo Mode';
-    demoButton.style.backgroundColor = '#9933cc';
-    
-    // Insert the demo button after the start game button
-    if (startButton && startButton.parentNode) {
-      startButton.parentNode.insertBefore(demoButton, startButton.nextSibling);
-    }
-    
-    // Add event listener for the demo button
+  // Add event listener for demo mode button
+  const demoButton = document.getElementById('demo-mode');
+  if (demoButton) {
     demoButton.addEventListener('click', () => {
       // Hide the menu container
       const menuContainer = document.querySelector('.menu-container');
@@ -196,51 +184,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }, 2000);
     });
-  } else {
-    // Use the existing demo button if it's already in the DOM
-    existingDemoButton.addEventListener('click', () => {
-      // Hide the menu container
-      const menuContainer = document.querySelector('.menu-container');
-      if (menuContainer instanceof HTMLElement) {
-        menuContainer.style.display = 'none';
-      }
-      
-      // Initialize the game
-      initializeGame();
-      
-      // Create and show the game instructions
-      createGameInstructions();
-      
-      // Start the demo mode after a short delay
-      setTimeout(() => {
-        // Access the renderer through the game's public API
-        if (game && game.getRenderer && typeof game.getRenderer === 'function') {
-          const renderer = game.getRenderer();
-          if (renderer && typeof renderer.startDemoMode === 'function') {
-            renderer.startDemoMode();
-          }
-        }
-      }, 2000);
-    });
-  }
-  
-  // Add the open world game button
-  const openWorldButton = document.createElement('button');
-  openWorldButton.className = 'btn';
-  openWorldButton.id = 'open-world-game';
-  openWorldButton.textContent = 'Open World';
-  openWorldButton.style.backgroundColor = '#2196F3';
-  
-  // Find where to insert the button - either after demo mode button or start button
-  const demoButton = document.getElementById('demo-mode');
-  if (demoButton && demoButton.parentNode) {
-    demoButton.parentNode.insertBefore(openWorldButton, demoButton.nextSibling);
-  } else if (startButton && startButton.parentNode) {
-    startButton.parentNode.insertBefore(openWorldButton, startButton.nextSibling);
   }
   
   // Add event listener for the open world button
-  openWorldButton.addEventListener('click', initializeOpenWorldGame);
+  const openWorldButton = document.getElementById('open-world-game');
+  if (openWorldButton) {
+    openWorldButton.addEventListener('click', initializeOpenWorldGame);
+  }
   
   // Add event listeners for other menu buttons
   const optionsButton = document.getElementById('options');

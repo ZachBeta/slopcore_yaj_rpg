@@ -1,5 +1,13 @@
 # Neon Dominance Web Version - Development Roadmap
 
+## open world game
+
+* player colors are not consistent - red player should be red on both clients, blue player same
+* maps are different - let's generate that on server start and find a way to relay that to the player
+* generate a random username in the form "adjective noun"
+
+## soon
+
 * [ ] the demo only runs thru part of a player turn, it should get thru to someone winning
 * [ ] explore in browser LLM calls https://developer.chrome.com/docs/ai/built-in
 

@@ -67,12 +67,12 @@ export class OpenWorldGame {
     // Position camera to follow the player
     this.updateCameraPosition();
     
-    // Initialize the network manager
+    // Initialize the network manager with color support
     this.networkManager = new NetworkManager(
       this.localPlayer, 
-      (id, position) => this.handlePlayerJoin(id, position),
-      (id) => this.handlePlayerLeave(id),
-      (id, position) => this.updatePlayerPosition(id, position)
+      (id: string, position: THREE.Vector3, color: THREE.Color) => this.handlePlayerJoin(id, position, color),
+      (id: string) => this.handlePlayerLeave(id),
+      (id: string, position: THREE.Vector3) => this.updatePlayerPosition(id, position)
     );
     
     // Set up event listeners
@@ -172,11 +172,12 @@ export class OpenWorldGame {
   /**
    * Handle player joining the game
    */
-  private handlePlayerJoin(id: string, position: THREE.Vector3): void {
+  private handlePlayerJoin(id: string, position: THREE.Vector3, color: THREE.Color): void {
     if (id !== this.localPlayer.getId() && !this.players.has(id)) {
       console.log(`Player ${id} joined`);
       const player = new Player(id, false);
       player.setPosition(position);
+      player.setColor(color);
       this.scene.add(player.getObject());
       this.players.set(id, player);
     }

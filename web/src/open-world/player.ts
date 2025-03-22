@@ -26,6 +26,7 @@ export class Player {
   private collisionEffectTimer: number = 0;
   private rotation: THREE.Euler = new THREE.Euler(0, 0, 0, 'YXZ');
   private lookSpeed: number = 2.0;
+  private color: THREE.Color;
 
   /**
    * Create a new player
@@ -38,11 +39,12 @@ export class Player {
     this.object = new THREE.Group();
     this.object.position.set(0, 1, 0);
     
+    // Set default color
+    this.color = new THREE.Color(isLocal ? 0x00ff00 : 0xff0000);
+    
     // Create the player body (a simple cylinder for now)
     const geometry = new THREE.CylinderGeometry(0.5, 0.5, 2, 16);
-    const material = new THREE.MeshLambertMaterial({ 
-      color: isLocal ? 0x00ff00 : 0xff0000 
-    });
+    const material = new THREE.MeshLambertMaterial({ color: this.color });
     this.body = new THREE.Mesh(geometry, material);
     this.body.castShadow = true;
     this.body.receiveShadow = true;
@@ -290,5 +292,20 @@ export class Player {
    */
   public getRotation(): THREE.Euler {
     return this.rotation.clone();
+  }
+
+  /**
+   * Set the player's color
+   */
+  public setColor(color: THREE.Color): void {
+    this.color = color;
+    (this.body.material as THREE.MeshLambertMaterial).color = color;
+  }
+
+  /**
+   * Get the player's color
+   */
+  public getColor(): THREE.Color {
+    return this.color;
   }
 } 
