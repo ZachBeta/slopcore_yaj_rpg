@@ -72,7 +72,42 @@ The game board renderer uses color-coded ASCII art to represent different card t
 - **Upgrades**: Green
 - **Agendas**: Magenta
 
-## Integration
+## Game Board Sections
+
+The game board is divided into several sections:
+
+1. **Game Logo** - At the top of the board, displaying the Neon Dominance title
+2. **Status Bar** - Shows player credits, memory usage, and remaining clicks
+3. **Corporate Servers** - Displays servers (HQ, R&D, Archives, and remote servers) with their ICE protection
+4. **Runner's Rig** - Shows installed runner cards organized by type (programs, hardware, resources)
+5. **Hand Cards** - Displays the cards in the runner's hand
+6. **Run Information** - Shows run progress, ICE encounters, or run success when applicable
+
+## Run Visualization
+
+During a run, the game board will display:
+
+- The server being run on is highlighted
+- A visual progress track showing passed ICE, current ICE, and upcoming ICE
+- When encountering ICE, a detailed view of the ICE card with its ASCII art
+- Upon successful run, a celebratory animation
+
+## Integration Example
+
+An integration example is provided in `integrate_board_renderer.py`. This demonstrates how to:
+
+1. Extract game state from the main game logic
+2. Map data to the format expected by the board renderer
+3. Display the game board at different stages of gameplay
+4. Simulate a run from start to completion
+
+To run the integration example:
+
+```
+python3 integrate_board_renderer.py
+```
+
+### Integration API
 
 This renderer can be integrated with the main game logic to provide a visual representation of the game state. The `display_board()` function accepts an options dictionary that can be populated with the current game state.
 
@@ -92,8 +127,38 @@ options = {
 display_board(options)
 ```
 
+For complete integration, you'll need to:
+
+1. Import the necessary functions from `game_board_render.py`
+2. Map your game's card type names to the renderer's expected format (see `map_card_type()` in integration example)
+3. Extract the current game state and convert it to board options
+4. Call `display_board()` with these options at appropriate points in your game logic
+
+## Customizing the Renderer
+
+To add new card types or modify existing ASCII art:
+
+1. Add new entries to the `ascii_art` dictionary in `game_board_render.py`
+2. Update the `get_card_color()` function to handle the new card type
+3. Ensure your card data includes a 'type' field that matches the keys in the `ascii_art` dictionary
+
+## Troubleshooting
+
+### Display Issues
+
+- **Overlapping or misaligned cards**: Ensure your terminal is wide enough (80+ columns)
+- **Missing colors**: Check that your terminal supports ANSI color codes
+- **Broken ASCII art**: Some terminals may not display certain Unicode characters properly
+
+### Integration Issues
+
+- **Card type mismatch**: Ensure you're mapping card types correctly between your game and the renderer
+- **Card data format**: Cards must have at minimum 'name' and 'type' fields
+- **Import errors**: Check that path to game_board_render.py is correctly specified
+
 ## Requirements
 
 - Python 3.6 or higher
 - Terminal with ANSI color support
-- Sufficient terminal width (80+ columns recommended) 
+- Sufficient terminal width (80+ columns recommended)
+- For integration: compatible game state format 
