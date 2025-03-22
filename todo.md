@@ -1,59 +1,47 @@
-# todo
-* ✅ can we go so minimalist as to create a new mode CLI mode? or command line mode, or something else?
-* ✅ tab completion (implemented in CLI mode)
-* ✅ maybe treat "cards" as files on a file system (implemented in CLI mode)
-* ✅ instead of drawing a card, we curl a script (conceptually implemented in CLI mode)
-* let's add back in the ascii art
+# Neon Dominance Development Todo
 
+## Active Tasks (Next 2 Weeks)
 
-* ✅ Create minimalist card game UI (Version 1) for basic gameplay
-* ✅ Implement full game loop with win/lose conditions in the minimalist UI
-* ✅ Create terminal-based game mode for testing without Godot rendering
-* Add more card interactions and special abilities support
-* Improve card display with basic visual enhancements (Version 2)
-* Implement Corporation side gameplay
-* Consider adding simple animations for card actions (Version 3)
+### Gameplay
+- [ ] Implement economy rebalancing
+  - [ ] Adjust starting credits (5 → 8)
+  - [ ] Increase memory units (4 → 5)
+  - [ ] Add auto-credit at turn start
+  - [ ] Add "work" command
+- [ ] Complete run approach options
+  - [ ] Stealth approach implementation
+  - [ ] Aggressive approach implementation
+  - [ ] Careful approach implementation
 
-## Current Progress
+### Visuals
+- [ ] Create ASCII server visualizations
+  - [ ] Server structure templates
+  - [ ] ICE visualization by type
+  - [ ] Run progress indicator
+- [ ] Improve feedback during runs
+  - [ ] Clear status messages
+  - [ ] Progress visualization
 
-* Terminal-based implementation completed with:
-  * Real terminal interface independent of Godot
-  * Command-line gameplay with same mechanics as Godot version
-  * Support for automated testing
-  * Reproducible gameplay with random seed control
+### Technical
+- [ ] Update testing for new mechanics
+  - [ ] Economy balance test cases
+  - [ ] Run approaches test cases
+- [ ] Optimize card implementation
+  - [ ] Refactor card data structure
+  - [ ] Improve card ability system
 
-* Version 1 minimalist UI implemented with:
-  * Text-based card representation
-  * Simple button-based gameplay (draw, play, discard)
-  * Card details display
-  * Basic game state tracking
+## Recently Completed
+* ✅ Created terminal-based implementation
+* ✅ Implemented full game loop with win/lose conditions 
+* ✅ Added resource management systems
+* ✅ Implemented basic run mechanics
+* ✅ Built testing framework with mock renderers
+* ✅ Implemented jack-out command
 
-* Version 0.2.x+1 completed with:
-  * Full gameplay loop with game phases (setup, start turn, action, discard, end turn)
-  * Win conditions through agenda points and deck depletion
-  * Action point management with click system
-  * Resource management (credits and memory units)
-  * Hand limit enforcement
+## Upcoming
+* Implement Corporation AI improvements
+* Expand ICE interaction system
+* Develop comprehensive Card resource class
+* Begin work on deck building interface
 
-* Things to improve:
-  * Add Corporation gameplay
-  * Connect game logic to the UI for special card abilities
-  * Add visual feedback for actions
-  * Enhance terminal mode with more detailed gameplay elements
-
-## Future Versions
-
-See the detailed UI development roadmap in `/docs/ui_roadmap.md`
-
-## reference/notes
-
-* Card visualization is now handled through both terminal-based and simplified text-based approaches
-* Terminal mode allows for testing gameplay mechanics without Godot rendering
-* The minimalist UI focuses on core gameplay functionality and readability
-* UI development will follow an incremental approach from minimal to full-featured
-* Current functionality includes a complete game loop with resource management, win conditions, and structured gameplay phases
-
-## previous notes
-
-* actually read the requirements xd
-    * I think it's a deck building game like Dominion? I've never played netrunner, but I know it's a big deal
+See `docs/development_overview.md` for the complete development plan.
