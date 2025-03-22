@@ -10,9 +10,6 @@ import sys
 import os
 import argparse
 
-# Add the parent directory to sys.path to allow importing from sibling directories
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'cmd/terminal_game')))
-
 # Import the card data and card ASCII art
 from card_data import load_cards, GAME_UI_ASCII
 

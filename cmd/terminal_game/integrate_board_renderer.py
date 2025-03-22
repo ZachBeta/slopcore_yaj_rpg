@@ -11,10 +11,6 @@ import subprocess
 import argparse
 import re
 
-# Make sure we can import from our game_board_render module
-current_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, current_dir)
-
 # Import the game board renderer
 import game_board_render
 
@@ -36,7 +32,7 @@ def run_game_with_renderer(scenario='basic', delay=1, seed=None):
     game_board_render.display_board()
     
     # Build the command to run the game
-    cmd = ['./run_game.sh', '--test']
+    cmd = ['../../run_game.sh', '--test']
     cmd.append(f'--scenario')
     cmd.append(scenario)
     cmd.append(f'--delay')
