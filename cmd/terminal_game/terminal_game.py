@@ -230,10 +230,18 @@ class TerminalGame:
 
     def _initialize_deck(self):
         """Initialize the player deck with cards"""
-        # In a real implementation, we would load card data from a file
-        # For now, we'll create some sample cards
+        # Make sure cards are initialized
+        if not hasattr(self, 'cards_data'):
+            self._initialize_cards()
+            
+        # Use the cards defined in _initialize_cards
         self.player_deck = self.cards_data.copy()
+        
+        # Shuffle the deck
+        random.seed(self.random_seed)
         random.shuffle(self.player_deck)
+        
+        # Set number of cards for status tracking
         self.runner_cards_remaining = len(self.player_deck)
 
     def _draw_starting_hand(self):
@@ -263,13 +271,49 @@ class TerminalGame:
         """
         # Skip if card has no ability
         if 'ability' not in card:
+            # For our terminal implementation, we'll handle some special cases even without formal ability definitions
+            
+            # Check for cards that might give credits on successful runs
+            if trigger == 'successful_run' and card.get('type', '').lower() == 'resource':
+                if 'data mining' in card.get('name', '').lower():
+                    self.player_credits += 1
+                    return f"Gained 1 credit from {card['name']}"
+                    
+            # No other special cases to handle
             return None
             
         ability = card['ability']
         ability_type = ability.get('type')
         
+        # Break ice ability specific handling
+        if ability_type == 'break_ice' and trigger == 'encounter_ice':
+            if not context or 'ice' not in context:
+                return None
+                
+            ice = context['ice']
+            ice_types = ability.get('ice_types', [])
+            max_strength = ability.get('max_strength', 0)
+            strength_bonus = context.get('strength_bonus', 0)
+            
+            # Check if this breaker can handle the encountered ICE
+            ice_subtype = ice.get('subtype', '').lower()
+            ice_strength = ice.get('strength', 0)
+            
+            can_break = ('all' in [t.lower() for t in ice_types] or 
+                        ice_subtype in [t.lower() for t in ice_types])
+                        
+            effective_strength = max_strength + strength_bonus
+            
+            if can_break and effective_strength >= ice_strength:
+                return f"Used {card['name']} to successfully break {ice['name']} subroutines"
+            else:
+                if not can_break:
+                    return f"{card['name']} can't break {ice_subtype} ICE"
+                else:
+                    return f"{card['name']} strength ({effective_strength}) is not enough for {ice['name']} ({ice_strength})"
+            
         # Handle permanent abilities
-        if ability_type == 'permanent':
+        elif ability_type == 'permanent':
             # These are handled at installation time and don't need trigger checks
             if trigger == 'install':
                 effects = ability.get('effects', [])
@@ -298,90 +342,32 @@ class TerminalGame:
         # Handle triggered abilities
         elif ability_type == 'trigger':
             ability_trigger = ability.get('trigger')
-            if trigger == ability_trigger:
-                effect = ability.get('effect')
-                value = ability.get('value', 0)
-                frequency = ability.get('frequency', 'always')
+            
+            # Only process if the trigger matches
+            if ability_trigger != trigger:
+                return None
                 
-                # Check if frequency limits are satisfied
-                if frequency == 'per_turn' and card.get('used_this_turn', False):
-                    return None
-                    
-                # Apply effect
-                if effect == 'gain_credits':
-                    self.player_credits += value
-                    card['used_this_turn'] = True
-                    return f"Gained {value} credits from {card['name']}"
-                elif effect == 'draw':
-                    card_drawn = self._draw_card(value)
-                    card['used_this_turn'] = True
-                    if card_drawn:
-                        return f"Drew {value} card(s) from {card['name']}"
-                        
-        # Handle one-time effects (events)
-        elif ability_type == 'one_time':
-            if trigger == 'play':
-                effect = ability.get('effect')
-                if effect == 'bypass_ice':
-                    # Store that the next ice should be bypassed
-                    self.bypass_next_ice = ability.get('count', 1)
-                    return f"Next {self.bypass_next_ice} ice will be bypassed"
-                elif effect == 'untraceable_run':
-                    # Store that the next run is untraceable
-                    self.next_run_untraceable = True
-                    return f"Next run this turn will be untraceable"
-                elif effect == 'run':
-                    # Implement direct run effect
-                    target = ability.get('target', 'any')
-                    success_effect = ability.get('success_effect')
-                    success_value = ability.get('success_value', 0)
-                    # Run logic would be implemented here
-                    return f"Initiated a run on {target}"
-                    
-        # Handle ice breaking abilities
-        elif ability_type == 'break_ice':
-            if trigger == 'encounter_ice':
-                ice = context.get('ice')
-                if not ice:
-                    return None
-                    
-                # Check if the breaker can handle this ice type
-                ice_types = ability.get('ice_types', [])
-                ice_type = ice.get('type', 'unknown')
-                if 'all' not in ice_types and ice_type not in ice_types:
-                    return f"{card['name']} cannot break {ice_type} ice"
-                    
-                # Check strength
-                breaker_strength = card.get('strength', 0)
-                ice_strength = ice.get('strength', 0)
-                max_strength = ability.get('max_strength', 0)
-                if ice_strength > max_strength:
-                    return f"{card['name']} is not strong enough to break {ice['name']}"
-                    
-                # Check subroutine limits
-                max_subroutines = ability.get('subroutines')
-                ice_subroutines = ice.get('subroutines', [])
-                if max_subroutines != 'unlimited' and len(ice_subroutines) > max_subroutines:
-                    return f"{card['name']} can only break {max_subroutines} subroutines"
-                    
-                # Break the ice
-                return f"{card['name']} successfully broke {ice['name']}"
+            effect = ability.get('effect')
+            value = ability.get('value', 0)
+            
+            # Handle different effect types
+            if effect == 'gain_credits':
+                self.player_credits += value
+                return f"Gained {value} credits from {card['name']}"
+            elif effect == 'draw_cards':
+                # Not implementing card drawing in this demo terminal version
+                return f"Drew {value} cards from {card['name']}"
                 
-        # Handle resource cards
-        elif ability_type == 'resource':
-            if trigger == 'install':
-                resource_type = ability.get('resource_type')
-                value = ability.get('value', 0)
-                card['counters'] = value
-                return f"Placed {value} {resource_type} on {card['name']}"
-            elif trigger == 'use':
-                resource_type = ability.get('resource_type')
-                usage = ability.get('usage')
-                if context and context.get('action') == usage:
-                    if card.get('counters', 0) > 0:
-                        card['counters'] -= 1
-                        return f"Used 1 {resource_type} from {card['name']}"
-                        
+        # Handle resource usage (like spending counters)
+        elif ability_type == 'resource' and trigger == 'use':
+            usage_type = ability.get('usage')
+            if not context or 'action' not in context:
+                return None
+                
+            if usage_type == context['action'] and card.get('counters', 0) > 0:
+                card['counters'] = card.get('counters', 0) - 1
+                return f"Used {card['name']} to assist with {context['action']}"
+        
         return None
 
     def process_command(self, command_text):
@@ -633,86 +619,63 @@ class TerminalGame:
             self.renderer.output(f"[{i+1}] {card['name']} - {card['type']} - {card.get('cost', 0)}c {card.get('mu', 0)}mu")
 
     def _cmd_install(self, args):
-        """Install a card from the player's hand"""
+        """Implement the install command"""
+        if not args:
+            self.renderer.output_error("What do you want to install?")
+            self.renderer.output("Usage: install <card_number>")
+            return
+            
+        # Validate we're in the correct phase
         if self.current_phase != GamePhase.ACTION:
             self.renderer.output_error("Can only install during action phase")
             return
-
-        if self.clicks_remaining < 1:
-            self.renderer.output_error("Not enough clicks remaining")
+            
+        # Check if player has any clicks remaining
+        if self.clicks_remaining <= 0:
+            self.renderer.output_error("You don't have any clicks remaining.")
             return
-
-        if not args:
-            self.renderer.output_error("Must specify a card number to install")
-            self.renderer.output("Usage: install <card_number>")
-            return
-
+            
         try:
-            card_number = int(args[0])
-            if card_number < 1 or card_number > len(self.hand_cards):
-                self.renderer.output_error(f"Invalid card number: {card_number}")
-                return
-
-            # Get the card from hand
-            card = self.hand_cards[card_number - 1]
+            # Get the card index
+            card_index = int(args[0]) - 1
+            if card_index < 0 or card_index >= len(self.hand_cards):
+                raise ValueError("Invalid card index")
+                
+            # Reference the card
+            card = self.hand_cards[card_index]
             
-            # Check if player has enough credits to install
-            if self.player_credits < card.get('cost', 0):
-                self.renderer.output_error(f"Not enough credits to install {card['name']} (need {card['cost']})")
+            # Check if player has enough credits
+            cost = card.get('cost', 0)
+            if self.player_credits < cost:
+                self.renderer.output_error(f"Not enough credits to install {card['name']}. Costs {cost} credits, you have {self.player_credits}.")
                 return
                 
-            # Check if player has enough memory for programs
-            if card.get('type', '').lower() == 'program' and self.memory_units_used + card.get('mu', 0) > self.memory_units_available:
-                self.renderer.output_error(f"Not enough memory to install {card['name']} (need {card['mu']} MU)")
+            # Check if player has enough memory
+            memory_required = card.get('mu', 0)
+            memory_available = self.memory_units_available - self.memory_units_used
+            if memory_required > memory_available:
+                self.renderer.output_error(f"Not enough memory to install {card['name']}. Requires {memory_required} MU, you have {memory_available} available.")
                 return
                 
-            # Check for special resource costs (e.g., from Credit Cache)
-            special_payments = []
-            for installed_card in self.played_cards:
-                if ('ability' in installed_card and 
-                    installed_card['ability'].get('type') == 'resource' and
-                    installed_card['ability'].get('usage') == 'install_programs' and
-                    card.get('type', '').lower() == 'program' and
-                    installed_card.get('counters', 0) > 0):
-                    special_payments.append(installed_card)
+            # Pay the cost
+            self.player_credits -= cost
             
-            # If there are special payment options, handle them
-            credits_from_resources = 0
-            if special_payments and card.get('type', '').lower() == 'program':
-                for resource_card in special_payments:
-                    result = self._process_card_ability(
-                        resource_card, 
-                        trigger='use',
-                        context={'action': 'install_programs'}
-                    )
-                    if result:
-                        self.renderer.output_success(result)
-                        credits_from_resources += 1
-                        if credits_from_resources >= card.get('cost', 0):
-                            break
-            
-            # Deduct costs
-            credit_cost = max(0, card.get('cost', 0) - credits_from_resources)
-            self.player_credits -= credit_cost
-            
-            # Update memory if it's a program
-            if card.get('type', '').lower() == 'program':
+            # Consume memory if it's a program
+            if card.get('type', '').lower() in ['program', 'icebreaker', 'virus']:
                 self.memory_units_used += card.get('mu', 0)
                 
             # Remove from hand and add to played cards
             self.hand_cards.remove(card)
             self.played_cards.append(card)
             
-            self.renderer.output_success(f"Installed {card['name']}")
+            # Display mini card visualization
+            self.renderer.display_mini_card(card, f"Installing {card['name']} for {cost} credits")
             
             # Process card abilities on installation
             ability_result = self._process_card_ability(card, trigger='install')
             if ability_result:
                 self.renderer.output_success(ability_result)
                 
-            # Display detailed card information
-            self.renderer.display_card_details(card)
-            
             # Use up a click
             self.clicks_remaining -= 1
             
@@ -856,69 +819,94 @@ class TerminalGame:
         
     def _process_next_ice(self):
         """Process the next ICE in the run sequence"""
-        # Get the current ICE based on the index
-        if self.current_run['ice_index'] >= len(self.current_run['ice_encountered']):
-            # No more ICE, run is successful
+        if self.current_run is None or self.current_run['state'] not in ['approaching_ice', 'encountering_ice']:
+            return
+            
+        # Get current ICE index
+        ice_index = self.current_run.get('ice_index', 0)
+        ice_list = self.current_run.get('ice_encountered', [])
+        server_name = self.current_run.get('server', "Unknown")
+        
+        # Show run progress
+        self.renderer.display_run_progress(ice_list, ice_index, server_name)
+        
+        # If we've gone through all ICE, access the server
+        if ice_index >= len(ice_list):
             self._complete_run(True)
             return
             
-        ice = self.current_run['ice_encountered'][self.current_run['ice_index']]
+        # Get the current ICE
+        ice = ice_list[ice_index]
         self.current_run['current_ice'] = ice
-        self.current_run['state'] = 'ice_encountered'
         
-        # Check if we can bypass this ICE
-        if hasattr(self, 'bypass_next_ice') and self.bypass_next_ice > 0:
-            self.renderer.output_success(f"Bypassing {ice['name']} with exploit...")
+        # Check if we should bypass this ICE (e.g., stealth approach effect)
+        if self.bypass_next_ice > 0:
             self.bypass_next_ice -= 1
+            self.renderer.output_success(f"Your stealth approach allows you to bypass the {ice['name']}!")
             
-            # Move to next ICE
+            # Move to the next ICE
             self.current_run['ice_index'] += 1
             self._process_next_ice()
             return
-        
-        # Display ICE encounter
+            
+        # Display the ICE encounter
         self.renderer.display_ice_encounter(ice)
         
-        # Check for aggressive approach strength bonus
-        strength_bonus = 0
-        if self.current_run['approach'] == 'aggressive':
-            strength_bonus = 1
-            self.renderer.output("Your aggressive approach gives you +1 strength against this ICE.")
+        # Change run state
+        self.current_run['state'] = 'encountering_ice'
         
-        # Check if player has any installed icebreakers that can handle this ICE
+        # Check if player has appropriate icebreaker
         breakers = self._get_installed_breakers()
-        usable_breakers = []
+        can_break = False
         
         for breaker in breakers:
-            result = self._process_card_ability(
-                breaker, 
-                trigger='encounter_ice', 
-                context={'ice': ice, 'strength_bonus': strength_bonus}
-            )
-            if result and "successfully broke" in result:
-                usable_breakers.append((breaker, result))
+            if 'ability' in breaker and breaker['ability'].get('type') == 'break_ice':
+                ice_types = breaker['ability'].get('ice_types', [])
+                max_strength = breaker['ability'].get('max_strength', 0)
+                
+                # Check if the breaker can handle this ICE
+                if (ice.get('subtype', '').lower() in [t.lower() for t in ice_types] or 'all' in [t.lower() for t in ice_types]) and max_strength >= ice.get('strength', 0):
+                    can_break = True
+                    
+                    # Show that the breaker can handle this ICE
+                    self.renderer.output_success(f"Your {breaker['name']} can break this ICE.")
+                    self.renderer.display_mini_card(breaker, f"This icebreaker can handle {ice['name']}")
+                    break
         
-        if usable_breakers:
-            # Player has at least one usable breaker
-            # If multiple, let player choose or auto-select the best one
-            best_breaker, message = usable_breakers[0]  # For simplicity, take the first one
-            self.renderer.output_success(message)
+        if not can_break:
+            # Player doesn't have appropriate breaker
+            # In a real game, this would be where subroutines fire
+            # For the terminal version, just damage the player and continue
+            damage = ice.get('strength', 1)
+            self.renderer.output_error(f"No appropriate icebreaker found! {ice['name']} deals {damage} damage.")
             
-            # Move to next ICE
+            # Apply damage based on approach
+            if self.current_run['approach'] == 'aggressive':
+                damage = max(1, damage - 1)  # Aggressive reduces damage
+                self.renderer.output("Your aggressive approach reduces the damage!")
+            elif self.current_run['approach'] == 'careful':
+                self.renderer.output("Your careful approach allows you to jack out safely.")
+                self._complete_run(False)
+                return
+                
+            # Move to the next ICE
             self.current_run['ice_index'] += 1
             self._process_next_ice()
         else:
-            # No usable icebreakers for this ICE
-            self.renderer.output("You need to decide how to proceed.")
-            self.renderer.output("Options: 'jack_out' to abort the run, or press Enter to continue and face consequences.")
-            
-            # The command loop will handle the next action
-            # If jack_out, that command will handle it
-            # If they press Enter, we'll process the failure in _cmd_continue
-    
+            # Move to the next ICE
+            self.current_run['ice_index'] += 1
+            self._process_next_ice()
+
     def _complete_run(self, success):
         """Complete the current run with success or failure"""
+        server_name = self.current_run['server']
+        ice_list = self.current_run.get('ice_encountered', [])
+        
         if success:
+            # Show final run progress with all ICE passed
+            if ice_list:
+                self.renderer.display_run_progress(ice_list, len(ice_list), server_name)
+                
             self.renderer.output_success("Accessing server...")
             server_result = self._access_server(self.current_run['server'])
             
@@ -929,6 +917,11 @@ class TerminalGame:
                     self.renderer.output_success(result)
         else:
             self.renderer.output_error("Run failed!")
+            
+            # Show partial progress
+            if ice_list:
+                ice_index = self.current_run.get('ice_index', 0)
+                self.renderer.display_run_progress(ice_list, ice_index, server_name)
             
             # Apply approach-specific consequences on failure
             if self.current_run['approach'] == 'aggressive':
@@ -957,153 +950,220 @@ class TerminalGame:
             ice_count = 2 if not is_central else 3
             
         # For testing, limit the ice to make runs possible early game
-        ice_count = min(1, ice_count)  # Limit to at most 1 ice in early development
+        # ice_count = min(2, ice_count)  # Allow up to 2 ICE for more interesting runs
         
         # If no ICE, return empty list
         if ice_count == 0:
             return []
             
-        # Sample ICE cards
-        ice_templates = [
+        # Create ICE with various subtypes to test our breakers
+        ice_pool = [
             {
-                "name": "Enigma",
-                "type": "Code Gate",
-                "strength": 2,
-                "description": "Runner loses 1 click if able",
-                "subroutines": ["End the run", "Runner loses 1 click"]
+                'name': 'Ice Wall',
+                'type': 'Ice',
+                'subtype': 'Barrier',
+                'cost': 1,
+                'strength': 1,
+                'description': 'End the run.'
             },
             {
-                "name": "Ice Wall",
-                "type": "Barrier",
-                "strength": 1,
-                "description": "Basic barrier protection",
-                "subroutines": ["End the run"]
+                'name': 'Enigma',
+                'type': 'Ice',
+                'subtype': 'Code Gate',
+                'cost': 3,
+                'strength': 2,
+                'description': 'The Runner loses 1 click. End the run.'
             },
             {
-                "name": "Neural Katana",
-                "type": "Sentry",
-                "strength": 3,
-                "description": "Deals 3 net damage",
-                "subroutines": ["Do 3 net damage", "End the run"]
+                'name': 'Rototurret',
+                'type': 'Ice', 
+                'subtype': 'Sentry',
+                'cost': 4,
+                'strength': 0,
+                'description': 'Trash 1 program. End the run.'
             },
             {
-                "name": "Data Mine",
-                "type": "Trap",
-                "strength": 2,
-                "description": "Do 1 net damage",
-                "subroutines": ["Do 1 net damage", "End the run"]
+                'name': 'Neural Katana',
+                'type': 'Ice',
+                'subtype': 'Sentry',
+                'cost': 4,
+                'strength': 3,
+                'description': 'Do 3 net damage. End the run.'
             },
             {
-                "name": "Ghost Walker",
-                "type": "Stealth",
-                "strength": 1,
-                "description": "The runner loses 2 credits",
-                "subroutines": ["Runner loses 2 credits", "End the run"]
+                'name': 'Wall of Static',
+                'type': 'Ice',
+                'subtype': 'Barrier',
+                'cost': 3,
+                'strength': 3,
+                'description': 'End the run.'
+            },
+            {
+                'name': 'Tollbooth',
+                'type': 'Ice',
+                'subtype': 'Code Gate',
+                'cost': 8,
+                'strength': 5,
+                'description': 'The Runner loses 3 credits, if able. End the run if the Runner cannot pay 3 credits.'
             }
         ]
         
-        # Select random ICE from templates
-        ice_selection = []
+        # Generate a mix of ICE
+        # Use deterministic selection for reproducibility in testing
+        selected_ice = []
         for i in range(ice_count):
-            ice_index = (self.random_seed + i + hash(server_name)) % len(ice_templates)
-            ice_selection.append(ice_templates[ice_index])
+            # Determine a "slot" for each position in the server
+            if i == 0:  # Outermost ICE is often a barrier
+                candidates = [ice for ice in ice_pool if ice['subtype'] == 'Barrier']
+            elif i == 1:  # Second ICE is often a code gate
+                candidates = [ice for ice in ice_pool if ice['subtype'] == 'Code Gate']
+            else:  # Innermost ICE is often a sentry
+                candidates = [ice for ice in ice_pool if ice['subtype'] == 'Sentry']
+                
+            # If no candidates of the right type, use any type
+            if not candidates:
+                candidates = ice_pool
+                
+            # Select an ICE using a deterministic method based on turn number and server
+            index = (self.turn_number + ord(server_name[0]) + i) % len(candidates)
+            selected_ice.append(candidates[index])
             
-        return ice_selection
+        return selected_ice
     
     def _get_installed_breakers(self):
         """Get all installed icebreaker programs"""
-        return [card for card in self.played_cards 
-                if card.get('type', '') == 'Program' and 
-                'ability' in card and 
-                card['ability'].get('type', '') == 'break_ice']
+        # Let's simplify this to just return installed cards that are icebreaker type
+        breakers = []
+        for card in self.played_cards:
+            if card.get('type', '').lower() == 'icebreaker':
+                # Add basic icebreaker ability if not present
+                if 'ability' not in card:
+                    card['ability'] = {
+                        'type': 'break_ice',
+                        'ice_types': ['all'],
+                        'max_strength': card.get('strength', 2)
+                    }
+                breakers.append(card)
+                
+        return breakers
                 
     def _access_server(self, server_name):
-        """Access a server after a successful run"""
-        # Different server types have different access mechanics
+        """Access a server and get its contents"""
+        self.renderer.output_success(f"Accessing server: {server_name}")
+        
+        # Each server has different content to access
+        accessed_cards = []
+        
         if server_name == "R&D":
-            # Access top card of R&D (Corp's deck)
-            if self.corp_cards_remaining > 0:
-                # In a real implementation, this would reveal the top card of R&D
-                # For the terminal version, we'll simulate it
-                found_agenda = (self.random_seed + self.turn_number) % 6 == 0
-                if found_agenda:
-                    self.runner_agenda_points += 1
-                    self.renderer.output_success("Found an agenda! You score 1 agenda point.")
-                    
-                    # Check win condition
-                    if self.runner_agenda_points >= self.agenda_points_to_win:
-                        self.game_over = True
-                        self.win_message = "Runner wins by scoring 7 agenda points!"
-                    return "Agenda scored"
-                else:
-                    self.renderer.output("No valuable data found.")
-                    return "No agenda"
-            else:
-                self.renderer.output("R&D is empty.")
-                return "Empty server"
+            # In a simulation, create dummy cards instead of accessing corp_deck
+            dummy_card = {
+                'name': "Priority Directive",
+                'type': "Agenda",
+                'advancement_requirement': 3,
+                'agenda_points': 2,
+                'description': "When you score this agenda, you may rez a piece of ice ignoring all costs."
+            }
+            accessed_cards = [dummy_card]
+            self.renderer.output(f"You access the top card of R&D.")
                 
         elif server_name == "HQ":
-            # Access a random card from HQ (Corp's hand)
-            # In a real implementation, this would reveal a random card from the Corp's hand
-            # For the terminal version, we'll simulate it
-            found_agenda = (self.random_seed + self.turn_number + 1) % 5 == 0
-            if found_agenda:
-                self.runner_agenda_points += 1
-                self.renderer.output_success("Found an agenda in HQ! You score 1 agenda point.")
-                
-                # Check win condition
-                if self.runner_agenda_points >= self.agenda_points_to_win:
-                    self.game_over = True
-                    self.win_message = "Runner wins by scoring 7 agenda points!"
-                return "Agenda scored"
-            else:
-                self.renderer.output("No valuable data found in HQ.")
-                return "No agenda"
+            # Create a dummy card for HQ
+            dummy_card = {
+                'name': "Corporate Strategy",
+                'type': "Operation",
+                'cost': 2,
+                'description': "Gain 5 credits."
+            }
+            accessed_cards = [dummy_card]
+            self.renderer.output("You access a random card from HQ.")
                 
         elif server_name == "ARCHIVES":
-            # Access all cards in Archives (Corp's discard pile)
-            # In a real implementation, this would reveal all cards in the Corp's discard pile
-            # For the terminal version, we'll simulate it
-            found_agenda = (self.random_seed + self.turn_number + 2) % 7 == 0
-            if found_agenda:
-                self.runner_agenda_points += 1
-                self.renderer.output_success("Found an agenda in Archives! You score 1 agenda point.")
+            # Create dummy cards for Archives
+            dummy_cards = [
+                {
+                    'name': "Hedge Fund",
+                    'type': "Operation",
+                    'cost': 5,
+                    'description': "Gain 9 credits."
+                },
+                {
+                    'name': "Ice Wall",
+                    'type': "Ice",
+                    'subtype': "Barrier",
+                    'cost': 1,
+                    'strength': 1,
+                    'description': "End the run."
+                }
+            ]
+            accessed_cards = dummy_cards
+            self.renderer.output(f"You access {len(accessed_cards)} cards from Archives.")
                 
-                # Check win condition
-                if self.runner_agenda_points >= self.agenda_points_to_win:
-                    self.game_over = True
-                    self.win_message = "Runner wins by scoring 7 agenda points!"
-                return "Agenda scored"
-            else:
-                self.renderer.output("No valuable data found in Archives.")
-                return "No agenda"
-                
-        else:  # Remote server
-            # Access a remote server, which could contain agendas or assets
-            # In a real implementation, this would reveal the card in the remote server
-            # For the terminal version, we'll simulate it
+        elif server_name.startswith("REMOTE"):
+            # Access cards in a remote server
             server_num = int(server_name[6:])
-            found_agenda = (self.random_seed + self.turn_number + server_num) % 4 == 0
-            if found_agenda:
-                self.runner_agenda_points += 2  # Remote servers usually have higher-value agendas
-                self.renderer.output_success("Found a high-value agenda! You score 2 agenda points.")
+            if server_num > 0 and server_num <= 3:
+                # Generate a random card for this remote server
+                card_types = ["Asset", "Upgrade", "Agenda"]
+                card_type = random.choice(card_types)
                 
-                # Check win condition
-                if self.runner_agenda_points >= self.agenda_points_to_win:
-                    self.game_over = True
-                    self.win_message = "Runner wins by scoring 7 agenda points!"
-                return "Agenda scored"
-            else:
-                # Could be an asset or trap
-                is_trap = (self.random_seed + self.turn_number + server_num) % 3 == 0
-                if is_trap:
-                    damage = 2
-                    self.renderer.output_error(f"It's a trap! You take {damage} neural damage.")
-                    # In a real implementation, this would reduce the Runner's hand size or cards
-                    return "Trap sprung"
-                else:
-                    self.renderer.output("You access an asset but gain no advantage.")
-                    return "Asset accessed"
+                if card_type == "Agenda":
+                    # Create a random agenda
+                    agenda = {
+                        'name': f"Priority Requisition {server_num}",
+                        'type': "Agenda",
+                        'advancement_requirement': 3,
+                        'agenda_points': 2,
+                        'description': "When you score this agenda, you may rez a piece of ice ignoring all costs."
+                    }
+                    accessed_cards = [agenda]
+                    self.renderer.output("You've found an agenda!")
+                    
+                    # Award agenda points
+                    self.player_agenda_points += agenda['agenda_points']
+                    self.renderer.output_success(f"You score {agenda['agenda_points']} agenda points!")
+                    
+                elif card_type == "Asset":
+                    # Create a random asset
+                    asset = {
+                        'name': f"Adonis Campaign {server_num}",
+                        'type': "Asset",
+                        'cost': 4,
+                        'trash_cost': 3,
+                        'description': "Place 12 credits on Adonis Campaign. When it is rezzed. Take 3 credits from Adonis Campaign at the start of your turn. Trash it if there are no credits left."
+                    }
+                    accessed_cards = [asset]
+                    self.renderer.output("You've found an asset.")
+                    
+                    # Option to trash
+                    if self.player_credits >= asset['trash_cost']:
+                        self.renderer.output(f"You can spend {asset['trash_cost']} credits to trash it.")
+                
+                elif card_type == "Upgrade":
+                    # Create a random upgrade
+                    upgrade = {
+                        'name': f"Red Herrings {server_num}",
+                        'type': "Upgrade",
+                        'cost': 2,
+                        'trash_cost': 1,
+                        'description': "The Runner must pay 5 credits as an additional cost to steal an agenda from this server."
+                    }
+                    accessed_cards = [upgrade]
+                    self.renderer.output("You've found an upgrade.")
+                    
+                    # Option to trash
+                    if self.player_credits >= upgrade['trash_cost']:
+                        self.renderer.output(f"You can spend {upgrade['trash_cost']} credits to trash it.")
+        
+        # Display all accessed cards
+        if accessed_cards:
+            self.renderer.output(f"You accessed {len(accessed_cards)} card(s):")
+            for card in accessed_cards:
+                # Display the accessed card with our mini card visual
+                self.renderer.display_mini_card(card, "Accessed from server")
+        else:
+            self.renderer.output("No cards were accessed.")
+            
+        return accessed_cards
 
     def _cmd_system(self, args):
         """Implement the system command"""
@@ -1260,3 +1320,107 @@ class TerminalGame:
             
         # Update status display
         self._update_status()
+
+    def _initialize_cards(self):
+        """Initialize the card data for the game"""
+        # These would normally be loaded from a JSON file or similar
+        # For this example, we'll create some basic cards
+        self.cards_data = [
+            {
+                'name': 'Corroder',
+                'type': 'Icebreaker',
+                'subtype': 'Fracter',
+                'cost': 2,
+                'mu': 1,
+                'strength': 2,
+                'description': 'Break barrier subroutines. 1 credit: +1 strength for the remainder of this run.'
+            },
+            {
+                'name': 'Data Mining',
+                'type': 'Resource',
+                'cost': 2,
+                'mu': 0,
+                'description': 'Gain 1 credit whenever you make a successful run.'
+            },
+            {
+                'name': 'Gordian Blade',
+                'type': 'Icebreaker',
+                'subtype': 'Decoder',
+                'cost': 4,
+                'mu': 1,
+                'strength': 2,
+                'description': 'Break code gate subroutines. 1 credit: +1 strength for the remainder of this run.'
+            },
+            {
+                'name': 'Diesel',
+                'type': 'Event',
+                'cost': 0,
+                'mu': 0,
+                'description': 'Draw 3 cards.'
+            },
+            {
+                'name': 'Magnum Opus',
+                'type': 'Program',
+                'cost': 5,
+                'mu': 2,
+                'description': 'Click: Gain 2 credits.'
+            },
+            {
+                'name': 'Sure Gamble',
+                'type': 'Event',
+                'cost': 5,
+                'mu': 0,
+                'description': 'Gain 9 credits.'
+            },
+            {
+                'name': 'Akamatsu Mem Chip',
+                'type': 'Hardware',
+                'cost': 1,
+                'mu': 0,
+                'description': '+1 memory unit.'
+            },
+            {
+                'name': 'The Personal Touch',
+                'type': 'Hardware',
+                'cost': 2,
+                'mu': 0,
+                'description': 'Install on an icebreaker. Host icebreaker has +1 strength.'
+            },
+            {
+                'name': 'Ninja',
+                'type': 'Icebreaker',
+                'subtype': 'Killer',
+                'cost': 4,
+                'mu': 1,
+                'strength': 3,
+                'description': 'Break sentry subroutines. 1 credit: +1 strength for the remainder of this run.'
+            },
+            {
+                'name': 'Net Shield',
+                'type': 'Hardware',
+                'cost': 2,
+                'mu': 0,
+                'description': 'Prevent up to 1 net damage each turn.'
+            }
+        ]
+        
+        # Add abilities to icebreakers
+        for card in self.cards_data:
+            if card['type'] == 'Icebreaker':
+                subtype = card.get('subtype', 'AI')
+                ice_types = []
+                
+                if subtype == 'Fracter':
+                    ice_types = ['Barrier']
+                elif subtype == 'Decoder':
+                    ice_types = ['Code Gate']
+                elif subtype == 'Killer':
+                    ice_types = ['Sentry']
+                elif subtype == 'AI':
+                    ice_types = ['all']
+                    
+                card['ability'] = {
+                    'type': 'break_ice',
+                    'ice_types': ice_types,
+                    'max_strength': card.get('strength', 2)
+                }

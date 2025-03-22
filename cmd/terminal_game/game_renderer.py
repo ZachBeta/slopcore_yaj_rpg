@@ -90,6 +90,135 @@ class TerminalRenderer:
                 r" | [====||====]    |",
                 r" | [====||====]    |",
                 r" +-----------------+"
+            ],
+            # Card type ASCII art
+            "program": [
+                r"    _____",
+                r"   /    /|",
+                r"  /____/ |",
+                r" |    |  |",
+                r" |____|/   "
+            ],
+            "icebreaker": [
+                r"   /|  /|",
+                r"  /_|_/ |",
+                r" |     /|",
+                r" |__/|/ |",
+                r" |  ||  |",
+                r" |__|/   "
+            ],
+            "hardware": [
+                r"  _______",
+                r" /       \\",
+                r"|  o   o  |",
+                r"|    |    |",
+                r"|___|___|_|"
+            ],
+            "resource": [
+                r"    $$$    ",
+                r"   $   $   ",
+                r"   $   $   ",
+                r"   $   $   ",
+                r"    $$$    "
+            ],
+            "event": [
+                r"    /\\    ",
+                r"   /  \\   ",
+                r"  /    \\  ",
+                r" +------+ ",
+                r" |      | "
+            ],
+            "virus": [
+                r"    ()    ",
+                r"   /\\/\\   ",
+                r"  <(  )>  ",
+                r"   \\\\//   ",
+                r"    \\/    "
+            ],
+            "operation": [
+                r"   __/\\__   ",
+                r"  /      \\  ",
+                r" |   >>   | ",
+                r"  \\______/  ",
+                r"    |  |    "
+            ],
+            "asset": [
+                r"    _____    ",
+                r"   |     |   ",
+                r"   |  █  |   ",
+                r"   |_____|   ",
+                r"   /  |  \\   "
+            ],
+            "upgrade": [
+                r"     /\\     ",
+                r"    /||\\    ",
+                r"   /||||\\   ",
+                r"  /||||||\\  ",
+                r" /_|_||_|_\\ "
+            ],
+            "agenda": [
+                r"   _   _   ",
+                r"  / \\ / \\  ",
+                r" |  ■ ■  | ",
+                r"  \\_/ \\_/  ",
+                r"    | |    "
+            ],
+            # Server types
+            "rd_server": [
+                r"╔═══════════════════╗",
+                r"║ R&D SERVER ACCESS ║",
+                r"╠═══════════════════╣",
+                r"║ ┌─────┐ ┌─────┐   ║",
+                r"║ │DATA │ │DATA │   ║",
+                r"║ │FILES│ │FILES│   ║",
+                r"║ └─────┘ └─────┘   ║",
+                r"║ ┌─────┐           ║",
+                r"║ │DATA │           ║",
+                r"║ │FILES│           ║",
+                r"║ └─────┘           ║",
+                r"╚═══════════════════╝"
+            ],
+            "hq_server": [
+                r"╔═══════════════════╗",
+                r"║  HQ SERVER ACCESS ║",
+                r"╠═══════════════════╣",
+                r"║      ┌─────┐      ║",
+                r"║     /│CORP │\     ║",
+                r"║    / │ HQ  │ \    ║",
+                r"║   /  └─────┘  \   ║",
+                r"║  /     ___     \  ║",
+                r"║ │     /   \     │ ║",
+                r"║ │    │     │    │ ║",
+                r"║ └────╲___/─────┘ ║",
+                r"╚═══════════════════╝"
+            ],
+            "archives_server": [
+                r"╔═══════════════════╗",
+                r"║ ARCHIVES ACCESS   ║",
+                r"╠═══════════════════╣",
+                r"║    ┌─────────┐    ║",
+                r"║   /│ARCHIVES │\   ║",
+                r"║  / └─────────┘ \  ║",
+                r"║ │  ┌┐ ┌┐ ┌┐ ┌┐  │ ║",
+                r"║ │  └┘ └┘ └┘ └┘  │ ║",
+                r"║ │  ┌┐ ┌┐ ┌┐ ┌┐  │ ║",
+                r"║ │  └┘ └┘ └┘ └┘  │ ║",
+                r"║ └───────────────┘ ║",
+                r"╚═══════════════════╝"
+            ],
+            "remote_server": [
+                r"╔═══════════════════╗",
+                r"║  REMOTE{} ACCESS   ║",
+                r"╠═══════════════════╣",
+                r"║       ╱───╲       ║",
+                r"║      │     │      ║",
+                r"║     /│     │\     ║",
+                r"║    / │     │ \    ║",
+                r"║   │  │     │  │   ║",
+                r"║   │  │     │  │   ║",
+                r"║   \   ─────   /   ║",
+                r"║    ╲_________╱    ║",
+                r"╚═══════════════════╝"
             ]
         }
     
@@ -189,25 +318,52 @@ class TerminalRenderer:
         
         # Change color based on card type
         type_color = Colors.RESET
+        icon = "◆"  # Default icon
+        
         if card_type.lower() == "program":
             type_color = Colors.BRIGHT_CYAN
+            icon = "⟨⟩"
+        elif card_type.lower() == "icebreaker":
+            type_color = Colors.BRIGHT_BLUE
+            icon = "⚒"
         elif card_type.lower() == "hardware":
             type_color = Colors.BRIGHT_YELLOW
+            icon = "⚙"
         elif card_type.lower() == "resource":
             type_color = Colors.BRIGHT_GREEN
+            icon = "$"
         elif card_type.lower() == "event":
             type_color = Colors.BRIGHT_MAGENTA
+            icon = "⚡"
+        elif card_type.lower() == "virus":
+            type_color = Colors.BRIGHT_RED
+            icon = "⌘"
+        elif card_type.lower() == "ice":
+            type_color = Colors.BRIGHT_RED
+            icon = "■"
+        elif card_type.lower() == "operation":
+            type_color = Colors.BRIGHT_BLUE
+            icon = "▶"
+        elif card_type.lower() == "asset":
+            type_color = Colors.BRIGHT_YELLOW
+            icon = "♦" 
+        elif card_type.lower() == "upgrade":
+            type_color = Colors.BRIGHT_GREEN
+            icon = "▲"
+        elif card_type.lower() == "agenda":
+            type_color = Colors.BRIGHT_MAGENTA
+            icon = "★"
         
         # Format the card info
         if index is not None:
             return (
-                f"[{index}] {Colors.BOLD}{card.get('name', 'Unknown')}{Colors.RESET} - "
+                f"[{index}] {type_color}{icon} {Colors.BOLD}{card.get('name', 'Unknown')}{Colors.RESET} - "
                 f"{type_color}{card_type}{Colors.RESET} - "
                 f"{card.get('cost', 0)}c {card.get('mu', 0)}mu"
             )
         else:
             return (
-                f"{Colors.BOLD}{card.get('name', 'Unknown')}{Colors.RESET} - "
+                f"{type_color}{icon} {Colors.BOLD}{card.get('name', 'Unknown')}{Colors.RESET} - "
                 f"{type_color}{card_type}{Colors.RESET} - "
                 f"{card.get('cost', 0)}c {card.get('mu', 0)}mu"
             )
@@ -238,6 +394,27 @@ class TerminalRenderer:
         elif card_type.lower() == "event":
             type_color = Colors.BRIGHT_MAGENTA
             box_color = Colors.BRIGHT_MAGENTA
+        elif card_type.lower() == "virus":
+            type_color = Colors.BRIGHT_RED
+            box_color = Colors.BRIGHT_RED
+        elif card_type.lower() == "icebreaker":
+            type_color = Colors.BRIGHT_BLUE
+            box_color = Colors.BRIGHT_BLUE
+        elif card_type.lower() == "ice":
+            type_color = Colors.BRIGHT_RED
+            box_color = Colors.BRIGHT_RED
+        elif card_type.lower() == "operation":
+            type_color = Colors.BRIGHT_BLUE
+            box_color = Colors.BRIGHT_BLUE
+        elif card_type.lower() == "asset":
+            type_color = Colors.BRIGHT_YELLOW
+            box_color = Colors.BRIGHT_YELLOW
+        elif card_type.lower() == "upgrade":
+            type_color = Colors.BRIGHT_GREEN
+            box_color = Colors.BRIGHT_GREEN
+        elif card_type.lower() == "agenda":
+            type_color = Colors.BRIGHT_MAGENTA
+            box_color = Colors.BRIGHT_MAGENTA
         
         # Create card box
         print(f"{box_color}┌{'─' * (width - 2)}┐{Colors.RESET}")
@@ -252,6 +429,15 @@ class TerminalRenderer:
         # Cost and MU
         stats = f"Cost: {cost}   MU: {mu}"
         print(f"{box_color}│{Colors.RESET} {stats}{' ' * (width - 3 - len(stats))}{box_color}│{Colors.RESET}")
+        
+        # Card ASCII art (if available)
+        art_key = card_type.lower()
+        if art_key in self.ascii_art:
+            print(f"{box_color}├{'─' * (width - 2)}┤{Colors.RESET}")
+            art_lines = self.ascii_art[art_key]
+            for line in art_lines:
+                line_padding = (width - 2 - len(line)) // 2
+                print(f"{box_color}│{Colors.RESET}{' ' * line_padding}{type_color}{line}{Colors.RESET}{' ' * (width - 2 - len(line) - line_padding)}{box_color}│{Colors.RESET}")
         
         # Separator
         print(f"{box_color}├{'─' * (width - 2)}┤{Colors.RESET}")
@@ -291,14 +477,49 @@ class TerminalRenderer:
     
     def display_running_animation(self, target_server):
         """Display a visual representation of initiating a run"""
+        print(f"\n{Colors.BRIGHT_MAGENTA}INITIATING RUN ON {Colors.BOLD}{target_server}{Colors.RESET}{Colors.BRIGHT_MAGENTA}...{Colors.RESET}")
+        
+        # Show the run animation
         self.output_ascii_art("run")
-        print(f"\n{Colors.BRIGHT_MAGENTA}Initiating run on {Colors.BOLD}{target_server}{Colors.RESET}{Colors.BRIGHT_MAGENTA}...{Colors.RESET}")
+        
+        # Show server visualization based on target
+        if target_server == "R&D":
+            server_art = self.ascii_art["rd_server"]
+            color = Colors.BRIGHT_CYAN
+        elif target_server == "HQ": 
+            server_art = self.ascii_art["hq_server"]
+            color = Colors.BRIGHT_BLUE
+        elif target_server == "ARCHIVES":
+            server_art = self.ascii_art["archives_server"]
+            color = Colors.BRIGHT_GREEN
+        elif target_server.startswith("REMOTE"):
+            # Get the remote server number
+            try:
+                server_num = target_server[6:]
+                # Create a copy of the template and format with server number
+                server_art = self.ascii_art["remote_server"].copy()
+                server_art[1] = server_art[1].format(server_num)
+                color = Colors.BRIGHT_YELLOW
+            except:
+                # Fallback
+                server_art = None
+                color = Colors.RESET
+        else:
+            server_art = None
+            color = Colors.RESET
+            
+        # Print the server visualization
+        if server_art:
+            print()  # Add spacing
+            for line in server_art:
+                print(f"{color}{line}{Colors.RESET}")
+        
+        print()  # Add spacing after visualization
     
     def display_ice_encounter(self, ice_card):
         """Display a visual representation of encountering ICE"""
         print(f"\n{Colors.BRIGHT_RED}ICE ENCOUNTERED:{Colors.RESET}")
-        self.output_ascii_art("ice")
-        print(f"\n{Colors.BRIGHT_RED}You encounter {Colors.BOLD}{ice_card.get('name', 'Unknown ICE')}{Colors.RESET}")
+        self.display_mini_card(ice_card, f"{Colors.BRIGHT_RED}> You must deal with this ICE to continue{Colors.RESET}")
         if 'description' in ice_card:
             print(f"{Colors.BRIGHT_RED}> {ice_card['description']}{Colors.RESET}")
         print()
@@ -328,3 +549,113 @@ class TerminalRenderer:
         
         print(f"\n{Colors.BOLD}{message}{Colors.RESET}\n")
         print(f"{Colors.BRIGHT_BLACK}{'=' * 60}{Colors.RESET}")
+
+    # Add a new method for displaying a mini card representation during play
+    def display_mini_card(self, card, action_text=None):
+        """Display a compact visual representation of a card being played or encountered"""
+        card_type = card.get('type', 'Unknown')
+        name = card.get('name', 'Unknown')
+        
+        # Determine card color
+        type_color = Colors.RESET
+        if card_type.lower() == "program":
+            type_color = Colors.BRIGHT_CYAN
+        elif card_type.lower() == "hardware":
+            type_color = Colors.BRIGHT_YELLOW
+        elif card_type.lower() == "resource":
+            type_color = Colors.BRIGHT_GREEN
+        elif card_type.lower() == "event":
+            type_color = Colors.BRIGHT_MAGENTA
+        elif card_type.lower() == "virus":
+            type_color = Colors.BRIGHT_RED
+        elif card_type.lower() == "icebreaker":
+            type_color = Colors.BRIGHT_BLUE
+        elif card_type.lower() == "ice":
+            type_color = Colors.BRIGHT_RED
+        elif card_type.lower() == "operation":
+            type_color = Colors.BRIGHT_BLUE
+        elif card_type.lower() == "asset":
+            type_color = Colors.BRIGHT_YELLOW
+        elif card_type.lower() == "upgrade":
+            type_color = Colors.BRIGHT_GREEN
+        elif card_type.lower() == "agenda":
+            type_color = Colors.BRIGHT_MAGENTA
+            
+        # Get card art if available
+        art_key = card_type.lower()
+        art_lines = []
+        if art_key in self.ascii_art:
+            art_lines = self.ascii_art[art_key]
+        
+        # Calculate card width based on name length (minimum 20)
+        card_width = max(20, len(name) + 4)
+        
+        # Top of card
+        print(f"{type_color}╔{'═' * card_width}╗{Colors.RESET}")
+        
+        # Card name
+        print(f"{type_color}║{Colors.BOLD} {name}{' ' * (card_width - len(name) - 1)}{Colors.RESET}{type_color}║{Colors.RESET}")
+        
+        # Card type
+        print(f"{type_color}║ {card_type}{' ' * (card_width - len(card_type) - 1)}║{Colors.RESET}")
+        
+        # Display mini ASCII art if available
+        if art_lines:
+            # Use up to 3 lines of art to keep it compact
+            art_sample = art_lines[:min(3, len(art_lines))]
+            for line in art_sample:
+                padding = (card_width - len(line)) // 2
+                print(f"{type_color}║{' ' * padding}{line}{' ' * (card_width - len(line) - padding)}║{Colors.RESET}")
+        
+        # Bottom of card
+        print(f"{type_color}╚{'═' * card_width}╝{Colors.RESET}")
+        
+        # Display action text if provided
+        if action_text:
+            print(f"{Colors.BRIGHT_WHITE}{action_text}{Colors.RESET}")
+            
+    def display_run_progress(self, ice_encountered, current_ice_index, server_name):
+        """Display a visual representation of the progress through a run"""
+        total_ice = len(ice_encountered)
+        if total_ice == 0:
+            # No ICE on this server
+            print(f"{Colors.BRIGHT_GREEN}No ICE protecting {server_name}. Direct access!{Colors.RESET}")
+            return
+            
+        # Calculate progress
+        passed_ice = current_ice_index
+        remaining_ice = total_ice - passed_ice
+        
+        # Header
+        print(f"\n{Colors.BRIGHT_BLUE}RUN PROGRESS: {Colors.RESET}{passed_ice}/{total_ice} ICE passed")
+        
+        # Create the progress visualization
+        progress_width = min(60, self.terminal_width - 10)
+        
+        # Print the starting point (Runner)
+        print(f"{Colors.BRIGHT_MAGENTA}[RUNNER]", end="")
+        
+        # Print passed ICE
+        for i in range(passed_ice):
+            ice_color = Colors.BRIGHT_GREEN
+            print(f"{Colors.BRIGHT_BLACK}==={Colors.RESET}{ice_color}[X]{Colors.RESET}", end="")
+            
+        # Print current ICE (if any)
+        if current_ice_index < total_ice:
+            ice = ice_encountered[current_ice_index]
+            ice_str = f"[!]"  # Default representation
+            ice_color = Colors.BRIGHT_RED
+            print(f"{Colors.BRIGHT_BLACK}==={Colors.RESET}{ice_color}{ice_str}{Colors.RESET}", end="")
+            
+            # Print remaining ICE
+            for i in range(current_ice_index + 1, total_ice):
+                print(f"{Colors.BRIGHT_BLACK}===[ ]{Colors.RESET}", end="")
+        
+        # Print the server
+        print(f"{Colors.BRIGHT_BLACK}==={Colors.RESET}{Colors.BRIGHT_CYAN}[{server_name}]{Colors.RESET}")
+        
+        # Show legend
+        print(f"\n{Colors.BRIGHT_GREEN}[X]{Colors.RESET} = Passed ICE   " +
+              f"{Colors.BRIGHT_RED}[!]{Colors.RESET} = Current ICE   " +
+              f"{Colors.BRIGHT_BLACK}[ ]{Colors.RESET} = Upcoming ICE\n")
+            
