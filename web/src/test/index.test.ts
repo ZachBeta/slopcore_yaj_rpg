@@ -20,6 +20,19 @@ jest.mock('../terminal-game/terminal-game', () => {
   };
 });
 
+// Mock ThreeScene class
+jest.mock('../three-scene', () => {
+  return {
+    ThreeScene: jest.fn().mockImplementation(() => {
+      return {
+        start: jest.fn(),
+        stop: jest.fn(),
+        dispose: jest.fn()
+      };
+    })
+  };
+});
+
 // Mock DOM elements
 const mockAppendChild = jest.fn();
 document.body.appendChild = mockAppendChild;
@@ -31,6 +44,7 @@ describe('Index', () => {
   let mockOptionsButton: HTMLButtonElement;
   let mockAboutButton: HTMLButtonElement;
   let mockMenuContainer: HTMLDivElement;
+  let mockCanvasContainer: HTMLDivElement;
   
   beforeEach(() => {
     // Save original console
@@ -57,11 +71,15 @@ describe('Index', () => {
     mockMenuContainer = document.createElement('div') as HTMLDivElement;
     mockMenuContainer.className = 'menu-container';
     
+    mockCanvasContainer = document.createElement('div') as HTMLDivElement;
+    mockCanvasContainer.id = 'canvas-container';
+    
     // Mock document.getElementById and querySelector
     jest.spyOn(document, 'getElementById').mockImplementation((id) => {
       if (id === 'start-game') return mockStartButton;
       if (id === 'options') return mockOptionsButton;
       if (id === 'about') return mockAboutButton;
+      if (id === 'canvas-container') return mockCanvasContainer;
       return null;
     });
     

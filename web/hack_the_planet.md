@@ -1,12 +1,13 @@
 # in flight
-
-# next 
 * iterate on gameplay mechanics
 
-# soon
-* [ ] make the game screen more responsive - suggest the console run side-by-side on a computer, deal with mobile later
-* [ ] reintroduce the threejs spinning cube on the main page, hide a teapot somewhere
+# next 
 * [ ] handle deprecation warnings
+* make main menu screen semi transparent so background cube can be seen
+
+# soon
+* [x] reintroduce the threejs spinning cube on the main page, hide a teapot somewhere
+* [ ] optimize webpack bundle size (code splitting, lazy loading)
 * rename across the board for "neon dominance"
 * more iteration on demo mode
 * set up a droplet to run this and share it

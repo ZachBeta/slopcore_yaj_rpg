@@ -1,4 +1,5 @@
 import { TerminalGame } from './terminal-game/terminal-game';
+import { ThreeScene } from './three-scene';
 
 // Define the global interface for the window object
 declare global {
@@ -7,8 +8,16 @@ declare global {
   }
 }
 
-// Variable to store the game instance
+// Variables to store the game and scene instances
 let game: TerminalGame | null = null;
+let threeScene: ThreeScene | null = null;
+
+// Function to initialize the Three.js scene
+function initializeThreeScene(): void {
+  // Create and start the Three.js scene
+  threeScene = new ThreeScene('canvas-container');
+  threeScene.start();
+}
 
 // Function to initialize and start the game
 function initializeGame(): void {
@@ -44,6 +53,9 @@ window.processCommand = function(command: string): void {
 
 // Add an HTML element to provide instructions on the page
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize the Three.js scene as soon as the DOM is loaded
+  initializeThreeScene();
+  
   // Add event listener for the start game button
   const startButton = document.getElementById('start-game');
   if (startButton) {
