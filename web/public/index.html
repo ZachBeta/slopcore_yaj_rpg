@@ -28,17 +28,19 @@
       transform: translate(-50%, -50%);
       text-align: center;
       padding: 3rem;
-      background-color: rgba(20, 20, 30, 0.95);
+      background-color: rgba(20, 20, 30, 0.25);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
       border-radius: 10px;
       max-width: 550px;
-      box-shadow: 0 0 30px rgba(0, 170, 255, 0.3);
-      border: 1px solid rgba(0, 200, 255, 0.2);
+      box-shadow: 0 0 30px rgba(0, 170, 255, 0.4);
+      border: 1px solid rgba(0, 200, 255, 0.4);
     }
     h1 {
       font-size: 3rem;
       margin-bottom: 1.5rem;
       color: #00ffff;
-      text-shadow: 0 0 15px rgba(0, 200, 255, 0.8);
+      text-shadow: 0 0 20px rgba(0, 255, 255, 1);
       font-weight: bold;
     }
     p {
@@ -46,6 +48,8 @@
       margin-bottom: 2rem;
       line-height: 1.6;
       color: #ffffff;
+      text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+      font-weight: 500;
     }
     .menu-buttons {
       display: flex;
@@ -96,6 +100,7 @@
     <p>Welcome to the cyberpunk hacking adventure! Play as an elite runner infiltrating corporate servers in this console-based card game.</p>
     <div class="menu-buttons">
       <button class="btn" id="start-game">Start Game</button>
+      <button class="btn" id="demo-mode">Demo Mode</button>
       <button class="btn" id="options">Options</button>
       <button class="btn" id="about">About</button>
     </div>

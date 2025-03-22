@@ -3,7 +3,7 @@
 
 # next 
 * [ ] handle deprecation warnings
-* make main menu screen semi transparent so background cube can be seen
+* [x] make main menu screen semi transparent so background cube can be seen
 
 # soon
 * [x] reintroduce the threejs spinning cube on the main page, hide a teapot somewhere

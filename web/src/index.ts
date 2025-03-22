@@ -75,42 +75,71 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   // Add a demo mode button
-  const demoButton = document.createElement('button');
-  demoButton.className = 'btn';
-  demoButton.id = 'demo-mode';
-  demoButton.textContent = 'Demo Mode';
-  demoButton.style.backgroundColor = '#9933cc';
-  
-  // Insert the demo button after the start game button
-  if (startButton && startButton.parentNode) {
-    startButton.parentNode.insertBefore(demoButton, startButton.nextSibling);
-  }
-  
-  // Add event listener for the demo button
-  demoButton.addEventListener('click', () => {
-    // Hide the menu container
-    const menuContainer = document.querySelector('.menu-container');
-    if (menuContainer instanceof HTMLElement) {
-      menuContainer.style.display = 'none';
+  const existingDemoButton = document.getElementById('demo-mode');
+  if (!existingDemoButton) {
+    const demoButton = document.createElement('button');
+    demoButton.className = 'btn';
+    demoButton.id = 'demo-mode';
+    demoButton.textContent = 'Demo Mode';
+    demoButton.style.backgroundColor = '#9933cc';
+    
+    // Insert the demo button after the start game button
+    if (startButton && startButton.parentNode) {
+      startButton.parentNode.insertBefore(demoButton, startButton.nextSibling);
     }
     
-    // Initialize the game
-    initializeGame();
-    
-    // Create and show the game instructions
-    createGameInstructions();
-    
-    // Start the demo mode after a short delay
-    setTimeout(() => {
-      // Access the renderer through the game's public API
-      if (game && game.getRenderer && typeof game.getRenderer === 'function') {
-        const renderer = game.getRenderer();
-        if (renderer && typeof renderer.startDemoMode === 'function') {
-          renderer.startDemoMode();
-        }
+    // Add event listener for the demo button
+    demoButton.addEventListener('click', () => {
+      // Hide the menu container
+      const menuContainer = document.querySelector('.menu-container');
+      if (menuContainer instanceof HTMLElement) {
+        menuContainer.style.display = 'none';
       }
-    }, 2000);
-  });
+      
+      // Initialize the game
+      initializeGame();
+      
+      // Create and show the game instructions
+      createGameInstructions();
+      
+      // Start the demo mode after a short delay
+      setTimeout(() => {
+        // Access the renderer through the game's public API
+        if (game && game.getRenderer && typeof game.getRenderer === 'function') {
+          const renderer = game.getRenderer();
+          if (renderer && typeof renderer.startDemoMode === 'function') {
+            renderer.startDemoMode();
+          }
+        }
+      }, 2000);
+    });
+  } else {
+    // Use the existing demo button if it's already in the DOM
+    existingDemoButton.addEventListener('click', () => {
+      // Hide the menu container
+      const menuContainer = document.querySelector('.menu-container');
+      if (menuContainer instanceof HTMLElement) {
+        menuContainer.style.display = 'none';
+      }
+      
+      // Initialize the game
+      initializeGame();
+      
+      // Create and show the game instructions
+      createGameInstructions();
+      
+      // Start the demo mode after a short delay
+      setTimeout(() => {
+        // Access the renderer through the game's public API
+        if (game && game.getRenderer && typeof game.getRenderer === 'function') {
+          const renderer = game.getRenderer();
+          if (renderer && typeof renderer.startDemoMode === 'function') {
+            renderer.startDemoMode();
+          }
+        }
+      }, 2000);
+    });
+  }
   
   // Add event listeners for other menu buttons
   const optionsButton = document.getElementById('options');

@@ -22,6 +22,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhanced ICE representations
   - Run progress visualization
 
+## [0.6.1] - 2025-03-22
+
+### Added
+- Reintroduced Three.js spinning cube on the main page
+- Added hidden teapot easter egg (can you find it?)
+- Inline ASCII art directly into card data for better rendering
+- Enhanced card display in console with visual art
+
+### Changed
+- Improved console renderer to display card ASCII art
+- Updated cyberpunk styling with neon effects
+
 ## [0.6.0] - Current Version
 
 ### Added

@@ -63,37 +63,46 @@ export class ThreeScene {
     directionalLight.position.set(5, 3, 5);
     this.scene.add(directionalLight);
 
-    // Add a cyberpunk point light for neon effect
-    const pointLight1 = new THREE.PointLight(0x00ffff, 1, 20);
-    pointLight1.position.set(2, 1, 2);
-    this.scene.add(pointLight1);
-
-    // Add another light for contrast
-    const pointLight2 = new THREE.PointLight(0xff00ff, 1, 20);
-    pointLight2.position.set(-2, 1, -2);
-    this.scene.add(pointLight2);
-
     // Create a cube with neon wireframe
-    const geometry = new THREE.BoxGeometry(2, 2, 2);
+    const geometry = new THREE.BoxGeometry(3, 3, 3);
     const edges = new THREE.EdgesGeometry(geometry);
     const material = new THREE.LineBasicMaterial({ 
       color: 0x00ffff, 
       transparent: true,
-      opacity: 0.8
+      opacity: 0.9,
+      linewidth: 2
     });
     this.cube = new THREE.LineSegments(edges, material);
     this.scene.add(this.cube);
 
     // Add a subtle pulsating internal cube for effect
-    const innerGeometry = new THREE.BoxGeometry(1.9, 1.9, 1.9);
+    const innerGeometry = new THREE.BoxGeometry(2.9, 2.9, 2.9);
     const innerMaterial = new THREE.MeshPhongMaterial({
       color: 0x00ffff,
       transparent: true,
-      opacity: 0.1,
+      opacity: 0.2,
       wireframe: true
     });
     const innerCube = new THREE.Mesh(innerGeometry, innerMaterial);
     this.scene.add(innerCube);
+
+    // Add stronger point lights for better visibility
+    const pointLight1 = new THREE.PointLight(0x00ffff, 2, 20);
+    pointLight1.position.set(2, 1, 2);
+    this.scene.add(pointLight1);
+
+    // Add another light for contrast
+    const pointLight2 = new THREE.PointLight(0xff00ff, 2, 20);
+    pointLight2.position.set(-2, 1, -2);
+    this.scene.add(pointLight2);
+
+    // Add a spotlight to highlight the cube
+    const spotlight = new THREE.SpotLight(0xffffff, 1.5);
+    spotlight.position.set(0, 5, 5);
+    spotlight.target = this.cube;
+    spotlight.angle = 0.3;
+    spotlight.penumbra = 0.3;
+    this.scene.add(spotlight);
 
     // Create a hidden teapot
     // We'll use a simplified proxy geometry since the TeapotGeometry requires extra imports
