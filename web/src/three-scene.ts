@@ -9,6 +9,7 @@ export class ThreeScene {
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private cube: THREE.LineSegments;
+  private glowingEdges: THREE.LineSegments;
   private d20: THREE.Mesh;
   private animating: boolean = false;
   private d20FollowingMouse: boolean = false;
@@ -76,16 +77,17 @@ export class ThreeScene {
     this.cube = new THREE.LineSegments(edges, material);
     this.scene.add(this.cube);
 
-    // Add a subtle pulsating internal cube for effect
-    const innerGeometry = new THREE.BoxGeometry(2.9, 2.9, 2.9);
-    const innerMaterial = new THREE.MeshPhongMaterial({
-      color: 0x00ffff,
+    // Remove the inner cube and instead add glowing edges for more visibility
+    const glowGeometry = new THREE.BoxGeometry(3.05, 3.05, 3.05);
+    const glowEdges = new THREE.EdgesGeometry(glowGeometry);
+    const glowMaterial = new THREE.LineBasicMaterial({ 
+      color: 0x00aaff, 
       transparent: true,
-      opacity: 0.2,
-      wireframe: true
+      opacity: 0.4,
+      linewidth: 1
     });
-    const innerCube = new THREE.Mesh(innerGeometry, innerMaterial);
-    this.scene.add(innerCube);
+    this.glowingEdges = new THREE.LineSegments(glowEdges, glowMaterial);
+    this.scene.add(this.glowingEdges);
 
     // Add stronger point lights for better visibility
     const pointLight1 = new THREE.PointLight(0x00ffff, 2, 20);
@@ -345,6 +347,11 @@ export class ThreeScene {
     if (this.cube) {
       this.cube.rotation.x += 0.005;
       this.cube.rotation.y += 0.01;
+      
+      // Make the glowing edges follow the cube
+      if (this.glowingEdges) {
+        this.glowingEdges.rotation.copy(this.cube.rotation);
+      }
     }
     
     // If d20 is revealed and following mouse, update its position
@@ -442,6 +449,17 @@ export class ThreeScene {
           this.cube.material.forEach(material => material.dispose());
         } else {
           this.cube.material.dispose();
+        }
+      }
+    }
+    
+    if (this.glowingEdges) {
+      if (this.glowingEdges.geometry) this.glowingEdges.geometry.dispose();
+      if (this.glowingEdges.material) {
+        if (Array.isArray(this.glowingEdges.material)) {
+          this.glowingEdges.material.forEach(material => material.dispose());
+        } else {
+          this.glowingEdges.material.dispose();
         }
       }
     }
