@@ -32,7 +32,10 @@ def run_game_with_renderer(scenario='basic', delay=1, seed=None):
     game_board_render.display_board()
     
     # Build the command to run the game
-    cmd = ['../../run_game.sh', '--test']
+    script_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    run_game_path = os.path.join(script_dir, 'run_game.sh')
+    
+    cmd = [run_game_path, '--test']
     cmd.append(f'--scenario')
     cmd.append(scenario)
     cmd.append(f'--delay')

@@ -1,6 +1,7 @@
 
 # top
 * move all pythonfiles into the python directory, root directory should have only shell scripts for easy onramp and a few top level docs
+* ignore pycache?
 
 
 # unsorted
