@@ -1,10 +1,12 @@
 # Neon Dominance
 
-A Netrunner-inspired roguelike PvPvE deckbuilder-RPG built with Godot Engine.
+A Netrunner-inspired roguelike PvPvE deckbuilder-RPG built with Python, featuring a full gameplay loop in the terminal implementation with future plans for a Godot-based GUI.
 
 ## Current Version
 
-**v0.2.1** - Minimalist Card Game with Complete Gameplay Loop
+**v0.3.0** - Terminal Game Implementation with Strategic AI Opponent
+
+> **CURRENT STATUS**: The Python terminal implementation is the primary playable version with complete gameplay and AI. The Godot GUI implementation is still being compiled in the grid - check back when the render matrices are stabilized.
 
 ## Overview
 
@@ -12,39 +14,60 @@ Neon Dominance is an asymmetric deckbuilder where players can take on the role o
 
 - **Asymmetric Gameplay**: Play as a Runner with modular decks and hack-based mechanics, or as a Corporation with server infrastructure and ICE defense systems
 - **Roguelike Elements**: Progress through temporary upgrades with cooldowns and face permanent consequences through the Neural Burnout system
-- **Territory Control**: Establish safehouses as a Runner or strongholds as a Corporation to control the digital landscape
+- **Strategic AI**: Face off against a Corporation AI with various strategic approaches (Economic, Aggressive, Defensive)
+- **Multiple Implementations**: 
+  - **ACTIVE**: Python-based terminal version with complete gameplay and AI opponent
+  - **IN DEVELOPMENT**: Godot-based GUI version (currently in beta testing phase)
 
 ## Development Status
 
-- [x] Project setup with Godot 4.4
-- [x] Main menu and basic navigation
-- [x] Comprehensive testing framework
-- [x] Card system implementation
-- [x] Game board layout
-- [x] Core game loop with turn-based mechanics
-- [x] Basic Runner and Corporation actions
-- [x] Win conditions
-- [x] Minimalist card game UI with complete gameplay loop
+✅ **STABLE IMPLEMENTATIONS**:
+- [x] Terminal game with full command interface
+- [x] Advanced AI opponent for Corporation side
+- [x] Complete game loop with turn structure
+- [x] Win conditions and agenda scoring
+- [x] Server run mechanics with ICE encounters
+
+🔄 **IN PROGRESS**:
+- [ ] Godot implementation with visual interface
 - [ ] Advanced card mechanics
 - [ ] Deck building system
 - [ ] Campaign progression
 
 ## Tech Stack
 
-- **Game Engine**: Godot 4.4 with GDScript
-- **3D Assets**: Blender
-- **Platforms**: Web (HTML5/WebGL) and Mobile
+- **Current Implementation**: Python 3.x terminal interface
+- **Secondary Implementation**: Godot 4.4 with GDScript (still in development)
+- **3D Assets**: Blender (for future Godot version)
+- **Platforms**: Terminal (current), Web/Mobile (planned)
 - **Web3**: Planned integration with Espresso EVM rollup (non-pay-to-win)
 
-## Quick Start (macOS M1)
+## Quick Start
+
+### Python Terminal Implementation ⭐ (RECOMMENDED)
+
+1. Make sure you have Python 3.x installed:
+   ```bash
+   python3 --version
+   ```
+
+2. Run the terminal game:
+   ```bash
+   cd /path/to/slopcore_yaj_rpg
+   python3 cmd/terminal_game/main.py -i
+   ```
+
+3. Use the `-i` flag for interactive mode, or `--help` to see all available options.
+
+### Godot Implementation 🚧 (UNDER CONSTRUCTION)
+
+> **Note**: The Godot implementation is still being compiled. Some features may be unstable or incomplete.
 
 1. Install Godot 4.4:
    ```bash
    brew install --cask godot
    ```
    Or download Godot 4.4 for macOS (Apple Silicon) from https://godotengine.org/download
-   
-   Note: Make sure you have Godot 4.4 or later, as the project uses features from this version.
 
 2. Open project:
    - Launch Godot
@@ -53,33 +76,28 @@ Neon Dominance is an asymmetric deckbuilder where players can take on the role o
    - Click "Import & Edit"
    - Press F5 or click the Play button to run or cmd + b
 
-3. Troubleshooting:
-   - If you see errors about missing files, the project structure might need repair
-   - Make sure you're importing the `game` folder, not the root repository folder
-   - Check that Godot 4.4+ is properly installed for Apple Silicon
-
 ## Project Structure
 
 ```
-game/
-├── project.godot       # Project configuration
-├── icon.svg           # Application icon
-├── scenes/            # Game scenes
-│   ├── main_menu.gd   # Main menu logic
-│   ├── main_menu.tscn # Main menu scene
-│   └── card_ui.tscn   # Card UI template
-└── scripts/           # Will contain game logic
-    ├── autoload/      # Global scripts
-    │   └── game_state.gd
-    └── classes/       # Base classes
-        └── card.gd
+cmd/terminal_game/    # PRIMARY IMPLEMENTATION
+├── main.py           # Entry point
+├── terminal_game.py  # Core game logic
+├── ai_opponent.py    # Corporation AI
+└── game_renderer.py  # Terminal UI
+
+game/                 # SECONDARY IMPLEMENTATION (IN DEVELOPMENT)
+├── project.godot     # Project configuration
+├── scenes/           # Game scenes
+├── scripts/          # Game logic
+└── tests/            # Test suite
 ```
 
 ## Getting Started
 
 ### Prerequisites
 
-- [Godot 4.4](https://godotengine.org/download) or newer
+- [Python 3.x](https://www.python.org/downloads/) or newer
+- [Godot 4.4](https://godotengine.org/download) or newer (for Godot implementation)
 
 ### Installation
 
@@ -88,7 +106,7 @@ game/
    git clone https://github.com/ZachBeta/slopcore_yaj_rpg.git
    ```
 
-2. Open the project in Godot:
+2. Open the project in Godot (for Godot implementation):
    - Launch Godot Engine
    - Click "Import"
    - Navigate to the cloned repository and select the `game/project.godot` file
@@ -96,10 +114,10 @@ game/
 
 ### Running Tests
 
-To run the test suite:
+To run the test suite for the terminal implementation:
 
 ```bash
-godot --headless --path ./game --script tests/run_tests.gd
+python3 -m unittest discover -s cmd/terminal_game/tests
 ```
 
 ## Development Roadmap
