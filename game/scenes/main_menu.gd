@@ -7,7 +7,8 @@ func _ready() -> void:
 
 func _on_start_button_pressed() -> void:
 	print("Starting new game...")
-	# Will connect to game scene later
+	# Change scene to the game scene
+	get_tree().change_scene_to_file("res://scenes/game_scene.tscn")
 	
 func _on_options_button_pressed() -> void:
 	print("Options menu (not implemented yet)")

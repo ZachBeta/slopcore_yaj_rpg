@@ -1,0 +1,365 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/game_scene.gd" id="1_t5uu7"]
+[ext_resource type="Script" path="res://scripts/card_container.gd" id="2_nj1dh"]
+
+[node name="GameScene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_t5uu7")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0470588, 0.0470588, 0.0627451, 1)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="Header" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="VBoxContainer/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+text = "Neon Dominance"
+vertical_alignment = 1
+
+[node name="BackButton" type="Button" parent="VBoxContainer/Header"]
+layout_mode = 2
+text = "Main Menu"
+
+[node name="GameContent" type="MarginContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="GameLayout" type="HBoxContainer" parent="VBoxContainer/GameContent"]
+layout_mode = 2
+
+[node name="LeftPanel" type="VBoxContainer" parent="VBoxContainer/GameContent/GameLayout"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PlayerInfo" type="PanelContainer" parent="VBoxContainer/GameContent/GameLayout/LeftPanel"]
+layout_mode = 2
+
+[node name="PlayerInfoContent" type="VBoxContainer" parent="VBoxContainer/GameContent/GameLayout/LeftPanel/PlayerInfo"]
+layout_mode = 2
+
+[node name="PlayerType" type="Label" parent="VBoxContainer/GameContent/GameLayout/LeftPanel/PlayerInfo/PlayerInfoContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.227451, 0.698039, 0.933333, 1)
+theme_override_font_sizes/font_size = 20
+text = "Runner"
+
+[node name="Credits" type="Label" parent="VBoxContainer/GameContent/GameLayout/LeftPanel/PlayerInfo/PlayerInfoContent"]
+layout_mode = 2
+text = "Credits: 5"
+
+[node name="CardCount" type="Label" parent="VBoxContainer/GameContent/GameLayout/LeftPanel/PlayerInfo/PlayerInfoContent"]
+layout_mode = 2
+text = "Cards in Deck: 40"
+
+[node name="ActionButtons" type="VBoxContainer" parent="VBoxContainer/GameContent/GameLayout/LeftPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="DrawButton" type="Button" parent="VBoxContainer/GameContent/GameLayout/LeftPanel/ActionButtons"]
+layout_mode = 2
+text = "Draw Card"
+
+[node name="InstallButton" type="Button" parent="VBoxContainer/GameContent/GameLayout/LeftPanel/ActionButtons"]
+layout_mode = 2
+text = "Install Program"
+
+[node name="MakeRunButton" type="Button" parent="VBoxContainer/GameContent/GameLayout/LeftPanel/ActionButtons"]
+layout_mode = 2
+text = "Make Run"
+
+[node name="GameBoard" type="PanelContainer" parent="VBoxContainer/GameContent/GameLayout"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="BoardContent" type="VBoxContainer" parent="VBoxContainer/GameContent/GameLayout/GameBoard"]
+layout_mode = 2
+
+[node name="CorporationSection" type="VBoxContainer" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Label" type="Label" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.862745, 0.196078, 0.184314, 1)
+text = "Corporation"
+
+[node name="ServerGrid" type="GridContainer" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 3
+
+[node name="HQServer" type="PanelContainer" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/HQServer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/HQServer/VBoxContainer"]
+layout_mode = 2
+text = "HQ"
+horizontal_alignment = 1
+
+[node name="ColorRect" type="ColorRect" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/HQServer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+color = Color(0.141176, 0.141176, 0.141176, 1)
+
+[node name="HQCardContainer" type="Control" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/HQServer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("2_nj1dh")
+horizontal_layout = false
+card_base_size = Vector2(40, 60)
+
+[node name="RDServer" type="PanelContainer" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/RDServer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/RDServer/VBoxContainer"]
+layout_mode = 2
+text = "R&D"
+horizontal_alignment = 1
+
+[node name="ColorRect" type="ColorRect" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/RDServer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+color = Color(0.141176, 0.141176, 0.141176, 1)
+
+[node name="RDCardContainer" type="Control" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/RDServer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("2_nj1dh")
+horizontal_layout = false
+card_base_size = Vector2(40, 60)
+
+[node name="ArchivesServer" type="PanelContainer" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/ArchivesServer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/ArchivesServer/VBoxContainer"]
+layout_mode = 2
+text = "Archives"
+horizontal_alignment = 1
+
+[node name="ColorRect" type="ColorRect" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/ArchivesServer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+color = Color(0.141176, 0.141176, 0.141176, 1)
+
+[node name="ArchivesCardContainer" type="Control" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/ArchivesServer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("2_nj1dh")
+horizontal_layout = false
+card_base_size = Vector2(40, 60)
+
+[node name="RemoteServer1" type="PanelContainer" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/RemoteServer1"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/RemoteServer1/VBoxContainer"]
+layout_mode = 2
+text = "Remote 1"
+horizontal_alignment = 1
+
+[node name="ColorRect" type="ColorRect" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/RemoteServer1/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+color = Color(0.141176, 0.141176, 0.141176, 1)
+
+[node name="Remote1CardContainer" type="Control" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/RemoteServer1/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("2_nj1dh")
+horizontal_layout = false
+card_base_size = Vector2(40, 60)
+
+[node name="RemoteServer2" type="PanelContainer" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/RemoteServer2"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/RemoteServer2/VBoxContainer"]
+layout_mode = 2
+text = "Remote 2"
+horizontal_alignment = 1
+
+[node name="ColorRect" type="ColorRect" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/RemoteServer2/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+color = Color(0.141176, 0.141176, 0.141176, 1)
+
+[node name="Remote2CardContainer" type="Control" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/RemoteServer2/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("2_nj1dh")
+horizontal_layout = false
+card_base_size = Vector2(40, 60)
+
+[node name="RemoteServer3" type="PanelContainer" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/RemoteServer3"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/RemoteServer3/VBoxContainer"]
+layout_mode = 2
+text = "Remote 3"
+horizontal_alignment = 1
+
+[node name="ColorRect" type="ColorRect" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/RemoteServer3/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+color = Color(0.141176, 0.141176, 0.141176, 1)
+
+[node name="Remote3CardContainer" type="Control" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/CorporationSection/ServerGrid/RemoteServer3/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("2_nj1dh")
+horizontal_layout = false
+card_base_size = Vector2(40, 60)
+
+[node name="RunnerSection" type="VBoxContainer" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Label" type="Label" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/RunnerSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.227451, 0.698039, 0.933333, 1)
+text = "Runner"
+
+[node name="RunnerGrid" type="HBoxContainer" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/RunnerSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="InstalledPrograms" type="PanelContainer" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/RunnerSection/RunnerGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/RunnerSection/RunnerGrid/InstalledPrograms"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/RunnerSection/RunnerGrid/InstalledPrograms/VBoxContainer"]
+layout_mode = 2
+text = "Installed Programs"
+horizontal_alignment = 1
+
+[node name="ProgramsContainer" type="Control" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/RunnerSection/RunnerGrid/InstalledPrograms/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("2_nj1dh")
+card_overlap = 0.8
+card_base_size = Vector2(70, 100)
+
+[node name="Hand" type="PanelContainer" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/RunnerSection/RunnerGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/RunnerSection/RunnerGrid/Hand"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/RunnerSection/RunnerGrid/Hand/VBoxContainer"]
+layout_mode = 2
+text = "Hand"
+horizontal_alignment = 1
+
+[node name="HandContainer" type="Control" parent="VBoxContainer/GameContent/GameLayout/GameBoard/BoardContent/RunnerSection/RunnerGrid/Hand/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("2_nj1dh")
+max_visible_cards = 7
+card_overlap = 0.6
+card_base_size = Vector2(70, 100)
+
+[node name="RightPanel" type="VBoxContainer" parent="VBoxContainer/GameContent/GameLayout"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ConsoleOutput" type="PanelContainer" parent="VBoxContainer/GameContent/GameLayout/RightPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer/GameContent/GameLayout/RightPanel/ConsoleOutput"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/GameContent/GameLayout/RightPanel/ConsoleOutput/MarginContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/GameContent/GameLayout/RightPanel/ConsoleOutput/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Console Output"
+
+[node name="RichTextLabel" type="RichTextLabel" parent="VBoxContainer/GameContent/GameLayout/RightPanel/ConsoleOutput/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/default_color = Color(0.0470588, 0.580392, 0.164706, 1)
+text = "> Game Started
+> Connecting to the Grid...
+> Welcome, Runner!
+> Neural Interface Active
+"
+
+[node name="StatusBar" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="TurnInfo" type="Label" parent="VBoxContainer/StatusBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Turn: 1 (Runner)"
+
+[node name="NeuralDamage" type="Label" parent="VBoxContainer/StatusBar"]
+layout_mode = 2
+text = "Neural Damage: 0 / 5"

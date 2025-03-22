@@ -4,7 +4,7 @@ A Netrunner-inspired roguelike PvPvE deckbuilder-RPG built with Godot Engine.
 
 ## Current Version
 
-**v0.1.0** - Testing Framework and Project Setup
+**v0.2.0** - Turn-Based Gameplay Loop
 
 ## Overview
 
@@ -19,9 +19,14 @@ Neon Dominance is an asymmetric deckbuilder where players can take on the role o
 - [x] Project setup with Godot 4.4
 - [x] Main menu and basic navigation
 - [x] Comprehensive testing framework
-- [ ] Card system implementation
-- [ ] Game board layout
-- [ ] Core game logic
+- [x] Card system implementation
+- [x] Game board layout
+- [x] Core game loop with turn-based mechanics
+- [x] Basic Runner and Corporation actions
+- [x] Win conditions
+- [ ] Advanced card mechanics
+- [ ] Deck building system
+- [ ] Campaign progression
 
 ## Tech Stack
 

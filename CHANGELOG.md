@@ -5,6 +5,26 @@ All notable changes to the Neon Dominance project will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2025-03-21
+
+### Added
+- Complete turn-based gameplay loop with Runner and Corporation turns
+- Card stacking system with proper visual organization
+- Interactive card display with type-based coloring
+- Game win conditions:
+  - Runner: Install 5 or more programs (liberate citizen groups)
+  - Corporation: Inflict 5 neural damage or maintain high compliance for 5 days
+- Card installation and action point system
+- Basic server structure for Corporation
+- Automated Corporation AI actions
+- Game state tracking and console log
+- Main menu integration with game scene
+
+### Changed
+- Improved UI layout with proper card stacking to prevent screen overflow
+- Enhanced visual feedback for different card types
+- Reorganized game scene for better visibility of game elements
+
 ## [0.1.0] - 2025-03-21
 
 ### Added

@@ -1,53 +1,56 @@
 # Neon Dominance: Immediate Next Steps
 
 ## Current Status
-- Basic project structure set up with Godot 4.4
-- Main menu scene created
-- Project configuration optimized for web and mobile
+- ✅ Basic project structure set up with Godot 4.4
+- ✅ Main menu scene created and functional
+- ✅ Project configuration optimized for web and mobile
+- ✅ Game scene with turn-based gameplay implemented
+- ✅ Card stacking and display system added
+- ✅ Win conditions for both Runner and Corporation
 
 ## Next Development Tasks
 
-### 1. Card System Implementation (Priority: High)
-- [ ] Create `Card` resource class
-  - [ ] Define card properties (name, cost, type, effects)
+### 1. Card System Enhancements (Priority: High)
+- [x] Create basic card display system
+  - [x] Define card properties (name, cost, type)
+  - [x] Add card type-based coloring
+  - [x] Implement card stacking for better UI
+- [ ] Implement comprehensive `Card` resource class
+  - [ ] Add card effects and abilities
   - [ ] Implement card serialization/deserialization
   - [ ] Add card artwork placeholder system
 - [ ] Build card database system
   - [ ] JSON-based card definitions
   - [ ] Card loading and caching
   - [ ] Card filtering and search
-- [ ] Develop card UI components
-  - [ ] Card display template
-  - [ ] Card interaction handlers
-  - [ ] Card animation system
 
 ### 2. Game Board Implementation (Priority: High)
-- [ ] Design game board layout
-  - [ ] Runner side layout
-  - [ ] Corporation side layout
-  - [ ] Central play area
-- [ ] Create board scene
-  - [ ] Card placement zones
-  - [ ] Resource trackers
-  - [ ] Action buttons
-- [ ] Implement drag-and-drop system
-  - [ ] Card movement between zones
-  - [ ] Target selection
-  - [ ] Validation rules
+- [x] Design game board layout
+  - [x] Runner side layout with hand and programs
+  - [x] Corporation side layout with servers
+  - [x] Central play area
+- [x] Create board scene
+  - [x] Card placement zones
+  - [x] Resource trackers
+  - [x] Action buttons
+- [ ] Implement advanced interactions
+  - [ ] Card drag-and-drop system
+  - [ ] Target selection for card abilities
+  - [ ] Enhanced validation rules
 
 ### 3. Core Game Logic (Priority: High)
-- [ ] Turn system
-  - [ ] Phase management
-  - [ ] Action tracking
-  - [ ] Timer implementation
-- [ ] Resource management
-  - [ ] Credit system
-  - [ ] Click tracking
-  - [ ] Special resources
-- [ ] Action resolution
-  - [ ] Action queue
-  - [ ] Effect resolution
-  - [ ] State updates
+- [x] Turn system
+  - [x] Player turn management
+  - [x] Action point tracking
+  - [x] End turn functionality
+- [x] Resource management
+  - [x] Credit system
+  - [x] Action point limitation
+  - [x] Neural damage and compliance tracking
+- [ ] Advanced action resolution
+  - [ ] Card ability resolution
+  - [ ] Complex effect resolution
+  - [ ] Advanced state updates
 
 ### 4. Deck Building System (Priority: Medium)
 - [ ] Deck editor UI
@@ -63,16 +66,16 @@
   - [ ] Deck importing/exporting
   - [ ] Preset decks
 
-### 5. Single Player AI (Priority: Medium)
-- [ ] Basic AI framework
-  - [ ] Decision tree system
-  - [ ] Action evaluation
-  - [ ] Threat assessment
-- [ ] Corporation AI
-  - [ ] ICE placement strategy
-  - [ ] Agenda advancement logic
-  - [ ] Economic management
-- [ ] Runner AI
+### 5. Enhanced Corporation AI (Priority: High)
+- [x] Basic Corporation automated turns
+  - [x] Income generation
+  - [x] ICE installation
+  - [x] Compliance tracking
+- [ ] Advanced Corporation AI
+  - [ ] Strategic ICE placement
+  - [ ] Dynamic threat assessment
+  - [ ] Adaptive economic decisions
+- [ ] Advanced Runner AI (for solo play)
   - [ ] Run timing decisions
   - [ ] Icebreaker installation priority
   - [ ] Resource management
@@ -83,7 +86,7 @@
   - [ ] Checkpoint system
   - [ ] Auto-save functionality
 - [ ] Game history
-  - [ ] Action log
+  - [ ] Action log enhancements
   - [ ] Replay system
   - [ ] Analytics tracking
 - [ ] Settings persistence
@@ -91,29 +94,41 @@
   - [ ] Control configurations
   - [ ] Audio settings
 
-### 7. UI/UX Improvements (Priority: Medium)
-- [ ] Theme system
-  - [ ] Color schemes
-  - [ ] Font selection
-  - [ ] UI element styling
-- [ ] Responsive design
-  - [ ] Layout adjustments for different screens
+### 7. UI/UX Improvements (Priority: High)
+- [x] Card stacking/layering system
+- [ ] Cyberpunk-themed UI enhancements
+  - [ ] Neon color schemes
+  - [ ] Futuristic font selection
+  - [ ] Holographic UI elements
+- [ ] Responsive design improvements
+  - [ ] Better layout adjustments for different screens
   - [ ] Touch vs. mouse controls
   - [ ] Accessibility options
 - [ ] Feedback systems
-  - [ ] Visual effects
+  - [ ] Visual effects for actions
   - [ ] Sound effects
   - [ ] Haptic feedback
 
-### 8. Asset Creation (Priority: Low initially)
-- [ ] Placeholder graphics
-  - [ ] Card templates
-  - [ ] UI elements
-  - [ ] Game board
+### 8. Run Mechanics Expansion (Priority: High)
+- [x] Basic run success/failure system
+- [ ] Enhanced run mechanics
+  - [ ] Server approach phase
+  - [ ] Encountering and breaking ICE
+  - [ ] Accessing server contents
+- [ ] Server types and content
+  - [ ] HQ, R&D, Archives content
+  - [ ] Remote server assets and upgrades
+  - [ ] Server protection mechanisms
+
+### 9. Asset Creation (Priority: Medium)
+- [ ] Improved graphics
+  - [ ] Card templates with cyberpunk aesthetic
+  - [ ] UI elements matching Netrunner theme
+  - [ ] Game board with neon grid design
 - [ ] Sound design
-  - [ ] UI sounds
-  - [ ] Ambient music
-  - [ ] Effect sounds
+  - [ ] UI sounds with digital theme
+  - [ ] Ambient cyberpunk music
+  - [ ] Effect sounds for runs and actions
 - [ ] Animation system
   - [ ] Card movements
   - [ ] Effect visualizations
@@ -121,22 +136,22 @@
 
 ## Technical Tasks
 
-### 1. Project Structure Refinement
-- [ ] Organize project folders
-  - [ ] Separate UI, logic, and data
-  - [ ] Create resource directories
-  - [ ] Set up asset pipelines
-- [ ] Implement autoloads
-  - [ ] GameState singleton
-  - [ ] EventBus for communication
-  - [ ] Settings manager
-- [ ] Create build configurations
-  - [ ] Development build
-  - [ ] Testing build
-  - [ ] Release build
+### 1. Web and Mobile Support (Priority: High)
+- [ ] Web export optimization
+  - [ ] Performance testing in browser
+  - [ ] WebGL compatibility
+  - [ ] Touch screen support for web
+- [ ] Mobile compatibility
+  - [ ] UI scaling for mobile devices
+  - [ ] Touch controls optimization
+  - [ ] Mobile-specific features
+- [ ] Cross-platform saving
+  - [ ] Cloud save implementation
+  - [ ] Account management
 
-### 2. Testing Framework
-- [ ] Unit testing setup
+### 2. Testing Framework Expansion
+- [x] Basic test files structure
+- [ ] Unit testing enhancement
   - [ ] Test card interactions
   - [ ] Test game rules
   - [ ] Test AI decisions
@@ -144,10 +159,6 @@
   - [ ] Full game flow tests
   - [ ] UI interaction tests
   - [ ] Performance benchmarks
-- [ ] Automated testing
-  - [ ] CI/CD pipeline
-  - [ ] Regression tests
-  - [ ] Coverage reporting
 
 ### 3. Documentation
 - [ ] Code documentation
@@ -158,7 +169,7 @@
   - [ ] Card interaction rules
   - [ ] Turn sequence
   - [ ] Special cases
-- [ ] Development guides
-  - [ ] Contribution guidelines
-  - [ ] Style guide
-  - [ ] Best practices
+- [ ] Player guide
+  - [ ] Basic tutorial
+  - [ ] Strategy tips
+  - [ ] Card reference
