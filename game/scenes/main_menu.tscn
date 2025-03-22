@@ -52,6 +52,11 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "Minimalist Card Game"
 
+[node name="TerminalGameButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Terminal Interface"
+
 [node name="OptionsButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24

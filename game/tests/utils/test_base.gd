@@ -1,90 +1,104 @@
 extends Node
 class_name TestBase
 
-# Base class for all test cases
+# Base class for all test cases in the game
 # Provides common functionality for testing
 
-var _assertions_passed = 0
-var _assertions_failed = 0
+signal test_completed
 
-func run_tests() -> bool:
-	print("Running test: " + name)
+func _ready():
+	print("TestBase ready")
+
+# Run all test methods in this class
+func run_all_tests():
+	print("Running all tests in " + self.get_class())
 	
-	# Reset counters
-	_assertions_passed = 0
-	_assertions_failed = 0
+	# Get all methods in this class
+	var methods = []
+	for method in get_method_list():
+		if method.name.begins_with("test_"):
+			methods.append(method.name)
 	
-	# Call test setup
+	print("Found " + str(methods.size()) + " test methods")
+	
+	# Run setup before each test
 	if has_method("setup"):
+		print("Running setup...")
 		call("setup")
 	
-	# Find and run all test_* methods
-	var methods = get_method_list()
+	# Run each test method
+	var passed = 0
+	var failed = 0
 	for method in methods:
-		if method.name.begins_with("test_"):
-			print("  Running: " + method.name)
-			call(method.name)
+		print("Running test: " + method)
+		var success = true
+		
+		# Try to run the test method
+		try:
+			# Call the test method
+			call(method)
+			success = true
+		catch(error):
+			print("Test failed with error: " + str(error))
+			success = false
+		
+		if success:
+			print("Test passed: " + method)
+			passed += 1
+		else:
+			print("Test failed: " + method)
+			failed += 1
 	
-	# Call test teardown
+	# Run teardown after all tests
 	if has_method("teardown"):
+		print("Running teardown...")
 		call("teardown")
 	
-	# Report results
-	print("  Assertions: %d passed, %d failed" % [_assertions_passed, _assertions_failed])
+	# Print test summary
+	print("Test summary:")
+	print("  Passed: " + str(passed))
+	print("  Failed: " + str(failed))
+	print("  Total: " + str(methods.size()))
 	
-	return _assertions_failed == 0
+	# Signal that testing is complete
+	test_completed.emit()
+	
+	return failed == 0
 
-# Assertion methods
-func assert_true(condition: bool, message: String = "") -> bool:
-	if condition:
-		_assertions_passed += 1
-		return true
-	else:
-		_assertions_failed += 1
-		print("    Assertion failed: Expected true but got false - " + message)
-		return false
-
-func assert_false(condition: bool, message: String = "") -> bool:
+# Assert functions for use in tests
+func assert_true(condition, message = ""):
 	if not condition:
-		_assertions_passed += 1
-		return true
-	else:
-		_assertions_failed += 1
-		print("    Assertion failed: Expected false but got true - " + message)
-		return false
+		print("Assertion failed: Expected true, got false. " + message)
+		assert(false, message)
 
-func assert_equal(expected, actual, message: String = "") -> bool:
-	if expected == actual:
-		_assertions_passed += 1
-		return true
-	else:
-		_assertions_failed += 1
-		print("    Assertion failed: Expected %s but got %s - %s" % [str(expected), str(actual), message])
-		return false
+func assert_false(condition, message = ""):
+	if condition:
+		print("Assertion failed: Expected false, got true. " + message)
+		assert(false, message)
 
-func assert_not_equal(expected, actual, message: String = "") -> bool:
+func assert_equal(expected, actual, message = ""):
 	if expected != actual:
-		_assertions_passed += 1
-		return true
-	else:
-		_assertions_failed += 1
-		print("    Assertion failed: Expected not equal to %s but got %s - %s" % [str(expected), str(actual), message])
-		return false
+		print("Assertion failed: Expected '" + str(expected) + "', got '" + str(actual) + "'. " + message)
+		assert(false, message)
 
-func assert_null(value, message: String = "") -> bool:
-	if value == null:
-		_assertions_passed += 1
-		return true
-	else:
-		_assertions_failed += 1
-		print("    Assertion failed: Expected null but got %s - %s" % [str(value), message])
-		return false
+func assert_not_equal(expected, actual, message = ""):
+	if expected == actual:
+		print("Assertion failed: Expected not equal to '" + str(expected) + "'. " + message)
+		assert(false, message)
 
-func assert_not_null(value, message: String = "") -> bool:
+func assert_null(value, message = ""):
 	if value != null:
-		_assertions_passed += 1
-		return true
-	else:
-		_assertions_failed += 1
-		print("    Assertion failed: Expected not null but got null - " + message)
-		return false
+		print("Assertion failed: Expected null, got '" + str(value) + "'. " + message)
+		assert(false, message)
+
+func assert_not_null(value, message = ""):
+	if value == null:
+		print("Assertion failed: Expected not null. " + message)
+		assert(false, message)
+
+# Utility method to check if an object has a method
+func has_method(method_name):
+	for method in get_method_list():
+		if method.name == method_name:
+			return true
+	return false

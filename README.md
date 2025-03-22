@@ -99,7 +99,7 @@ game/
 To run the test suite:
 
 ```bash
-godot --headless --path /path/to/slopcore_yaj_rpg/game --script tests/run_tests.gd
+godot --headless --path ./game --script tests/run_tests.gd
 ```
 
 ## Development Roadmap

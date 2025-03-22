@@ -1,5 +1,11 @@
 # todo
 * can we go so minimalist as to create a new mode CLI mode? or command line mode, or something else?
+* wasn't there a minigame like this in the ps2 matrix game?
+* tab completion
+* maybe treat "cards" as files on a file system
+* instead of drawing a card, we curl a script
+* let's add back in the ascii art
+
 
 * ✅ Create minimalist card game UI (Version 1) for basic gameplay
 * ✅ Implement full game loop with win/lose conditions in the minimalist UI

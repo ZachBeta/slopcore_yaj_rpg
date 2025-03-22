@@ -1,0 +1,132 @@
+[gd_scene load_steps=2 format=3 uid="uid://b8hwnykb0c7w2"]
+
+[ext_resource type="Script" path="res://scripts/terminal_game.gd" id="1_t7lbr"]
+
+[node name="TerminalGame" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_t7lbr")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.05, 0.05, 0.05, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HeaderContainer" type="PanelContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"TerminalPanel"
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/VBoxContainer/HeaderContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 5
+
+[node name="HeaderLabel" type="RichTextLabel" parent="MarginContainer/VBoxContainer/HeaderContainer/MarginContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/default_color = Color(0, 0.8, 0, 1)
+theme_override_font_sizes/normal_font_size = 14
+theme_override_font_sizes/bold_font_size = 14
+bbcode_enabled = true
+text = "[b]NEON DOMINANCE v0.1[/b] | [color=#00ff00]SECURE TERMINAL CONNECTION[/color]"
+fit_content = true
+
+[node name="MainTerminal" type="PanelContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"TerminalPanel"
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/VBoxContainer/MainTerminal"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="OutputText" type="RichTextLabel" parent="MarginContainer/VBoxContainer/MainTerminal/MarginContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/default_color = Color(0, 0.8, 0, 1)
+theme_override_constants/line_separation = 5
+theme_override_font_sizes/normal_font_size = 14
+bbcode_enabled = true
+text = "Initializing neural interface..."
+scroll_following = true
+
+[node name="InputContainer" type="PanelContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"TerminalPanel"
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/VBoxContainer/InputContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/InputContainer/MarginContainer"]
+layout_mode = 2
+
+[node name="PromptLabel" type="Label" parent="MarginContainer/VBoxContainer/InputContainer/MarginContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0.8, 0, 1)
+theme_override_font_sizes/font_size = 14
+text = "> "
+
+[node name="CommandInput" type="LineEdit" parent="MarginContainer/VBoxContainer/InputContainer/MarginContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0.8, 0, 1)
+theme_override_colors/caret_color = Color(0, 0.8, 0, 1)
+theme_override_font_sizes/font_size = 14
+placeholder_text = "Enter command..."
+caret_blink = true
+
+[node name="StatusContainer" type="PanelContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"TerminalPanel"
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/VBoxContainer/StatusContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 5
+
+[node name="StatusBar" type="RichTextLabel" parent="MarginContainer/VBoxContainer/StatusContainer/MarginContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/default_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/normal_font_size = 12
+bbcode_enabled = true
+text = "[color=#00ff00]SYSTEM:[/color] IDLE | [color=#00ff00]CREDITS:[/color] 5 | [color=#00ff00]MEMORY:[/color] 0/4 | [color=#00ff00]TURNS:[/color] 0"
+fit_content = true
+scroll_active = false
