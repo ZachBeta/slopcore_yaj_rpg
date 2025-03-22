@@ -10,6 +10,12 @@ import sys
 import os
 import argparse
 
+# Add the parent directory to sys.path to allow importing from sibling directories
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'cmd/terminal_game')))
+
+# Import the card data and card ASCII art
+from card_data import load_cards, GAME_UI_ASCII
+
 # ANSI color codes for terminal colors
 class Colors:
     BLACK = "\033[30m"
@@ -40,201 +46,33 @@ class Colors:
     BG_CYAN = "\033[46m"
     BG_WHITE = "\033[47m"
 
-# ASCII Art for different card types
-ascii_art = {
-    "logo": [
-        r"  _   _                   ____                 _                           ",
-        r" | \ | | ___  ___  _ __  |  _ \  ___  _ __ ___(_)_ __   __ _ _ __   ___ ___",
-        r" |  \| |/ _ \/ _ \| '_ \ | | | |/ _ \| '_ \_  / | '_ \ / _` | '_ \ / __/ _ \\",
-        r" | |\  |  __/ (_) | | | || |_| | (_) | | | / /| | | | | (_| | | | | (_|  __/",
-        r" |_| \_|\___|\___/|_| |_||____/ \___/|_| |/_/ |_|_| |_|\__,_|_| |_|\___\___|",
-        r"                                                                            "
-    ],
-    "runner": [
-        r"  _____                            ",
-        r" |  __ \                           ",
-        r" | |__) |_   _ _ __  _ __   ___ _ __",
-        r" |  _  /| | | | '_ \| '_ \ / _ \ '__|",
-        r" | | \ \| |_| | | | | | | |  __/ |   ",
-        r" |_|  \_\\__,_|_| |_|_| |_|\___|_|   ",
-        r"                                    "
-    ],
-    "corp": [
-        r"   _____                                    _   _             ",
-        r"  / ____|                                  | | (_)            ",
-        r" | |     ___  _ __ _ __   ___  _ __ __ _| |_ _  ___  _ __  ",
-        r" | |    / _ \| '__| '_ \ / _ \| '__/ _` | __| |/ _ \| '_ \ ",
-        r" | |___| (_) | |  | |_) | (_) | | | (_| | |_| | (_) | | | |",
-        r"  \_____\___/|_|  | .__/ \___/|_|  \__,_|\__|_|\___/|_| |_|",
-        r"                  | |                                       ",
-        r"                  |_|                                       "
-    ],
-    "run": [
-        r" _______ _______ _______ _______ _______ _______ _______ ",
-        r" |\     /|\     /|\     /|\     /|\     /|\     /|\     /|",
-        r" | +---+ | +---+ | +---+ | +---+ | +---+ | +---+ | +---+ |",
-        r" | |   | | |   | | |   | | |   | | |   | | |   | | |   | |",
-        r" | |R  | | |U  | | |N  | | |N  | | |I  | | |N  | | |G  | |",
-        r" | +---+ | +---+ | +---+ | +---+ | +---+ | +---+ | +---+ |",
-        r" |/_____\|/_____\|/_____\|/_____\|/_____\|/_____\|/_____\|",
-        r"                                                          "
-    ],
-    "program": [
-        r"    _____",
-        r"   /    /|",
-        r"  /____/ |",
-        r" |    |  |",
-        r" |____|/   "
-    ],
-    "icebreaker": [
-        r"   /|  /|",
-        r"  /_|_/ |",
-        r" |     /|",
-        r" |__/|/ |",
-        r" |  ||  |",
-        r" |__|/   "
-    ],
-    "hardware": [
-        r"  _______",
-        r" /       \\",
-        r"|  o   o  |",
-        r"|    |    |",
-        r"|___|___|_|"
-    ],
-    "resource": [
-        r"    $$$    ",
-        r"   $   $   ",
-        r"   $   $   ",
-        r"   $   $   ",
-        r"    $$$    "
-    ],
-    "event": [
-        r"    /\\    ",
-        r"   /  \\   ",
-        r"  /    \\  ",
-        r" +------+ ",
-        r" |      | "
-    ],
-    "virus": [
-        r"    ()    ",
-        r"   /\\/\\   ",
-        r"  <(  )>  ",
-        r"   \\\\//   ",
-        r"    \\/    "
-    ],
-    "operation": [
-        r"   __/\\__   ",
-        r"  /      \\  ",
-        r" |   >>   | ",
-        r"  \\______/  ",
-        r"    |  |    "
-    ],
-    "asset": [
-        r"    _____    ",
-        r"   |     |   ",
-        r"   |  █  |   ",
-        r"   |_____|   ",
-        r"   /  |  \\   "
-    ],
-    "ice": [
-        r" +-----------------+",
-        r" |    FIREWALL     |",
-        r" +-----------------+",
-        r" | [====||====]    |",
-        r" | [====||====]    |",
-        r" | [====||====]    |",
-        r" +-----------------+"
-    ],
-    "agenda": [
-        r"   ★★★★★   ",
-        r"  ★     ★  ",
-        r" ★       ★ ",
-        r"  ★     ★  ",
-        r"   ★★★★★   "
-    ],
-    "upgrade": [
-        r"   ▲▲▲▲   ",
-        r"  ▲    ▲  ",
-        r" ▲      ▲ ",
-        r"▲▲▲▲▲▲▲▲▲▲"
-    ]
-}
-
-# Sample card data for demonstration
-sample_cards = [
-    {
-        "name": "Icebreaker.exe",
-        "type": "icebreaker",
-        "cost": 3,
-        "mu": 1,
-    },
-    {
-        "name": "Neural Matrix",
-        "type": "hardware",
-        "cost": 2,
-        "mu": 0,
-    },
-    {
-        "name": "Quantum Protocol",
-        "type": "program",
-        "cost": 4,
-        "mu": 2,
-    },
-    {
-        "name": "Crypto Cache",
-        "type": "resource",
-        "cost": 2,
-        "mu": 0,
-    },
-    {
-        "name": "Run Exploit",
-        "type": "event",
-        "cost": 2,
-        "mu": 0,
-    },
-    {
-        "name": "Data Wall",
-        "type": "ice",
-        "cost": 3,
-        "strength": 2,
-    },
-    {
-        "name": "Project X",
-        "type": "agenda",
-        "cost": 4,
-        "points": 2,
-    },
-    {
-        "name": "Code Gate",
-        "type": "ice",
-        "cost": 2,
-        "strength": 1,
-    },
-    {
-        "name": "Sentry",
-        "type": "ice",
-        "cost": 5,
-        "strength": 4,
-    }
-]
+# Sample cards data
+sample_cards = load_cards()
 
 # Server data for demonstration
 server_data = {
     "HQ": {
-        "ice": [sample_cards[5]],
-        "contents": [sample_cards[6], sample_cards[4]]
+        "ice": [next(card for card in sample_cards if card["name"] == "Data Wall")],
+        "contents": [next(card for card in sample_cards if card["name"] == "Project Quantum"), 
+                     next(card for card in sample_cards if card["name"] == "Run Exploit")]
     },
     "R&D": {
-        "ice": [sample_cards[5], sample_cards[7]],
-        "contents": [sample_cards[1], sample_cards[2], sample_cards[6]]
+        "ice": [next(card for card in sample_cards if card["name"] == "Data Wall"), 
+                next(card for card in sample_cards if card["name"] == "Digital Lockpick")],
+        "contents": [next(card for card in sample_cards if card["name"] == "Neural Matrix"), 
+                    next(card for card in sample_cards if card["name"] == "Quantum Protocol"), 
+                    next(card for card in sample_cards if card["name"] == "Project Quantum")]
     },
     "Archives": {
         "ice": [],
-        "contents": [sample_cards[4], sample_cards[3]]
+        "contents": [next(card for card in sample_cards if card["name"] == "Run Exploit"), 
+                     next(card for card in sample_cards if card["name"] == "Crypto Cache")]
     },
     "Server 1": {
-        "ice": [sample_cards[8], sample_cards[7], sample_cards[5]],
-        "contents": [sample_cards[6]]
+        "ice": [next(card for card in sample_cards if card["name"] == "Digital Lockpick"), 
+                next(card for card in sample_cards if card["name"] == "Digital Lockpick"), 
+                next(card for card in sample_cards if card["name"] == "Data Wall")],
+        "contents": [next(card for card in sample_cards if card["name"] == "Project Quantum")]
     }
 }
 
@@ -278,8 +116,8 @@ def display_mini_card(card, width=20):
     # Get card color
     type_color = get_card_color(card_type)
     
-    # Get card art
-    art_lines = ascii_art.get(card_type, [])
+    # Get card art directly from the card object
+    art_lines = card.get('ascii_art', [])
     
     # Adjust width based on name length (minimum 20)
     card_width = max(width, len(name) + 4)
@@ -294,13 +132,29 @@ def display_mini_card(card, width=20):
     card_lines.append(f"{type_color}║{Colors.BOLD} {name}{' ' * (card_width - len(name) - 1)}{Colors.RESET}{type_color}║{Colors.RESET}")
     
     # Card type
-    card_lines.append(f"{type_color}║ {card_type.capitalize()}{' ' * (card_width - len(card_type) - 2)}║{Colors.RESET}")
+    subtype = card.get('subtype', '')
+    type_text = f"{card_type.capitalize()}{': ' + subtype if subtype else ''}"
+    card_lines.append(f"{type_color}║ {type_text}{' ' * (card_width - len(type_text) - 2)}║{Colors.RESET}")
     
     # Display ASCII art if available
     if art_lines:
         for line in art_lines:
             padding = max(0, (card_width - len(line)) // 2)
             card_lines.append(f"{type_color}║{' ' * padding}{line}{' ' * (card_width - len(line) - padding)}║{Colors.RESET}")
+    
+    # Display cost and other stats based on card type
+    stats_line = f" Cost: {cost}"
+    if 'mu' in card and card['mu'] > 0:
+        stats_line += f" | MU: {card['mu']}"
+    if 'strength' in card:
+        stats_line += f" | STR: {card['strength']}"
+    if 'agenda_points' in card:
+        stats_line += f" | Points: {card['agenda_points']}"
+    
+    if len(stats_line) > card_width - 2:
+        stats_line = stats_line[:card_width - 5] + "..."
+        
+    card_lines.append(f"{type_color}║{stats_line}{' ' * (card_width - len(stats_line) - 1)}║{Colors.RESET}")
     
     # Bottom of card
     card_lines.append(f"{type_color}╚{'═' * card_width}╝{Colors.RESET}")
@@ -371,14 +225,22 @@ def display_runner_area(runner_cards):
     print(f"{Colors.BRIGHT_BLACK}{'=' * 80}{Colors.RESET}\n")
     
     # Group cards by type
-    programs = [c for c in runner_cards if c.get('type').lower() in ['program', 'icebreaker']]
+    programs = [c for c in runner_cards if c.get('type').lower() in ['program']]
+    icebreakers = [c for c in runner_cards if c.get('subtype', '').lower() == 'icebreaker']
     hardware = [c for c in runner_cards if c.get('type').lower() == 'hardware']
     resources = [c for c in runner_cards if c.get('type').lower() == 'resource']
     
+    # Display icebreakers
+    if icebreakers:
+        print(f"{Colors.BRIGHT_BLUE}{Colors.BOLD}ICEBREAKERS:{Colors.RESET}")
+        icebreaker_cards = [display_mini_card(prog) for prog in icebreakers]
+        print("\n".join(merge_horizontally(icebreaker_cards)))
+        print()
+        
     # Display programs
     if programs:
-        print(f"{Colors.BRIGHT_CYAN}{Colors.BOLD}PROGRAMS & ICEBREAKERS:{Colors.RESET}")
-        program_cards = [display_mini_card(prog) for prog in programs]
+        print(f"{Colors.BRIGHT_CYAN}{Colors.BOLD}PROGRAMS:{Colors.RESET}")
+        program_cards = [display_mini_card(prog) for prog in programs if 'icebreaker' not in prog.get('subtype', '').lower()]
         print("\n".join(merge_horizontally(program_cards)))
         print()
     
@@ -409,7 +271,7 @@ def display_status_bar(credits, memory, clicks):
 
 def display_logo():
     """Display the game logo"""
-    for line in ascii_art["logo"]:
+    for line in GAME_UI_ASCII["logo"]:
         print(f"{Colors.BRIGHT_CYAN}{line}{Colors.RESET}")
     print()
 
@@ -475,7 +337,7 @@ def display_run_success(server_name):
     print(f"{Colors.BRIGHT_BLACK}{'=' * 80}{Colors.RESET}\n")
     
     # Display run ASCII art
-    for line in ascii_art["run"]:
+    for line in GAME_UI_ASCII["run"]:
         print(f"{Colors.BRIGHT_GREEN}{line}{Colors.RESET}")
     
     print(f"\n{Colors.BRIGHT_WHITE}You have successfully accessed {server_name}!{Colors.RESET}")
@@ -519,16 +381,23 @@ def display_board(options=None):
     display_servers(server_data, current_run)
     
     # Display Runner's area
-    runner_installed = options.get('installed_cards', [
-        sample_cards[0],  # Icebreaker
-        sample_cards[1],  # Hardware
-        sample_cards[2],  # Program
-        sample_cards[3],  # Resource
-    ])
+    default_installed = [
+        next(card for card in sample_cards if card["name"] == "Icebreaker.exe"),
+        next(card for card in sample_cards if card["name"] == "Neural Matrix"),
+        next(card for card in sample_cards if card["name"] == "Quantum Protocol"),
+        next(card for card in sample_cards if card["name"] == "Crypto Cache"),
+    ]
+    
+    runner_installed = options.get('installed_cards', default_installed)
     display_runner_area(runner_installed)
     
     # Display hand cards
-    hand_cards = options.get('hand_cards', [sample_cards[4], sample_cards[2], sample_cards[3]])
+    default_hand = [
+        next(card for card in sample_cards if card["name"] == "Run Exploit"),
+        next(card for card in sample_cards if card["name"] == "Memory Chip"),
+        next(card for card in sample_cards if card["name"] == "Net Shield"),
+    ]
+    hand_cards = options.get('hand_cards', default_hand)
     display_hand(hand_cards)
     
     # Display ice encounter if in a run

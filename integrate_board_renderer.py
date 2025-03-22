@@ -1,231 +1,187 @@
 #!/usr/bin/env python3
 """
-Integration Example - Demonstrates how to integrate the game board renderer with the terminal game
+Integrate the ASCII Game Board Renderer with the Terminal Game
+This script acts as a bridge between the terminal game and the ASCII board renderer
 """
 
-import sys
 import os
-import importlib.util
+import sys
 import time
+import subprocess
+import argparse
+import re
 
-# Path to the terminal game and game renderer modules
-terminal_game_path = "cmd/terminal_game"
+# Make sure we can import from our game_board_render module
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, current_dir)
 
-# Attempt to import the terminal game modules
-sys.path.append(os.path.abspath(terminal_game_path))
+# Import the game board renderer
+import game_board_render
 
-try:
-    from terminal_game import TerminalGame, GamePhase
-    from game_renderer import TerminalRenderer
-    from card_data import load_cards
-    from game_board_render import display_board, display_run_success, display_ice_encounter
-    
-    print("Successfully imported game modules")
-except ImportError as e:
-    print(f"Error importing game modules: {e}")
-    sys.exit(1)
+def clean_ansi(text):
+    """Remove ANSI escape codes from text"""
+    ansi_escape = re.compile(r'\x1b[^m]*m')
+    return ansi_escape.sub('', text)
 
-def map_card_type(original_type):
-    """Map the original card type to the type used in the board renderer"""
-    type_map = {
-        "Program": "program",
-        "Hardware": "hardware",
-        "Resource": "resource",
-        "Event": "event",
-        "ICE": "ice",
-        "Agenda": "agenda",
-        "Asset": "asset",
-        "Upgrade": "upgrade",
-        "Operation": "operation",
-        "Virus": "virus"
-    }
-    return type_map.get(original_type, original_type.lower())
-
-def get_game_board_options(game):
+def run_game_with_renderer(scenario='basic', delay=1, seed=None):
     """
-    Extract the current game state from the TerminalGame object
-    and convert it to options for the board renderer
+    Run the terminal game with the ASCII board renderer integrated
+    
+    Args:
+        scenario: The test scenario to run ('basic', 'full', 'custom')
+        delay: Delay between game actions in seconds
+        seed: Random seed for reproducible runs
     """
-    options = {
-        'credits': game.player_credits,
-        'memory': [game.memory_units_used, game.memory_units_available],
-        'clicks': game.clicks_remaining,
-        'installed_cards': [],
-        'hand_cards': []
-    }
+    # First display the ASCII game board in its initial state
+    game_board_render.display_board()
     
-    # Convert hand cards to the format expected by the board renderer
-    for card in game.hand_cards:
-        card_copy = card.copy()
-        card_copy['type'] = map_card_type(card.get('type', 'Unknown'))
-        options['hand_cards'].append(card_copy)
+    # Build the command to run the game
+    cmd = ['./run_game.sh', '--test']
+    cmd.append(f'--scenario')
+    cmd.append(scenario)
+    cmd.append(f'--delay')
+    cmd.append(str(delay))
     
-    # Convert installed cards to the format expected by the board renderer
-    for card in game.played_cards:
-        card_copy = card.copy()
-        card_copy['type'] = map_card_type(card.get('type', 'Unknown'))
-        options['installed_cards'].append(card_copy)
+    # Add seed if specified
+    if seed:
+        cmd.append('--seed')
+        cmd.append(str(seed))
     
-    # If there's an active run, add run info
-    if game.current_run:
-        options['run_server'] = game.current_run.get('server')
-        options['ice_index'] = game.current_run.get('ice_index', 0)
+    # Run the game process with real-time output capture
+    process = subprocess.Popen(
+        cmd, 
+        stdout=subprocess.PIPE, 
+        stderr=subprocess.STDOUT,
+        universal_newlines=True,
+        bufsize=1
+    )
+    
+    # Track game state
+    current_server = None
+    ice_index = 0
+    credits = 5
+    memory = [0, 4]
+    clicks = 4
+    runner_cards = []
+    
+    # Process output line by line
+    for line in iter(process.stdout.readline, ''):
+        print(line, end='')  # Echo to console
         
-        # Set ice_encounter flag if the runner is currently facing ICE
-        if game.current_run.get('encountering_ice'):
-            options['ice_encounter'] = True
+        # Parse game state from output
+        if "Credits:" in line and "MU:" in line and "Clicks:" in line:
+            parts = line.split('|')
+            for part in parts:
+                if "Credits:" in part:
+                    try:
+                        credits = int(part.split(':')[1].strip())
+                    except:
+                        pass
+                if "MU:" in part:
+                    try:
+                        mu_parts = part.split(':')[1].strip().split('/')
+                        memory = [int(mu_parts[0]), int(mu_parts[1])]
+                    except:
+                        pass
+                if "Clicks:" in part:
+                    try:
+                        click_parts = part.split(':')[1].strip().split('/')
+                        clicks = int(click_parts[0])
+                    except:
+                        pass
         
-        # Set run_success flag if the run was successful
-        if game.current_run.get('successful'):
-            options['run_success'] = True
+        # Detect run initiation
+        if "INITIATING RUN ON" in line:
+            parts = line.split("INITIATING RUN ON")
+            if len(parts) > 1:
+                server_name = clean_ansi(parts[1].strip().rstrip('.'))
+                
+                # Standard server mapping
+                server_map = {
+                    'HQ': 'HQ',
+                    'R&D': 'R&D',
+                    'ARCHIVES': 'Archives',
+                    'SERVER 1': 'Server 1',
+                    'SERVER1': 'Server 1'
+                }
+                
+                current_server = server_map.get(server_name.upper(), server_name)
+                ice_index = 0
+                
+                # Update game board for run
+                try:
+                    game_board_render.display_board({
+                        'run_server': current_server,
+                        'ice_index': ice_index,
+                        'credits': credits,
+                        'memory': memory,
+                        'clicks': clicks
+                    })
+                    time.sleep(1)  # Pause to show the board
+                except Exception as e:
+                    print(f"Error updating board: {e}")
+        
+        # Detect ICE encounters
+        if "ICE ENCOUNTERED:" in line:
+            if current_server:
+                # Update game board to show ice encounter
+                try:
+                    game_board_render.display_board({
+                        'run_server': current_server,
+                        'ice_index': ice_index,
+                        'ice_encounter': True,
+                        'credits': credits,
+                        'memory': memory,
+                        'clicks': clicks
+                    })
+                    time.sleep(1)  # Pause to show the encounter
+                    ice_index += 1  # Move to next ice
+                except Exception as e:
+                    print(f"Error updating ice encounter: {e}")
+        
+        # Detect successful run
+        if "RUN SUCCESSFUL" in line:
+            # Show run success animation
+            try:
+                game_board_render.display_board({
+                    'run_server': current_server,
+                    'run_success': True,
+                    'credits': credits,
+                    'memory': memory,
+                    'clicks': clicks
+                })
+                time.sleep(1)  # Pause to show success
+                current_server = None
+            except Exception as e:
+                print(f"Error showing run success: {e}")
+        
+        # Detect card installation or other major game state changes
+        if "Installing" in line and "for" in line and "credits" in line:
+            # Update game board to reflect installed card
+            try:
+                game_board_render.display_board({
+                    'credits': credits,
+                    'memory': memory,
+                    'clicks': clicks
+                })
+                time.sleep(0.5)  # Brief pause
+            except Exception as e:
+                print(f"Error updating after installation: {e}")
     
-    return options
+    # Wait for process to complete
+    process.wait()
+    return process.returncode
 
-def create_sample_game_state():
-    """
-    Create a sample game state for demonstration purposes
-    This simulates what would be extracted from an actual game instance
-    """
-    # Sample cards from the game's card data
-    cards = load_cards()
-    
-    # Create a sample game state
-    sample_state = {
-        'player_credits': 7,
-        'memory_units_used': 3,
-        'memory_units_available': 4,
-        'clicks_remaining': 2,
-        'hand_cards': [
-            {
-                'name': 'Run Exploit',
-                'type': 'Event',
-                'cost': 2,
-                'mu': 0,
-                'description': 'Bypass the first piece of ice encountered during a run',
-            },
-            {
-                'name': 'Memory Chip',
-                'type': 'Hardware',
-                'cost': 1,
-                'mu': 0,
-                'description': '+1 Memory Unit',
-            },
-            {
-                'name': 'Crypto Cache',
-                'type': 'Resource',
-                'cost': 2,
-                'mu': 0,
-                'description': 'Gain 1 credit at the start of your turn',
-            }
-        ],
-        'played_cards': [
-            {
-                'name': 'Icebreaker.exe',
-                'type': 'Program',
-                'cost': 3,
-                'mu': 1,
-                'strength': 2,
-                'description': 'Break ice subroutines with strength <= 2',
-            },
-            {
-                'name': 'Neural Matrix',
-                'type': 'Hardware',
-                'cost': 2,
-                'mu': 0,
-                'description': '+2 Memory Units',
-            },
-            {
-                'name': 'Quantum Protocol',
-                'type': 'Program',
-                'cost': 4,
-                'mu': 2,
-                'strength': 4,
-                'description': 'Break up to 3 subroutines on a single piece of ice',
-            }
-        ],
-        'current_run': {
-            'server': 'R&D',
-            'ice_index': 1,
-            'encountering_ice': True,
-            'successful': False
-        }
-    }
-    
-    return sample_state
-
-def simulate_run_progress(options):
-    """Simulate a run progress for demonstration"""
-    print("\nSimulating a run on R&D server...\n")
-    time.sleep(1)
-    
-    # Start the run
-    options['run_server'] = 'R&D'
-    options['ice_index'] = 0
-    options['ice_encounter'] = True
-    options['run_success'] = False
-    display_board(options)
-    time.sleep(2)
-    
-    # Break through first ICE
-    print("\nBreaking through first ICE...\n")
-    time.sleep(1)
-    options['ice_index'] = 1
-    options['ice_encounter'] = True
-    display_board(options)
-    time.sleep(2)
-    
-    # Break through second ICE
-    print("\nBreaking through second ICE...\n")
-    time.sleep(1)
-    options['ice_index'] = 2
-    options['ice_encounter'] = False
-    display_board(options)
-    time.sleep(2)
-    
-    # Run successful
-    print("\nRun successful! Accessing server...\n")
-    time.sleep(1)
-    options['run_success'] = True
-    display_board(options)
-    time.sleep(2)
-
-def main():
-    print("Demonstrating integration of game board renderer with terminal game")
-    print("================================================================\n")
-    
-    # Create a sample game state
-    sample_state = create_sample_game_state()
-    
-    # Convert the sample state to board renderer options
-    options = {
-        'credits': sample_state['player_credits'],
-        'memory': [sample_state['memory_units_used'], sample_state['memory_units_available']],
-        'clicks': sample_state['clicks_remaining'],
-        'hand_cards': [card.copy() for card in sample_state['hand_cards']],
-        'installed_cards': [card.copy() for card in sample_state['played_cards']]
-    }
-    
-    # Map card types to the format expected by the board renderer
-    for card in options['hand_cards']:
-        card['type'] = map_card_type(card['type'])
-    
-    for card in options['installed_cards']:
-        card['type'] = map_card_type(card['type'])
-    
-    # If there's an active run, add run info
-    if sample_state.get('current_run'):
-        options['run_server'] = sample_state['current_run']['server']
-        options['ice_index'] = sample_state['current_run']['ice_index']
-        options['ice_encounter'] = sample_state['current_run']['encountering_ice']
-        options['run_success'] = sample_state['current_run']['successful']
-    
-    # Display the initial game board
-    display_board(options)
-    
-    # Simulate a run for demonstration
-    simulate_run_progress(options)
-    
-    print("\nDemo complete!")
+def parse_arguments():
+    """Parse command-line arguments"""
+    parser = argparse.ArgumentParser(description='Run the terminal game with ASCII game board visualization')
+    parser.add_argument('--scenario', choices=['basic', 'full', 'custom'], default='basic',
+                       help='Test scenario to run')
+    parser.add_argument('--delay', type=float, default=2,
+                       help='Delay between game actions (seconds)')
+    parser.add_argument('--seed', type=int, help='Random seed for reproducible runs')
+    return parser.parse_args()
 
 if __name__ == "__main__":
-    main() 
+    args = parse_arguments()
+    run_game_with_renderer(args.scenario, args.delay, args.seed) 

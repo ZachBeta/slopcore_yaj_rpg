@@ -1,164 +1,100 @@
-# ASCII Game Board Renderer
+# ASCII Game Board Renderer for Neon Dominance
 
-This ASCII game board renderer is designed to display a visual representation of the Neon Dominance card game in a terminal interface. It uses colored ASCII art to represent different cards, servers, and game states.
+This is an ASCII art-based game board renderer for the Neon Dominance terminal card game. It provides a visual representation of the game state using ASCII characters and ANSI color codes.
 
 ## Features
 
-- Displays cards with appropriate ASCII art based on card type
-- Shows corporate servers with ICE protection
-- Renders the runner's installed cards organized by type
-- Visualizes runs on servers with progress tracking
-- Shows ICE encounters during runs
-- Displays run success animation
-- Provides command-line options to customize the display
+- Visual representation of game cards, servers, and runs
+- Card display with appropriate ASCII art based on card type
+- Color-coded elements based on card types
+- Run progress visualization
+- ICE encounter visualization
+- Run success animation
 
 ## Usage
 
-Basic usage:
+### Running the Demo with ASCII Game Board Renderer
 
-```
-python3 game_board_render.py
-```
+To run the demo with the ASCII game board renderer:
 
-This will display the default game board with sample data.
-
-### Command Line Options
-
-You can customize the game board display with various command-line options:
-
-- `--run <server>`: Show a run in progress on the specified server. Options: hq, r&d, archives, server1
-- `--ice-index <index>`: Current ICE index in the run (0-based)
-- `--credits <number>`: Number of credits the runner has
-- `--memory <used> <total>`: Memory usage and capacity (e.g. `--memory 3 4`)
-- `--clicks <number>`: Number of clicks remaining
-- `--ice-encounter`: Show ice encounter dialog
-- `--run-success`: Show run success animation
-
-### Examples
-
-Display a run on R&D, at the second ICE:
-```
-python3 game_board_render.py --run r&d --ice-index 1
+```bash
+./demo.sh --ascii
 ```
 
-Show an ICE encounter during a run:
-```
-python3 game_board_render.py --run hq --ice-index 0 --ice-encounter
-```
+This will run the full test scenario with a 2-second delay between actions, displaying the ASCII game board at key moments.
 
-Display a successful run:
-```
-python3 game_board_render.py --run archives --run-success
-```
+### Running without the ASCII Game Board Renderer
 
-Customize player stats:
-```
-python3 game_board_render.py --credits 10 --memory 2 4 --clicks 3
+To run the demo without the ASCII renderer (text-only mode):
+
+```bash
+./demo.sh
 ```
 
-## Card Visualization
+### Integration Script Options
 
-The game board renderer uses color-coded ASCII art to represent different card types:
+The `integrate_board_renderer.py` script can be run directly with these options:
 
-- **Programs**: Cyan
-- **Icebreakers**: Blue
-- **Hardware**: Yellow
-- **Resources**: Green
-- **Events**: Magenta
-- **Virus**: Red
-- **ICE**: Red
-- **Operations**: Blue
-- **Assets**: Yellow
-- **Upgrades**: Green
-- **Agendas**: Magenta
-
-## Game Board Sections
-
-The game board is divided into several sections:
-
-1. **Game Logo** - At the top of the board, displaying the Neon Dominance title
-2. **Status Bar** - Shows player credits, memory usage, and remaining clicks
-3. **Corporate Servers** - Displays servers (HQ, R&D, Archives, and remote servers) with their ICE protection
-4. **Runner's Rig** - Shows installed runner cards organized by type (programs, hardware, resources)
-5. **Hand Cards** - Displays the cards in the runner's hand
-6. **Run Information** - Shows run progress, ICE encounters, or run success when applicable
-
-## Run Visualization
-
-During a run, the game board will display:
-
-- The server being run on is highlighted
-- A visual progress track showing passed ICE, current ICE, and upcoming ICE
-- When encountering ICE, a detailed view of the ICE card with its ASCII art
-- Upon successful run, a celebratory animation
-
-## Integration Example
-
-An integration example is provided in `integrate_board_renderer.py`. This demonstrates how to:
-
-1. Extract game state from the main game logic
-2. Map data to the format expected by the board renderer
-3. Display the game board at different stages of gameplay
-4. Simulate a run from start to completion
-
-To run the integration example:
-
-```
-python3 integrate_board_renderer.py
+```bash
+python3 integrate_board_renderer.py [OPTIONS]
 ```
 
-### Integration API
+Available options:
+- `--scenario SCENARIO`: Choose test scenario (basic, full, custom)
+- `--delay SECONDS`: Set delay between game actions in seconds
+- `--seed NUMBER`: Set random seed for reproducible runs
 
-This renderer can be integrated with the main game logic to provide a visual representation of the game state. The `display_board()` function accepts an options dictionary that can be populated with the current game state.
-
-```python
-options = {
-    'credits': player.credits,
-    'memory': [player.memory_used, player.memory_capacity],
-    'clicks': player.clicks_remaining,
-    'run_server': current_run.server_name if current_run else None,
-    'ice_index': current_run.ice_index if current_run else 0,
-    'ice_encounter': is_encountering_ice,
-    'run_success': run_successful,
-    'installed_cards': player.installed_cards,
-    'hand_cards': player.hand
-}
-
-display_board(options)
+Example:
+```bash
+python3 integrate_board_renderer.py --scenario=full --delay=1
 ```
 
-For complete integration, you'll need to:
+## Game Board Features
 
-1. Import the necessary functions from `game_board_render.py`
-2. Map your game's card type names to the renderer's expected format (see `map_card_type()` in integration example)
-3. Extract the current game state and convert it to board options
-4. Call `display_board()` with these options at appropriate points in your game logic
+### Card Display
 
-## Customizing the Renderer
+Cards are displayed with:
+- Border and card name
+- Card type and subtype (if applicable)
+- ASCII art based on card type
+- Key stats (cost, memory usage, strength)
 
-To add new card types or modify existing ASCII art:
+### Server Display
 
-1. Add new entries to the `ascii_art` dictionary in `game_board_render.py`
-2. Update the `get_card_color()` function to handle the new card type
-3. Ensure your card data includes a 'type' field that matches the keys in the `ascii_art` dictionary
+Servers display:
+- Server name
+- ICE protecting the server (with ASCII art)
+- Number of cards in the server
 
-## Troubleshooting
+### Run Visualization
 
-### Display Issues
+When running on a server:
+- Run progress indicator showing passed, current, and upcoming ICE
+- ICE encounter display showing the current ICE being faced
+- Run success animation upon successful completion
 
-- **Overlapping or misaligned cards**: Ensure your terminal is wide enough (80+ columns)
-- **Missing colors**: Check that your terminal supports ANSI color codes
-- **Broken ASCII art**: Some terminals may not display certain Unicode characters properly
+## Development
 
-### Integration Issues
+### Adding New Card Types
 
-- **Card type mismatch**: Ensure you're mapping card types correctly between your game and the renderer
-- **Card data format**: Cards must have at minimum 'name' and 'type' fields
-- **Import errors**: Check that path to game_board_render.py is correctly specified
+To add a new card type with custom ASCII art:
+
+1. Update the `card_data.py` module to include the new card type
+2. Add appropriate ASCII art for the new card type in the `CARD_ASCII_ART` dictionary
+3. For specific cards with unique ASCII art, add them to the `SPECIFIC_CARD_ART` dictionary
+
+### Customizing Colors
+
+The color scheme can be modified in the `Colors` class within `game_board_render.py`.
+
+## Technical Details
+
+- Uses ANSI color codes for terminal coloring
+- Detects terminal width for optimal display
+- Modular code organization with separate concerns for card data and rendering
 
 ## Requirements
 
-- Python 3.6 or higher
 - Terminal with ANSI color support
-- Sufficient terminal width (80+ columns recommended)
-- For integration: compatible game state format 
+- Python 3.6+
+- Linux/macOS (may work on Windows with appropriate terminal) 
