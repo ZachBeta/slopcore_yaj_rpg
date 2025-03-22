@@ -1,130 +1,120 @@
 # Neon Dominance
 
-A Netrunner-inspired roguelike PvPvE deckbuilder-RPG built with Python, featuring a full gameplay loop in the terminal implementation with future plans for a Godot-based GUI.
+A cyberpunk card game where you play as a hacker (Runner) breaking into corporate servers, while an AI opponent controls the Corporation trying to stop you.
 
 ## Current Version
 
-**v0.3.0** - Terminal Game Implementation with Strategic AI Opponent
+**v0.5.1** - Terminal Implementation with Strategic AI
 
-> **CURRENT STATUS**: The Python terminal implementation is the primary playable version with complete gameplay and AI. The Godot GUI implementation is still being compiled in the grid - check back when the render matrices are stabilized.
+## Game Overview
 
-## Overview
+Neon Dominance is an asymmetric deckbuilder set in a cyberpunk world. You play as a hacker who must infiltrate corporate servers, bypass security ICE, and access valuable data while managing your resources and avoiding neural damage.
 
-Neon Dominance is an asymmetric deckbuilder where players can take on the role of either Runners or Corporations in a cyberpunk setting. The game features:
+### Key Features
 
-- **Asymmetric Gameplay**: Play as a Runner with modular decks and hack-based mechanics, or as a Corporation with server infrastructure and ICE defense systems
-- **Roguelike Elements**: Progress through temporary upgrades with cooldowns and face permanent consequences through the Neural Burnout system
-- **Strategic AI**: Face off against a Corporation AI with various strategic approaches (Economic, Aggressive, Defensive)
-- **Multiple Implementations**: 
-  - **ACTIVE**: Python-based terminal version with complete gameplay and AI opponent
-  - **IN DEVELOPMENT**: Godot-based GUI version (currently in beta testing phase)
+- **Asymmetric Gameplay**: Runner vs Corporation with different mechanics
+- **Strategic AI Opponent**: Corporation AI with multiple strategic approaches
+- **Complete Game Loop**: Card drawing, installation, runs, and win conditions
+- **Resource Management**: Balance credits and memory units
+- **Server Runs**: Make runs on different servers, handle ICE encounters
+- **Jack Out Mechanics**: Strategic choices during runs
+- **ASCII Art Interface**: Visual feedback with colored text
+
+## Getting Started
+
+### Quick Start
+
+Run the game directly from the root folder:
+
+```bash
+./run_game.sh
+```
+
+### Command-Line Options
+
+```bash
+./run_game.sh --help        # Show help
+./run_game.sh --seed 12345  # Set a random seed for reproducible gameplay
+./run_game.sh --test        # Run in automated test mode
+./run_game.sh --scenario full --delay 1  # Run a full test scenario with 1s delay
+```
+
+### Alternative Launch Method
+
+If you prefer to run the Python script directly:
+
+```bash
+python3 cmd/terminal_game/main.py
+```
+
+## Gameplay Commands
+
+During gameplay, the following commands are available:
+
+- `help` - Display available commands
+- `status` - Show current game status
+- `draw` - Draw a card (costs 1 click)
+- `hand` - View cards in your hand
+- `install <card_num>` - Install a card from your hand (costs 1 click)
+- `run <server>` - Run against a server (costs 1 click)
+  - Options: `run <server> --stealth`, `--aggressive`, `--careful`
+- `jack_out` - Abort a run after encountering ICE
+- `discard <card_num>` - Discard a card from your hand
+- `end` - End your turn
+
+## AI Opponent
+
+The game features a Corporation AI opponent with:
+
+- Multiple strategic approaches (Balanced, Aggressive, Defensive, Economic)
+- Independent game state management
+- Strategic decision-making based on context
+- Installation of ICE, creation of remote servers, and agenda advancement
 
 ## Development Status
 
-✅ **STABLE IMPLEMENTATIONS**:
-- [x] Terminal game with full command interface
-- [x] Advanced AI opponent for Corporation side
-- [x] Complete game loop with turn structure
-- [x] Win conditions and agenda scoring
+✅ **IMPLEMENTED**:
+- [x] Complete terminal-based game with full command interface
+- [x] Strategic AI opponent for Corporation side
+- [x] Resource management (credits and memory units)
 - [x] Server run mechanics with ICE encounters
+- [x] Jack out command implementation
 
 🔄 **IN PROGRESS**:
-- [ ] Godot implementation with visual interface
-- [ ] Advanced card mechanics
-- [ ] Deck building system
-- [ ] Campaign progression
-
-## Tech Stack
-
-- **Current Implementation**: Python 3.x terminal interface
-- **Secondary Implementation**: Godot 4.4 with GDScript (still in development)
-- **3D Assets**: Blender (for future Godot version)
-- **Platforms**: Terminal (current), Web/Mobile (planned)
-- **Web3**: Planned integration with Espresso EVM rollup (non-pay-to-win)
-
-## Quick Start
-
-### Python Terminal Implementation ⭐ (RECOMMENDED)
-
-1. Make sure you have Python 3.x installed:
-   ```bash
-   python3 --version
-   ```
-
-2. Run the terminal game:
-   ```bash
-   cd /path/to/slopcore_yaj_rpg
-   python3 cmd/terminal_game/main.py -i
-   ```
-
-3. Use the `-i` flag for interactive mode, or `--help` to see all available options.
-
-### Godot Implementation 🚧 (UNDER CONSTRUCTION)
-
-> **Note**: The Godot implementation is still being compiled. Some features may be unstable or incomplete.
-
-1. Install Godot 4.4:
-   ```bash
-   brew install --cask godot
-   ```
-   Or download Godot 4.4 for macOS (Apple Silicon) from https://godotengine.org/download
-
-2. Open project:
-   - Launch Godot
-   - Click "Import"
-   - Select the `game` folder in this repository
-   - Click "Import & Edit"
-   - Press F5 or click the Play button to run or cmd + b
+- [ ] Enhanced run approach options
+- [ ] Visual improvements for server visualization
+- [ ] Economic rebalancing
 
 ## Project Structure
 
 ```
-cmd/terminal_game/    # PRIMARY IMPLEMENTATION
+cmd/terminal_game/    # GAME IMPLEMENTATION
 ├── main.py           # Entry point
 ├── terminal_game.py  # Core game logic
 ├── ai_opponent.py    # Corporation AI
 └── game_renderer.py  # Terminal UI
 
-game/                 # SECONDARY IMPLEMENTATION (IN DEVELOPMENT)
-├── project.godot     # Project configuration
-├── scenes/           # Game scenes
-├── scripts/          # Game logic
-└── tests/            # Test suite
+docs/                 # DOCUMENTATION
+├── gameplay_enhancements.md  # Planned improvements
+└── implementation_plan.md    # Implementation roadmap
 ```
 
-## Getting Started
+## For Developers
 
 ### Prerequisites
 
 - [Python 3.x](https://www.python.org/downloads/) or newer
-- [Godot 4.4](https://godotengine.org/download) or newer (for Godot implementation)
-
-### Installation
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/ZachBeta/slopcore_yaj_rpg.git
-   ```
-
-2. Open the project in Godot (for Godot implementation):
-   - Launch Godot Engine
-   - Click "Import"
-   - Navigate to the cloned repository and select the `game/project.godot` file
-   - Click "Import & Edit"
 
 ### Running Tests
-
-To run the test suite for the terminal implementation:
 
 ```bash
 python3 -m unittest discover -s cmd/terminal_game/tests
 ```
 
-## Development Roadmap
+### Development Guidelines
 
-See the [ROADMAP.md](docs/ROADMAP.md) file for the complete development plan.
-
-See the [NEXT_STEPS.md](docs/NEXT_STEPS.md) file for immediate development tasks.
+- See [CHANGELOG.md](CHANGELOG.md) for version history and planned features
+- See [RULES.md](RULES.md) for project conventions and versioning guidelines
 
 ## License
 
