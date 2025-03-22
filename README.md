@@ -17,7 +17,7 @@ A Netrunner-inspired roguelike PvPvE deckbuilder-RPG hybrid with multiplayer ter
    - Click "Import"
    - Select the `game` folder in this repository
    - Click "Import & Edit"
-   - Press F5 or click the Play button to run
+   - Press F5 or click the Play button to run or cmd + b
 
 3. Troubleshooting:
    - If you see errors about missing files, the project structure might need repair
