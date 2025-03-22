@@ -407,6 +407,14 @@ export class ConsoleRenderer {
         `%c[${index}] ${card.name} - ${card.type} - Cost: ${card.cost}`,
         this.colors.card
       );
+      
+      // Display ASCII art if available
+      if (card.ascii_art && card.ascii_art.length > 0) {
+        card.ascii_art.forEach((line: string) => {
+          console.log(`    ${line}`);
+        });
+      }
+      
       console.log(`    ${card.description || 'No description'}`);
     });
   }
@@ -427,6 +435,14 @@ export class ConsoleRenderer {
         `%c[${index}] ${card.name} - ${card.type}`,
         this.colors.card
       );
+      
+      // Display ASCII art if available
+      if (card.ascii_art && card.ascii_art.length > 0) {
+        card.ascii_art.forEach((line: string) => {
+          console.log(`    ${line}`);
+        });
+      }
+      
       if (card.memoryUsage) {
         console.log(`    Memory Usage: ${card.memoryUsage} MU`);
       }

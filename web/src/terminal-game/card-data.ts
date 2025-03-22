@@ -159,13 +159,14 @@ export const SPECIFIC_CARD_ART = {
 export interface Card {
   id: string;
   name: string;
-  type: 'program' | 'hardware' | 'resource' | 'event';
+  type: 'program' | 'hardware' | 'resource' | 'event' | 'ice' | 'agenda' | 'upgrade';
   subtype?: string;
   cost: number;
   memoryUsage?: number;
   strength?: number;
   description: string;
   effect?: (gameState: any) => void;
+  ascii_art?: string[];
 }
 
 /**
@@ -181,7 +182,8 @@ export const CARD_DATA: Card[] = [
     cost: 2,
     memoryUsage: 1,
     strength: 2,
-    description: 'Break barrier subroutines for 1 credit each.'
+    description: 'Break barrier subroutines for 1 credit each.',
+    ascii_art: CARD_ASCII_ART['program']
   },
   {
     id: 'prog_decrypt',
@@ -191,7 +193,8 @@ export const CARD_DATA: Card[] = [
     cost: 3,
     memoryUsage: 1,
     strength: 1,
-    description: 'Break code gate subroutines for 1 credit each.'
+    description: 'Break code gate subroutines for 1 credit each.',
+    ascii_art: CARD_ASCII_ART['program']
   },
   {
     id: 'prog_disrupt',
@@ -201,7 +204,8 @@ export const CARD_DATA: Card[] = [
     cost: 3,
     memoryUsage: 1,
     strength: 2,
-    description: 'Break sentry subroutines for 2 credits each.'
+    description: 'Break sentry subroutines for 2 credits each.',
+    ascii_art: CARD_ASCII_ART['program']
   },
   {
     id: 'prog_autoscript',
@@ -209,7 +213,8 @@ export const CARD_DATA: Card[] = [
     type: 'program',
     cost: 2,
     memoryUsage: 2,
-    description: 'When your turn begins, draw 1 card.'
+    description: 'When your turn begins, draw 1 card.',
+    ascii_art: CARD_ASCII_ART['program']
   },
   {
     id: 'prog_credit_miner',
@@ -217,7 +222,8 @@ export const CARD_DATA: Card[] = [
     type: 'program',
     cost: 3,
     memoryUsage: 2,
-    description: 'Gain 1 credit at the start of your turn.'
+    description: 'Gain 1 credit at the start of your turn.',
+    ascii_art: CARD_ASCII_ART['program']
   },
   {
     id: 'prog_deepdive',
@@ -226,7 +232,8 @@ export const CARD_DATA: Card[] = [
     subtype: 'virus',
     cost: 4,
     memoryUsage: 2,
-    description: 'Place 3 virus counters on DeepDive when installed. Use a virus counter to access an additional card during a run on R&D.'
+    description: 'Place 3 virus counters on DeepDive when installed. Use a virus counter to access an additional card during a run on R&D.',
+    ascii_art: CARD_ASCII_ART['virus']
   },
   {
     id: 'prog_routefinder',
@@ -234,7 +241,8 @@ export const CARD_DATA: Card[] = [
     type: 'program',
     cost: 1,
     memoryUsage: 1,
-    description: 'Reduce the cost to install programs by 1 credit.'
+    description: 'Reduce the cost to install programs by 1 credit.',
+    ascii_art: CARD_ASCII_ART['program']
   },
   {
     id: 'prog_stealth_protocol',
@@ -242,61 +250,69 @@ export const CARD_DATA: Card[] = [
     type: 'program',
     cost: 3,
     memoryUsage: 2,
-    description: 'The first ICE encountered each turn has -2 strength.'
+    description: 'The first ICE encountered each turn has -2 strength.',
+    ascii_art: CARD_ASCII_ART['program']
   },
 
   // Hardware
   {
     id: 'hw_neural_interface',
-    name: 'Neural Interface',
+    name: 'Neural Matrix',
     type: 'hardware',
-    cost: 3,
-    description: 'Increase your maximum hand size by 2.'
+    cost: 4,
+    description: 'You have +2 maximum memory units.',
+    ascii_art: SPECIFIC_CARD_ART['Neural Matrix']
   },
   {
-    id: 'hw_modded_console',
-    name: 'Modded Console',
+    id: 'hw_console',
+    name: 'Console',
     type: 'hardware',
     subtype: 'console',
     cost: 4,
-    description: '+2 memory units. Draw 1 card when installed.'
+    description: '+2 memory units. Draw 1 card when installed.',
+    ascii_art: CARD_ASCII_ART['hardware']
   },
   {
-    id: 'hw_quantum_processor',
-    name: 'Quantum Processor',
+    id: 'hw_rig',
+    name: 'Custom Rig',
     type: 'hardware',
     cost: 5,
-    description: '+3 memory units. Reduce the cost of the first program you install each turn by 2 credits.'
+    description: '+3 memory units. Reduce the cost of the first program you install each turn by 2 credits.',
+    ascii_art: CARD_ASCII_ART['hardware']
   },
   {
     id: 'hw_mem_chip',
     name: 'Memory Chip',
     type: 'hardware',
     cost: 2,
-    description: '+1 memory unit.'
+    description: '+1 memory unit.',
+    ascii_art: CARD_ASCII_ART['hardware']
   },
   {
-    id: 'hw_trace_disruptor',
-    name: 'Trace Disruptor',
+    id: 'hw_trace_blocker',
+    name: 'Trace Blocker',
     type: 'hardware',
     cost: 3,
-    description: 'Reduce the strength of traces by 2.'
+    description: 'Reduce the strength of traces by 2.',
+    ascii_art: CARD_ASCII_ART['hardware']
   },
   {
-    id: 'hw_stealth_drive',
-    name: 'Stealth Drive',
+    id: 'hw_escape_hatch',
+    name: 'Escape Hatch',
     type: 'hardware',
     cost: 2,
-    description: 'You may jack out even if you have encountered a "cannot jack out" subroutine.'
+    description: 'You may jack out even if you have encountered a "cannot jack out" subroutine.',
+    ascii_art: CARD_ASCII_ART['hardware']
   },
 
   // Resources
   {
     id: 'res_crypto_stash',
-    name: 'Crypto Stash',
+    name: 'Crypto Cache',
     type: 'resource',
     cost: 3,
-    description: 'Place 3 credits on Crypto Stash when installed. Click to take 1 credit from Crypto Stash.'
+    description: 'Place 3 credits on Crypto Stash when installed. Click to take 1 credit from Crypto Stash.',
+    ascii_art: SPECIFIC_CARD_ART['Crypto Cache']
   },
   {
     id: 'res_darknet_contact',
@@ -304,7 +320,8 @@ export const CARD_DATA: Card[] = [
     type: 'resource',
     subtype: 'connection',
     cost: 2,
-    description: 'When your turn begins, gain 1 credit if you have fewer than 6 credits.'
+    description: 'When your turn begins, gain 1 credit if you have fewer than 6 credits.',
+    ascii_art: CARD_ASCII_ART['resource']
   },
   {
     id: 'res_data_dealer',
@@ -312,21 +329,24 @@ export const CARD_DATA: Card[] = [
     type: 'resource',
     subtype: 'connection',
     cost: 3,
-    description: 'Click, forfeit an agenda: Gain 7 credits.'
+    description: 'Click, forfeit an agenda: Gain 7 credits.',
+    ascii_art: CARD_ASCII_ART['resource']
   },
   {
     id: 'res_security_testing',
     name: 'Security Testing',
     type: 'resource',
     cost: 3,
-    description: 'When your turn begins, you may name a server. The first time you make a successful run on that server, gain 2 credits instead of accessing cards.'
+    description: 'When your turn begins, you may name a server. The first time you make a successful run on that server, gain 2 credits instead of accessing cards.',
+    ascii_art: CARD_ASCII_ART['resource']
   },
   {
     id: 'res_proxy_server',
     name: 'Proxy Server',
     type: 'resource',
     cost: 2,
-    description: 'The first time each turn a trace is initiated, the Corp must pay 1 credit or the trace strength starts at 0.'
+    description: 'The first time each turn a trace is initiated, the Corp must pay 1 credit or the trace strength starts at 0.',
+    ascii_art: CARD_ASCII_ART['resource']
   },
 
   // Events
@@ -335,21 +355,24 @@ export const CARD_DATA: Card[] = [
     name: 'Gaining Ground',
     type: 'event',
     cost: 2,
-    description: 'Draw 3 cards.'
+    description: 'Draw 3 cards.',
+    ascii_art: CARD_ASCII_ART['event']
   },
   {
     id: 'evt_easy_money',
     name: 'Easy Money',
     type: 'event',
     cost: 3,
-    description: 'Gain 5 credits.'
+    description: 'Gain 5 credits.',
+    ascii_art: CARD_ASCII_ART['event']
   },
   {
     id: 'evt_sure_gamble',
     name: 'Sure Gamble',
     type: 'event',
     cost: 5,
-    description: 'Gain 9 credits.'
+    description: 'Gain 9 credits.',
+    ascii_art: CARD_ASCII_ART['event']
   },
   {
     id: 'evt_inside_job',
@@ -357,36 +380,66 @@ export const CARD_DATA: Card[] = [
     type: 'event',
     subtype: 'run',
     cost: 3,
-    description: 'Make a run. Bypass the first ICE encountered during this run.'
+    description: 'Make a run. Bypass the first ICE encountered during this run.',
+    ascii_art: CARD_ASCII_ART['event']
   },
   {
     id: 'evt_special_order',
     name: 'Special Order',
     type: 'event',
     cost: 2,
-    description: 'Search your stack for a breaker program, reveal it, and add it to your grip. Shuffle your stack.'
+    description: 'Search your stack for a breaker program, reveal it, and add it to your grip. Shuffle your stack.',
+    ascii_art: CARD_ASCII_ART['event']
   },
   {
     id: 'evt_test_run',
     name: 'Test Run',
     type: 'event',
     cost: 3,
-    description: 'Search your stack or heap for a program, install it, and place it on top of your stack at the end of the turn. Shuffle your stack.'
+    description: 'Search your stack or heap for a program, install it, and place it on top of your stack at the end of the turn. Shuffle your stack.',
+    ascii_art: CARD_ASCII_ART['event']
   },
   {
     id: 'evt_infiltration',
     name: 'Infiltration',
     type: 'event',
     cost: 1,
-    description: 'Gain 2 credits or expose 1 card.'
+    description: 'Gain 2 credits or expose 1 card.',
+    ascii_art: CARD_ASCII_ART['event']
   },
   {
     id: 'evt_dirty_laundry',
     name: 'Dirty Laundry',
     type: 'event',
     cost: 2,
-    description: 'Make a run. When that run ends, if it was successful, gain 5 credits.'
-  }
+    description: 'Make a run. When that run ends, if it was successful, gain 5 credits.',
+    ascii_art: CARD_ASCII_ART['event']
+  },
+
+  // Programs (Icebreakers)
+  {
+    id: 'prog_icebreaker',
+    name: 'Icebreaker.exe',
+    type: 'program',
+    subtype: 'icebreaker',
+    cost: 2,
+    memoryUsage: 1,
+    strength: 1,
+    description: 'All-purpose icebreaker that can break any type of ICE subroutine for 2 credits each.',
+    ascii_art: SPECIFIC_CARD_ART['Icebreaker.exe']
+  },
+  
+  // ICE
+  {
+    id: 'ice_data_wall',
+    name: 'Data Wall',
+    type: 'ice',
+    subtype: 'barrier',
+    cost: 1,
+    strength: 3,
+    description: 'End the run unless the Runner spends 2 credits.',
+    ascii_art: SPECIFIC_CARD_ART['Data Wall']
+  },
 ];
 
 /**
@@ -421,10 +474,11 @@ export function createStarterDeck(seed?: number): Card[] {
     
     // Hardware (6 cards)
     'hw_neural_interface',
-    'hw_modded_console',
-    'hw_mem_chip', 'hw_mem_chip',
-    'hw_trace_disruptor',
-    'hw_stealth_drive',
+    'hw_console',
+    'hw_rig',
+    'hw_mem_chip',
+    'hw_trace_blocker',
+    'hw_escape_hatch',
     
     // Resources (6 cards)
     'res_crypto_stash',

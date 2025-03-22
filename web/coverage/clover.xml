@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1742670449409" clover="3.2.0">
-  <project timestamp="1742670449409" name="All files">
+<coverage generated="1742670749292" clover="3.2.0">
+  <project timestamp="1742670749292" name="All files">
     <metrics statements="875" coveredstatements="426" conditionals="214" coveredconditionals="91" methods="105" coveredmethods="48" elements="1194" coveredelements="565" complexity="0" loc="875" ncloc="875" packages="2" files="7" classes="7"/>
     <package name="src">
       <metrics statements="142" coveredstatements="20" conditionals="36" coveredconditionals="5" methods="11" coveredmethods="1"/>
@@ -267,34 +267,34 @@
         <line num="6" count="2" type="stmt"/>
         <line num="89" count="2" type="stmt"/>
         <line num="127" count="2" type="stmt"/>
-        <line num="174" count="2" type="stmt"/>
-        <line num="395" count="2" type="stmt"/>
-        <line num="396" count="5803" type="stmt"/>
-        <line num="402" count="2" type="stmt"/>
-        <line num="403" count="0" type="stmt"/>
-        <line num="410" count="2" type="stmt"/>
-        <line num="412" count="15" type="stmt"/>
-        <line num="446" count="15" type="stmt"/>
-        <line num="447" count="450" type="stmt"/>
-        <line num="448" count="450" type="cond" truecount="0" falsecount="1"/>
-        <line num="449" count="0" type="stmt"/>
-        <line num="451" count="450" type="stmt"/>
-        <line num="455" count="15" type="stmt"/>
+        <line num="175" count="2" type="stmt"/>
+        <line num="448" count="2" type="stmt"/>
+        <line num="449" count="5790" type="stmt"/>
+        <line num="455" count="2" type="stmt"/>
+        <line num="456" count="0" type="stmt"/>
         <line num="463" count="2" type="stmt"/>
-        <line num="464" count="17" type="stmt"/>
-        <line num="469" count="17" type="cond" truecount="2" falsecount="0"/>
-        <line num="471" count="15" type="stmt"/>
-        <line num="472" count="15" type="stmt"/>
-        <line num="473" count="15" type="stmt"/>
-        <line num="474" count="15" type="stmt"/>
-        <line num="476" count="15" type="stmt"/>
-        <line num="477" count="435" type="stmt"/>
-        <line num="478" count="435" type="stmt"/>
-        <line num="481" count="2" type="stmt"/>
-        <line num="485" count="17" type="stmt"/>
-        <line num="486" count="463" type="stmt"/>
-        <line num="487" count="463" type="stmt"/>
-        <line num="490" count="17" type="stmt"/>
+        <line num="465" count="15" type="stmt"/>
+        <line num="500" count="15" type="stmt"/>
+        <line num="501" count="450" type="stmt"/>
+        <line num="502" count="450" type="cond" truecount="0" falsecount="1"/>
+        <line num="503" count="0" type="stmt"/>
+        <line num="505" count="450" type="stmt"/>
+        <line num="509" count="15" type="stmt"/>
+        <line num="517" count="2" type="stmt"/>
+        <line num="518" count="17" type="stmt"/>
+        <line num="523" count="17" type="cond" truecount="2" falsecount="0"/>
+        <line num="525" count="15" type="stmt"/>
+        <line num="526" count="15" type="stmt"/>
+        <line num="527" count="15" type="stmt"/>
+        <line num="528" count="15" type="stmt"/>
+        <line num="530" count="15" type="stmt"/>
+        <line num="531" count="435" type="stmt"/>
+        <line num="532" count="435" type="stmt"/>
+        <line num="535" count="2" type="stmt"/>
+        <line num="539" count="17" type="stmt"/>
+        <line num="540" count="463" type="stmt"/>
+        <line num="541" count="463" type="stmt"/>
+        <line num="544" count="17" type="stmt"/>
       </file>
       <file name="command-docs.ts" path="/Users/zmorek/workspace/ZachBeta/slopcore_yaj_rpg/web/src/terminal-game/command-docs.ts">
         <metrics statements="2" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
