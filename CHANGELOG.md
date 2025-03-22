@@ -8,69 +8,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Enhanced gameplay loop with more strategic decisions
-- Rebalanced economy for better early-game progression
-- Improved run mechanics with jack out functionality
-- Enhanced visual feedback during different game phases
+- Economic Rebalancing
+  - Increased starting credits from 5 to 8
+  - Automatic +1 credit per turn
+  - Additional memory unit (5 MU total)
 
-## [0.2.1] - 2025-03-21
+- Enhanced Run Mechanics
+  - New `jack_out` command to abort runs
+  - Run approach options (stealth, aggressive, careful)
+  - ICE-specific interactions with different approaches
 
-### Added
-- Minimalist card game UI implementation with fully functional gameplay loop
-- Complete game phase system (setup, start turn, action, discard, end turn, game over)
-- Resource management system (credits and memory units)
-- Action point management using click system
-- Win conditions implementation:
-  - Agenda points accumulation
-  - Deck depletion mechanics
-- Hand limit enforcement with discard phase
-- Phase-based button state management
-- Visual phase indication with colored labels
+- Visual Improvements
+  - Server structure visualization
+  - Enhanced ICE representations
+  - Run progress visualization
 
-### Changed
-- Updated UI elements to show click costs for actions
-- Improved game state display with comprehensive information
-- Enhanced card details display with type-specific attributes
-- Restructured scene file to accommodate new gameplay elements
-
-## [0.2.0] - 2025-03-21
+## [0.5.1] - Current Version
 
 ### Added
-- Complete turn-based gameplay loop with Runner and Corporation turns
-- Card stacking system with proper visual organization
-- Interactive card display with type-based coloring
-- Game win conditions:
-  - Runner: Install 5 or more programs (liberate citizen groups)
-  - Corporation: Inflict 5 neural damage or maintain high compliance for 5 days
-- Card installation and action point system
-- Basic server structure for Corporation
-- Automated Corporation AI actions
-- Game state tracking and console log
-- Main menu integration with game scene
+- Card ability system with triggers and effects
+- Resource management (credits and memory units)
+- Run and ICE encounter system
+- Corporation AI turn with visual distinction
+- Turn start triggered abilities
 
-### Changed
-- Improved UI layout with proper card stacking to prevent screen overflow
-- Enhanced visual feedback for different card types
-- Reorganized game scene for better visibility of game elements
-
-## [0.1.0] - 2025-03-21
+## [0.5.0] - Previous Major Release
 
 ### Added
-- Initial project setup with Godot 4.4
-- Main menu scene with start, options, and quit functionality
-- Basic project structure and configuration
-- Application icon
-- Comprehensive testing framework with:
-  - Unit tests for card system
-  - Integration tests for Runner/Corporation interactions
-  - System tests for game flow and win conditions
-  - Performance tests for card operations
-- Development roadmap and next steps documentation
-- Project README with setup instructions
+- Complete turn-based gameplay loop
+- Server structure implementation
+- Core card mechanics
 
-### Changed
-- Optimized project configuration for web and mobile targets
-- Simplified autoload dependencies
+## [0.3.0] - Earlier Release
 
-### Fixed
-- Resolved initial errors due to missing files and dependencies
+### Added
+- Enhanced user interface
+- Additional card types
+- Basic AI behavior
