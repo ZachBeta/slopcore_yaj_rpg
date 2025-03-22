@@ -1,8 +1,8 @@
 # in flight
+* [ ] getting deployed somewhere we can playtest it
 * iterate on gameplay mechanics
 
 # next 
-* [x] teapot to be changed to a d20 
 * [ ] handle deprecation warnings
 
 # soon
