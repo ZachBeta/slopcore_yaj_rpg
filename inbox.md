@@ -1,6 +1,17 @@
+# Inbox
+
+Items from this file have been consolidated into [ROADMAP.md](ROADMAP.md), which now serves as the primary location for tracking features and development priorities.
+
+Please add any new feature ideas or tasks to the appropriate section in ROADMAP.md instead of this file.
+
+## Quick References
+
+- Current sprint tasks: See "High Priority" in ROADMAP.md
+- Documentation index: See docs/README.md
+- Command reference: See COMMANDS.md
 
 # top
-* add a demo run with no delay for the agent to iterate faster
+* scrollback keeps failing
 
 # unsorted
 * render ascii versions of the game board and the cards, I should see my entire hand as a series of ascii cards

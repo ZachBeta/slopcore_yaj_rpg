@@ -39,6 +39,18 @@ Run the game directly from the root folder:
 ./run_game.sh --scenario full --delay 1  # Run a full test scenario with 1s delay
 ```
 
+### Demo Mode
+
+Run the demo with various options:
+
+```bash
+./demo.sh                # Run demo with 2s delay between actions
+./demo.sh --ascii        # Run with ASCII game board visualization
+./demo.sh --fast         # Run with no delay (for fast iteration)
+./demo.sh --fast --ascii # Run with ASCII board and no delay
+./demo.sh --help         # Show all demo options
+```
+
 ### Alternative Launch Method
 
 If you prefer to run the Python script directly:

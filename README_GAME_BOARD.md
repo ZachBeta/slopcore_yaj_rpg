@@ -16,22 +16,33 @@ This is an ASCII art-based game board renderer for the Neon Dominance terminal c
 
 ## Usage
 
-### Running the Demo with ASCII Game Board Renderer
-
-To run the demo with the ASCII game board renderer:
+### Demo Options
 
 ```bash
-./demo.sh --ascii
+# Visual options
+./demo.sh --ascii        # Run with ASCII game board (2s delay)
+./demo.sh                # Run with text-only display (2s delay)
+
+# Speed options
+./demo.sh --fast --ascii # Run with ASCII board and no delay
+./demo.sh --fast         # Run with text-only and no delay
+
+# Help
+./demo.sh --help         # Show all options
 ```
 
-This will run the full test scenario with a 2-second delay between actions, displaying the ASCII game board at key moments.
+### Key Game Commands
 
-### Running without the ASCII Game Board Renderer
+While playing, use these commands:
 
-To run the demo without the ASCII renderer (text-only mode):
-
-```bash
-./demo.sh
+```
+help       - Display available commands
+draw       - Draw a card from your deck
+hand       - List all cards in your hand
+install N  - Install card number N from your hand
+run SERVER - Initiate a run on a server (R&D, HQ, etc.)
+jack_out   - Abort the current run
+end        - End your current turn
 ```
 
 ### Integration Script Options

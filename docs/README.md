@@ -1,5 +1,34 @@
 # Neon Dominance Documentation
 
+## Documentation Index
+
+### For Players
+- [README.md](../README.md) - Game overview, features, and basic usage
+- [TUTORIAL.md](../TUTORIAL.md) - Step-by-step tutorial for new players
+
+### For Visual Experience
+- [README_GAME_BOARD.md](../README_GAME_BOARD.md) - ASCII game board renderer usage
+
+### For Developers
+- [DEVELOPER.md](../DEVELOPER.md) - Technical implementation details
+- [rules.md](../rules.md) - Project conventions and standards
+- [implementation_plan.md](implementation_plan.md) - Implementation roadmap
+- [development_overview.md](development_overview.md) - Current status and goals
+
+### Project Management
+- [CHANGELOG.md](../CHANGELOG.md) - Version history and changes
+- [todo.md](../todo.md) - Active tasks and upcoming features
+
+### User Experience
+- [ui_roadmap.md](ui_roadmap.md) - UI/UX planning and design
+
+## Quick References
+
+- **Game Launch**: `./run_game.sh` or `./demo.sh` (use `--help` for options)
+- **Demo Options**: `--ascii` for visual mode, `--fast` for no delay
+- **Tests**: `./run_tests.sh` (use `--help` for options)
+- **Current Version**: v0.6.0
+
 ## Guide to Project Documentation
 
 This README provides an overview of the documentation structure for the Neon Dominance project.
