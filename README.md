@@ -1,6 +1,34 @@
 # Neon Dominance
 
-A Netrunner-inspired roguelike PvPvE deckbuilder-RPG hybrid with multiplayer territory control elements.
+A Netrunner-inspired roguelike PvPvE deckbuilder-RPG built with Godot Engine.
+
+## Current Version
+
+**v0.1.0** - Testing Framework and Project Setup
+
+## Overview
+
+Neon Dominance is an asymmetric deckbuilder where players can take on the role of either Runners or Corporations in a cyberpunk setting. The game features:
+
+- **Asymmetric Gameplay**: Play as a Runner with modular decks and hack-based mechanics, or as a Corporation with server infrastructure and ICE defense systems
+- **Roguelike Elements**: Progress through temporary upgrades with cooldowns and face permanent consequences through the Neural Burnout system
+- **Territory Control**: Establish safehouses as a Runner or strongholds as a Corporation to control the digital landscape
+
+## Development Status
+
+- [x] Project setup with Godot 4.4
+- [x] Main menu and basic navigation
+- [x] Comprehensive testing framework
+- [ ] Card system implementation
+- [ ] Game board layout
+- [ ] Core game logic
+
+## Tech Stack
+
+- **Game Engine**: Godot 4.4 with GDScript
+- **3D Assets**: Blender
+- **Platforms**: Web (HTML5/WebGL) and Mobile
+- **Web3**: Planned integration with Espresso EVM rollup (non-pay-to-win)
 
 ## Quick Start (macOS M1)
 
@@ -41,20 +69,43 @@ game/
         └── card.gd
 ```
 
-## Development
+## Getting Started
 
-- Edit scenes in Godot editor
-- Modify scripts in `scripts/` directory
-- Test changes with F5
-- Export to Web/Mobile using the export templates
+### Prerequisites
 
-## Requirements
+- [Godot 4.4](https://godotengine.org/download) or newer
 
-- Godot 4.4 or later
-- macOS with Apple Silicon (M1 or later)
-- 4GB RAM minimum
-- OpenGL 3.3+ compatible graphics
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/ZachBeta/slopcore_yaj_rpg.git
+   ```
+
+2. Open the project in Godot:
+   - Launch Godot Engine
+   - Click "Import"
+   - Navigate to the cloned repository and select the `game/project.godot` file
+   - Click "Import & Edit"
+
+### Running Tests
+
+To run the test suite:
+
+```bash
+godot --headless --path /path/to/slopcore_yaj_rpg/game --script tests/run_tests.gd
+```
+
+## Development Roadmap
+
+See the [ROADMAP.md](docs/ROADMAP.md) file for the complete development plan.
+
+See the [NEXT_STEPS.md](docs/NEXT_STEPS.md) file for immediate development tasks.
 
 ## License
 
 See [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- Inspired by Android: Netrunner and other cyberpunk media
