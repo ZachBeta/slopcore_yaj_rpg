@@ -9,6 +9,7 @@ Focus on establishing the fundamental card game mechanics and single-player expe
 ### Milestone 1.1: Basic Game Framework
 - [x] Project setup with Godot 4.4
 - [x] Main menu implementation
+- [x] Terminal-based game mode implementation
 - [ ] Card system architecture
 - [ ] Basic UI framework
 - [ ] Settings system
@@ -40,6 +41,13 @@ Focus on establishing the fundamental card game mechanics and single-player expe
 - [ ] Campaign structure
 - [ ] Progression system
 - [ ] Basic narrative elements
+
+### Milestone 1.6: Testing Framework
+- [x] Terminal-based game CLI for testing without Godot
+- [x] Automated test scenarios
+- [x] Deterministic gameplay with seed control
+- [ ] Unit testing framework
+- [ ] Integration testing pipeline
 
 ## Phase 2: Roguelike Elements - Q3 2025
 Incorporate roguelike elements and expand the game's depth and replayability.

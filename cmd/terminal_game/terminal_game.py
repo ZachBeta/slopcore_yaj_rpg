@@ -5,6 +5,7 @@ Terminal Game - Core game logic for the terminal-based mode
 
 import random
 from enum import Enum
+from ai_opponent import AIOpponent
 
 class GamePhase(Enum):
     SETUP = 0
@@ -53,6 +54,9 @@ class TerminalGame:
         # Command history
         self.command_history = []
         self.command_history_index = -1
+
+        # AI opponent
+        self.ai_opponent = None
 
         # Map of valid commands to their descriptions
         self.valid_commands = {
@@ -190,6 +194,9 @@ class TerminalGame:
         # Set the random seed for consistent behavior
         random.seed(self.random_seed)
         
+        # Initialize AI opponent with the same seed
+        self.ai_opponent = AIOpponent(self.random_seed)
+        
         # Set up the initial deck, shuffle, and draw starting hand
         self._initialize_deck()
         self._draw_starting_hand()
@@ -267,18 +274,70 @@ class TerminalGame:
         self.turn_number += 1
         self.current_phase = GamePhase.START_TURN
         
-        # Reset clicks
-        self.clicks_remaining = self.max_clicks
+        # Reset clicks based on active player
+        if self.active_player == self.player_side:
+            self.clicks_remaining = self.max_clicks
+        else:
+            # Corp has 3 clicks per turn
+            self.clicks_remaining = 3
         
         # Update status
         self._update_status()
         
         # Output turn start message
-        self.renderer.output(f"\nTurn {self.turn_number} - {self.active_player.capitalize()}'s turn")
-        self.renderer.output(f"You have {self.clicks_remaining} clicks available.")
+        self.renderer.output(f"\n==========================================")
+        self.renderer.output(f"Turn {self.turn_number} - {self.active_player.capitalize()}'s turn")
         
-        # Move to action phase
-        self.current_phase = GamePhase.ACTION
+        if self.active_player == self.player_side:
+            self.renderer.output(f"You have {self.clicks_remaining} clicks available.")
+            # Move to action phase
+            self.current_phase = GamePhase.ACTION
+        else:
+            # AI opponent's turn
+            self._process_ai_turn()
+
+    def _process_ai_turn(self):
+        """Process the AI opponent's turn"""
+        self.renderer.output("\nCorporation's turn...")
+        
+        # Let the AI opponent start its turn
+        start_message = self.ai_opponent.start_turn()
+        self.renderer.output(start_message)
+        
+        # Let AI take actions and get a log of what it did
+        game_state = self._get_game_state_for_ai()
+        action_log = self.ai_opponent.take_turn(game_state)
+        
+        # Display AI actions
+        for action in action_log:
+            self.renderer.output(action)
+        
+        # Update corp agenda points
+        self.corp_agenda_points = self.ai_opponent.get_agenda_points()
+        
+        # Check for corp win
+        if self.corp_agenda_points >= self.agenda_points_to_win:
+            self.game_over = True
+            self.win_message = "Corporation wins by advancing agendas!"
+            self.renderer.output("\n" + "=" * 50)
+            self.renderer.output(self.win_message)
+            self.renderer.output("=" * 50)
+            self.current_phase = GamePhase.GAME_OVER
+            return
+            
+        # Back to runner's turn
+        self.active_player = self.player_side
+        self.start_turn()
+    
+    def _get_game_state_for_ai(self):
+        """Prepare a game state object to pass to the AI"""
+        return {
+            "turn_number": self.turn_number,
+            "runner_agenda_points": self.runner_agenda_points,
+            "runner_credits": self.player_credits,
+            "runner_programs": len(self.played_cards),
+            "runner_cards": len(self.hand_cards),
+        }
 
     def _update_status(self):
         """Update the status bar with current game information"""
@@ -475,16 +534,81 @@ class TerminalGame:
             return
             
         server = args[0]
-        if server.upper() in ["R&D", "HQ", "ARCHIVES"]:
+        valid_servers = ["R&D", "HQ", "ARCHIVES"]
+        
+        # Add remote servers from AI opponent
+        for i, remote in enumerate(self.ai_opponent.remote_servers):
+            valid_servers.append(f"REMOTE{i+1}")
+        
+        if server.upper() in [s.upper() for s in valid_servers]:
             self.renderer.output(f"\nInitiating run on {server}...")
+            
+            # Check if the server has ICE
+            has_ice = False
+            if server.upper() in ["R&D", "HQ", "ARCHIVES"]:
+                has_ice = len(self.ai_opponent.installed_ice.get(server.upper(), [])) > 0
+            elif server.upper().startswith("REMOTE"):
+                remote_index = int(server.upper().replace("REMOTE", "")) - 1
+                if 0 <= remote_index < len(self.ai_opponent.remote_servers):
+                    has_ice = len(self.ai_opponent.remote_servers[remote_index].get('ice', [])) > 0
+            
+            if has_ice:
+                self.renderer.output("Encounter ICE protecting the server...")
+                # Simulate ICE encounter
+                ice_strength = random.randint(1, 5)
+                runner_strength = len(self.played_cards) + random.randint(0, 2)
+                
+                self.renderer.output(f"ICE strength: {ice_strength}")
+                self.renderer.output(f"Runner strength: {runner_strength}")
+                
+                if runner_strength >= ice_strength:
+                    self.renderer.output("Successfully bypassed ICE!")
+                else:
+                    self.renderer.output("Failed to bypass ICE.")
+                    self.renderer.output("Jack out to avoid damage.")
+                    self.clicks_remaining -= 1
+                    self._update_status()
+                    return
+            else:
+                self.renderer.output("No ICE encountered.")
+            
             self.renderer.output("Accessing server...")
-            self.renderer.output("No ICE encountered.")
-            self.renderer.output("Run successful!")
+            
+            # Different success rates based on server type
+            success_chance = 0.3  # Default
+            if server.upper() == "R&D":
+                success_chance = 0.25
+            elif server.upper() == "HQ":
+                success_chance = 0.3
+            elif server.upper() == "ARCHIVES":
+                success_chance = 0.4
+            elif server.upper().startswith("REMOTE"):
+                success_chance = 0.5
             
             # Simulate accessing cards
-            if random.random() < 0.3:  # 30% chance of success
+            if random.random() < success_chance:  # Chance of success
                 self.renderer.output("You found a valuable file!")
-                self.runner_agenda_points += 1
+                
+                # Check if we're running on a remote server with an agenda
+                agenda_found = False
+                if server.upper().startswith("REMOTE"):
+                    remote_index = int(server.upper().replace("REMOTE", "")) - 1
+                    if 0 <= remote_index < len(self.ai_opponent.remote_servers):
+                        remote_server = self.ai_opponent.remote_servers[remote_index]
+                        if remote_server.get('card', {}).get('type') == 'agenda':
+                            # Runner steals the agenda
+                            points = random.choice([1, 2, 3])
+                            self.renderer.output(f"You stole an agenda worth {points} points!")
+                            self.runner_agenda_points += points
+                            agenda_found = True
+                            
+                            # Remove the server
+                            self.ai_opponent.remote_servers.pop(remote_index)
+                
+                if not agenda_found:
+                    self.runner_agenda_points += 1
+                    self.renderer.output("You accessed an agenda worth 1 point!")
+                
                 self.renderer.output(f"Runner agenda points: {self.runner_agenda_points}/{self.agenda_points_to_win}")
                 
                 # Check for win condition
@@ -494,6 +618,7 @@ class TerminalGame:
                     self.renderer.output("\n" + "=" * 50)
                     self.renderer.output(self.win_message)
                     self.renderer.output("=" * 50)
+                    self.current_phase = GamePhase.GAME_OVER
             else:
                 self.renderer.output("No valuable data found.")
             
@@ -501,7 +626,7 @@ class TerminalGame:
             self._update_status()
         else:
             self.renderer.output_error(f"Invalid server: {server}")
-            self.renderer.output("Valid servers: R&D, HQ, Archives")
+            self.renderer.output(f"Valid servers: {', '.join(valid_servers)}")
 
     def _cmd_system(self, args):
         """Implement the system command"""
@@ -583,34 +708,9 @@ class TerminalGame:
         self.current_phase = GamePhase.END_TURN
         self.renderer.output("Turn ended.")
         
-        # Corp's turn simulation
+        # Switch to AI opponent's turn
         if self.active_player == self.player_side:
-            self.renderer.output("\nCorporation's turn...")
-            self.renderer.output("Corporation is taking actions...")
-            
-            # Simulate corp drawing and playing cards
-            corp_actions = random.randint(3, 5)
-            for _ in range(corp_actions):
-                action = random.choice(["draw", "install", "advance", "play operation"])
-                self.renderer.output(f"Corporation performs action: {action}")
-                
-            # Simulate the corp potentially scoring an agenda
-            if random.random() < 0.2:  # 20% chance
-                self.corp_agenda_points += 1
-                self.renderer.output(f"Corporation scores an agenda! Corp points: {self.corp_agenda_points}/{self.agenda_points_to_win}")
-                
-                # Check for corp win
-                if self.corp_agenda_points >= self.agenda_points_to_win:
-                    self.game_over = True
-                    self.win_message = "Corporation wins by advancing agendas!"
-                    self.renderer.output("\n" + "=" * 50)
-                    self.renderer.output(self.win_message)
-                    self.renderer.output("=" * 50)
-            
-            self.renderer.output("Corporation ends turn.")
-            
-            # Back to runner's turn
-            self.active_player = self.player_side
+            self.active_player = self.opponent_side
             self.start_turn()
         else:
             # If it's already the runner's turn after corp, start a new turn

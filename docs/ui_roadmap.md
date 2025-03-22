@@ -2,23 +2,40 @@
 
 This document outlines the progressive development of our card game UI, focusing on incremental improvements while ensuring the game is playable at each stage.
 
+## Version 0: Terminal-Based CLI Mode
+
+**Goal:** Create a terminal-based implementation that runs outside of Godot for testing gameplay mechanics independently.
+
+- [x] Implement in Python for terminal environments
+- [x] Support for the same command set as the in-game terminal
+- [x] Reproducible gameplay with seed-based randomization
+- [x] Automated test scenarios
+- [x] Color-coded terminal output for improved readability
+
+**Implementation Benefits:**
+- [x] Bypasses Godot rendering issues during testing
+- [x] Enables easier integration testing of gameplay logic
+- [x] Provides a fallback mode for quick gameplay iteration
+- [x] More accessible for automated testing frameworks
+- [x] Serves as a reference implementation for core game rules
+
 ## Version 1: Text-Based Command Interface
 
 **Goal:** Create a playable version with minimal UI complexity, focusing on core gameplay.
 
-- [ ] Replace graphical cards with text-based lists
-- [ ] Implement gameplay through numbered options and buttons
-- [ ] Show hand as numbered list of cards
-- [ ] Simple button-based interactions (Draw, Play Selected, Discard)
-- [ ] Text description area for card details
-- [ ] Basic game state display (credits, clicks remaining, etc.)
+- [x] Replace graphical cards with text-based lists
+- [x] Implement gameplay through numbered options and buttons
+- [x] Show hand as numbered list of cards
+- [x] Simple button-based interactions (Draw, Play Selected, Discard)
+- [x] Text description area for card details
+- [x] Basic game state display (credits, clicks remaining, etc.)
 
 **Implementation Steps:**
-- [ ] Replace card container with a ScrollContainer + VBoxContainer
-- [ ] Each card represented as a simple button with name + cost
-- [ ] Selection highlights the button
-- [ ] Play area shows text representation of played cards
-- [ ] Implement back-end card logic independent of UI
+- [x] Replace card container with a ScrollContainer + VBoxContainer
+- [x] Each card represented as a simple button with name + cost
+- [x] Selection highlights the button
+- [x] Play area shows text representation of played cards
+- [x] Implement back-end card logic independent of UI
 
 ## Version 2: Basic Card Visuals with Fixed Positioning
 
