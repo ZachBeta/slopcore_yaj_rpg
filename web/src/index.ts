@@ -1,5 +1,6 @@
 import { TerminalGame } from './terminal-game/terminal-game';
 import { ThreeScene } from './three-scene';
+import { OpenWorldGame } from './open-world/open-world';
 
 // Define the global interface for the window object
 declare global {
@@ -11,6 +12,7 @@ declare global {
 // Variables to store the game and scene instances
 let game: TerminalGame | null = null;
 let threeScene: ThreeScene | null = null;
+let openWorldGame: OpenWorldGame | null = null;
 
 // Function to initialize the Three.js scene
 function initializeThreeScene(): void {
@@ -19,7 +21,7 @@ function initializeThreeScene(): void {
   threeScene.start();
 }
 
-// Function to initialize and start the game
+// Function to initialize and start the terminal game
 function initializeGame(): void {
   // Clear console before starting
   console.clear();
@@ -40,6 +42,87 @@ function initializeGame(): void {
   console.log("%cTo enter commands, call the following function:", 'color: #2196F3; font-weight: bold');
   console.log("%cprocessCommand('your command here')", 'color: #2196F3; font-style: italic');
   console.log("%cFor example: processCommand('draw')", 'color: #2196F3;');
+}
+
+// Function to initialize the open world game
+function initializeOpenWorldGame(): void {
+  // Hide the menu container
+  const menuContainer = document.querySelector('.menu-container');
+  if (menuContainer instanceof HTMLElement) {
+    menuContainer.style.display = 'none';
+  }
+
+  // Remove the game instructions if they exist
+  const gameInstructions = document.getElementById('game-instructions');
+  if (gameInstructions) {
+    gameInstructions.remove();
+  }
+
+  // Hide the Three.js scene if it's active
+  if (threeScene) {
+    const canvasContainer = document.getElementById('canvas-container');
+    if (canvasContainer) {
+      canvasContainer.style.display = 'none';
+    }
+  }
+
+  // Create a container for the open world game
+  const openWorldContainer = document.createElement('div');
+  openWorldContainer.id = 'open-world-container';
+  openWorldContainer.style.position = 'absolute';
+  openWorldContainer.style.top = '0';
+  openWorldContainer.style.left = '0';
+  openWorldContainer.style.width = '100%';
+  openWorldContainer.style.height = '100%';
+  document.body.appendChild(openWorldContainer);
+
+  // Initialize and start the open world game
+  openWorldGame = new OpenWorldGame('open-world-container');
+  openWorldGame.start();
+
+  // Add a back button to return to the main menu
+  const backButton = document.createElement('button');
+  backButton.className = 'btn';
+  backButton.textContent = 'Back to Menu';
+  backButton.style.position = 'absolute';
+  backButton.style.top = '10px';
+  backButton.style.left = '10px';
+  backButton.style.zIndex = '1000';
+  backButton.style.backgroundColor = '#222';
+  backButton.style.color = '#fff';
+  backButton.style.border = '1px solid #444';
+  backButton.style.padding = '8px 16px';
+  backButton.style.borderRadius = '4px';
+  backButton.style.cursor = 'pointer';
+  
+  backButton.addEventListener('click', () => {
+    // Stop and cleanup the open world game
+    if (openWorldGame) {
+      openWorldGame.dispose();
+      openWorldGame = null;
+    }
+    
+    // Remove the open world container
+    openWorldContainer.remove();
+    
+    // Show the menu container again
+    if (menuContainer instanceof HTMLElement) {
+      menuContainer.style.display = 'flex';
+    }
+    
+    // Show the Three.js scene again
+    if (threeScene) {
+      const canvasContainer = document.getElementById('canvas-container');
+      if (canvasContainer) {
+        canvasContainer.style.display = 'block';
+      }
+    }
+    
+    // Remove the back button
+    backButton.remove();
+  });
+  
+  document.body.appendChild(backButton);
 }
 
 // Create a function to handle console input
@@ -140,6 +223,24 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 2000);
     });
   }
+  
+  // Add the open world game button
+  const openWorldButton = document.createElement('button');
+  openWorldButton.className = 'btn';
+  openWorldButton.id = 'open-world-game';
+  openWorldButton.textContent = 'Open World';
+  openWorldButton.style.backgroundColor = '#2196F3';
+  
+  // Find where to insert the button - either after demo mode button or start button
+  const demoButton = document.getElementById('demo-mode');
+  if (demoButton && demoButton.parentNode) {
+    demoButton.parentNode.insertBefore(openWorldButton, demoButton.nextSibling);
+  } else if (startButton && startButton.parentNode) {
+    startButton.parentNode.insertBefore(openWorldButton, startButton.nextSibling);
+  }
+  
+  // Add event listener for the open world button
+  openWorldButton.addEventListener('click', initializeOpenWorldGame);
   
   // Add event listeners for other menu buttons
   const optionsButton = document.getElementById('options');
