@@ -218,6 +218,13 @@ func _display_card_details(card):
     if card.card_type.to_lower() == "agenda":
         text += "[b]Agenda Points:[/b] %d\n" % card.agenda_points
     
+    # Display ASCII art if available
+    if card.ascii_art and card.ascii_art.size() > 0:
+        text += "\n[b]Card Art:[/b]\n[code]"
+        for line in card.ascii_art:
+            text += line + "\n"
+        text += "[/code]\n"
+        
     text += "\n[b]Card Text:[/b]\n%s" % card.text
     
     card_details_text.text = text

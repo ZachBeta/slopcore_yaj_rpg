@@ -8,7 +8,16 @@
 			"strength": 3,
 			"subtype": "Barrier",
 			"text": "[Subroutine] End the run.",
-			"type": "ICE"
+			"type": "ICE",
+			"ascii_art": [
+				" +-----------------+",
+				" |    FIREWALL     |",
+				" +-----------------+",
+				" | [====||====]    |",
+				" | [====||====]    |",
+				" | [====||====]    |",
+				" +-----------------+"
+			]
 		},
 		{
 			"cost": 5,
@@ -18,7 +27,16 @@
 			"strength": 4,
 			"subtype": "Sentry",
 			"text": "[Subroutine] Deal 1 neural damage.\n[Subroutine] End the run.",
-			"type": "ICE"
+			"type": "ICE",
+			"ascii_art": [
+				" +-----------------+",
+				" |  NEURAL TRACKER |",
+				" +-----------------+",
+				" |   /\\  /\\  /\\    |",
+				" |  /  \\/  \\/  \\   |",
+				" | /            \\  |",
+				" +-----------------+"
+			]
 		},
 		{
 			"cost": 3,
@@ -27,7 +45,14 @@
 			"name": "Corporate Server",
 			"text": "Gain 2[credit] at the start of your turn.",
 			"trash_cost": 4,
-			"type": "Asset"
+			"type": "Asset",
+			"ascii_art": [
+				"    _____    ",
+				"   |     |   ",
+				"   |  █  |   ",
+				"   |_____|   ",
+				"   /  |  \\   "
+			]
 		},
 		{
 			"advancement_requirement": 2,
@@ -36,7 +61,14 @@
 			"id": "c04",
 			"name": "Hostile Takeover",
 			"text": "When you score this agenda, gain 5[credit].",
-			"type": "Agenda"
+			"type": "Agenda",
+			"ascii_art": [
+				"   ★★★★★   ",
+				"  ★     ★  ",
+				" ★       ★ ",
+				"  ★     ★  ",
+				"   ★★★★★   "
+			]
 		},
 		{
 			"cost": 1,
@@ -44,7 +76,14 @@
 			"id": "c05",
 			"name": "Operation Cleanup",
 			"text": "Purge all virus counters and gain 2[credit].",
-			"type": "Operation"
+			"type": "Operation",
+			"ascii_art": [
+				"   __/\\__   ",
+				"  /      \\  ",
+				" |   >>   | ",
+				"  \\______/  ",
+				"    |  |    "
+			]
 		}
 	]
 }

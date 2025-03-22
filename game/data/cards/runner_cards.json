@@ -9,7 +9,15 @@
 			"strength": 2,
 			"subtype": "AI",
 			"text": "2[credit]: Break ice subroutine.",
-			"type": "Icebreaker"
+			"type": "Icebreaker",
+			"ascii_art": [
+				"   /|  /|",
+				"  /_|_/ |",
+				" |     /|",
+				" |__/|/ |",
+				" |  ||  |",
+				" |__|/   "
+			]
 		},
 		{
 			"cost": 2,
@@ -18,7 +26,14 @@
 			"memory_units": 1,
 			"name": "Virus Implant",
 			"text": "When installed, place 3 virus counters on this card.\nHosted virus counter: Deal 1 neural damage.",
-			"type": "Virus"
+			"type": "Virus",
+			"ascii_art": [
+				"    ()    ",
+				"   /\\/\\   ",
+				"  <(  )>  ",
+				"   \\\\//   ",
+				"    \\/    "
+			]
 		},
 		{
 			"cost": 3,
@@ -26,7 +41,14 @@
 			"id": "r03",
 			"name": "Hardened Access Point",
 			"text": "+2 hand size.",
-			"type": "Hardware"
+			"type": "Hardware",
+			"ascii_art": [
+				"  _______",
+				" /       \\",
+				"|  o   o  |",
+				"|    |    |",
+				"|___|___|_|"
+			]
 		},
 		{
 			"cost": 2,
@@ -34,7 +56,14 @@
 			"id": "r04",
 			"name": "Data Mining",
 			"text": "Gain 1[credit] whenever you make a successful run.",
-			"type": "Resource"
+			"type": "Resource",
+			"ascii_art": [
+				"    $$$    ",
+				"   $   $   ",
+				"   $   $   ",
+				"   $   $   ",
+				"    $$$    "
+			]
 		},
 		{
 			"cost": 1,
@@ -42,7 +71,14 @@
 			"id": "r05",
 			"name": "Root Access",
 			"text": "Make a run. If successful, gain 4[credit].",
-			"type": "Event"
+			"type": "Event",
+			"ascii_art": [
+				"    /\\    ",
+				"   /  \\   ",
+				"  /    \\  ",
+				" +------+ ",
+				" |      | "
+			]
 		}
 	]
 }

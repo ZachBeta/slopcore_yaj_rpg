@@ -98,6 +98,14 @@ func update_card_display():
 	else:
 		card_text.text = card_data.text
 	
+	# Display ASCII art if available
+	if card_data.has("ascii_art") and card_data.ascii_art.size() > 0:
+		var ascii_display = ""
+		for line in card_data.ascii_art:
+			ascii_display += line + "\n"
+		if ascii_display != "":
+			card_text.text = ascii_display + "\n" + card_text.text
+	
 	# Apply card type color
 	var card_type_lower = card_data.card_type.to_lower()
 	if card_colors.has(card_type_lower):

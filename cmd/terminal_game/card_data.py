@@ -165,20 +165,6 @@ SPECIFIC_CARD_ART = {
     ]
 }
 
-def get_card_ascii(card_name, card_type):
-    """Get ASCII art for a card, trying specific card art first, then falling back to type art"""
-    # First check if there's specific art for this card
-    if card_name in SPECIFIC_CARD_ART:
-        return SPECIFIC_CARD_ART[card_name]
-    
-    # Otherwise fall back to the card type art
-    card_type_lower = card_type.lower()
-    if card_type_lower in CARD_ASCII_ART:
-        return CARD_ASCII_ART[card_type_lower]
-    
-    # If no art is found, return an empty list
-    return []
-
 def load_cards():
     """
     Load a set of sample cards for the terminal game
@@ -200,7 +186,15 @@ def load_cards():
                 "ice_types": ["all"],
                 "max_strength": 2,
                 "subroutines": "unlimited"
-            }
+            },
+            "ascii_art": [
+                r"   ░░░░░   ",
+                r"  ░█▀▀▀█░  ",
+                r" ░█░ ░ ░█░ ",
+                r" ░█░ ░ ░█░ ",
+                r"  ░█▄▄▄█░  ",
+                r"   ░░░░░   "
+            ]
         },
         {
             "name": "Neural Matrix",
@@ -213,7 +207,14 @@ def load_cards():
                 "type": "permanent",
                 "effect": "increase_memory",
                 "value": 2
-            }
+            },
+            "ascii_art": [
+                r"  ┌─┐┌─┐┌─┐ ",
+                r"  │ ││ ││ │ ",
+                r"  ├─┘├─┘├─┘ ",
+                r"  │▞▀│▞▀│▞▀ ",
+                r"  └─┘└─┘└─┘ "
+            ]
         },
         {
             "name": "Quantum Protocol",
@@ -228,7 +229,14 @@ def load_cards():
                 "ice_types": ["all"],
                 "max_strength": 4,
                 "subroutines": 3
-            }
+            },
+            "ascii_art": [
+                r"    _____",
+                r"   /    /|",
+                r"  /____/ |",
+                r" |    |  |",
+                r" |____|/   "
+            ]
         },
         {
             "name": "Crypto Cache",
@@ -242,7 +250,13 @@ def load_cards():
                 "trigger": "turn_start",
                 "effect": "gain_credits",
                 "value": 1
-            }
+            },
+            "ascii_art": [
+                r"   ╭───╮   ",
+                r"  ╭│╲$╱│╮  ",
+                r"  │╰─┬─╯│  ",
+                r"  ╰──┴──╯  "
+            ]
         },
         {
             "name": "Run Exploit",
@@ -255,7 +269,14 @@ def load_cards():
                 "type": "one_time",
                 "effect": "bypass_ice",
                 "count": 1
-            }
+            },
+            "ascii_art": [
+                r"    /\\    ",
+                r"   /  \\   ",
+                r"  /    \\  ",
+                r" +------+ ",
+                r" |      | "
+            ]
         },
         {
             "name": "Memory Chip",
@@ -268,7 +289,14 @@ def load_cards():
                 "type": "permanent",
                 "effect": "increase_memory",
                 "value": 1
-            }
+            },
+            "ascii_art": [
+                r"  _______",
+                r" /       \\",
+                r"|  o   o  |",
+                r"|    |    |",
+                r"|___|___|_|"
+            ]
         },
         {
             "name": "Net Shield",
@@ -284,7 +312,14 @@ def load_cards():
                 "effect": "prevent_damage",
                 "value": 1,
                 "frequency": "per_turn"
-            }
+            },
+            "ascii_art": [
+                r"    _____",
+                r"   /    /|",
+                r"  /____/ |",
+                r" |    |  |",
+                r" |____|/   "
+            ]
         },
         {
             "name": "Backdoor Method",
@@ -299,7 +334,14 @@ def load_cards():
                 "target": "any",
                 "success_effect": "gain_credits",
                 "success_value": 2
-            }
+            },
+            "ascii_art": [
+                r"    /\\    ",
+                r"   /  \\   ",
+                r"  /    \\  ",
+                r" +------+ ",
+                r" |      | "
+            ]
         },
         {
             "name": "Ghost Runner",
@@ -315,7 +357,15 @@ def load_cards():
                 "ice_types": ["stealth"],
                 "max_strength": 1,
                 "subroutines": "unlimited"
-            }
+            },
+            "ascii_art": [
+                r"   /|  /|",
+                r"  /_|_/ |",
+                r" |     /|",
+                r" |__/|/ |",
+                r" |  ||  |",
+                r" |__|/   "
+            ]
         },
         {
             "name": "Tactical Uplink",
@@ -330,7 +380,14 @@ def load_cards():
                 "effect": "draw",
                 "value": 1,
                 "frequency": "per_turn"
-            }
+            },
+            "ascii_art": [
+                r"  _______",
+                r" /       \\",
+                r"|  o   o  |",
+                r"|    |    |",
+                r"|___|___|_|"
+            ]
         },
         {
             "name": "Cyberdeck Extension",
@@ -345,7 +402,14 @@ def load_cards():
                     {"effect": "increase_memory", "value": 2},
                     {"effect": "increase_hand_size", "value": 1}
                 ]
-            }
+            },
+            "ascii_art": [
+                r"  _______",
+                r" /       \\",
+                r"|  o   o  |",
+                r"|    |    |",
+                r"|___|___|_|"
+            ]
         },
         {
             "name": "Data Siphon",
@@ -359,7 +423,14 @@ def load_cards():
                 "trigger": "successful_run",
                 "effect": "draw",
                 "value": 1
-            }
+            },
+            "ascii_art": [
+                r"    _____",
+                r"   /    /|",
+                r"  /____/ |",
+                r" |    |  |",
+                r" |____|/   "
+            ]
         },
         {
             "name": "Stealth Protocol",
@@ -372,7 +443,14 @@ def load_cards():
                 "type": "one_time",
                 "effect": "untraceable_run",
                 "duration": "next_run_this_turn"
-            }
+            },
+            "ascii_art": [
+                r"    /\\    ",
+                r"   /  \\   ",
+                r"  /    \\  ",
+                r" +------+ ",
+                r" |      | "
+            ]
         },
         {
             "name": "Digital Lockpick",
@@ -388,7 +466,15 @@ def load_cards():
                 "ice_types": ["barrier"],
                 "max_strength": 3,
                 "subroutines": "unlimited"
-            }
+            },
+            "ascii_art": [
+                r"   /|  /|",
+                r"  /_|_/ |",
+                r" |     /|",
+                r" |__/|/ |",
+                r" |  ||  |",
+                r" |__|/   "
+            ]
         },
         {
             "name": "Credit Cache",
@@ -402,7 +488,14 @@ def load_cards():
                 "resource_type": "credits",
                 "value": 3,
                 "usage": "install_programs"
-            }
+            },
+            "ascii_art": [
+                r"    $$$    ",
+                r"   $   $   ",
+                r"   $   $   ",
+                r"   $   $   ",
+                r"    $$$    "
+            ]
         },
         {
             "name": "Data Wall",
@@ -414,6 +507,13 @@ def load_cards():
             "flavor_text": "Sometimes the simplest solutions are the most effective.",
             "subroutines": [
                 {"text": "End the run unless the runner spends 2 credits", "effect": "end_run_or_pay", "cost": 2}
+            ],
+            "ascii_art": [
+                r" ┏━━━━━━━━┓ ",
+                r" ┃■■■■■■■■┃ ",
+                r" ┃■■■■■■■■┃ ",
+                r" ┃■■■■■■■■┃ ",
+                r" ┗━━━━━━━━┛ "
             ]
         },
         {
@@ -427,12 +527,15 @@ def load_cards():
                 "type": "on_score",
                 "effect": "gain_credits",
                 "value": 3
-            }
+            },
+            "ascii_art": [
+                r"   ★★★★★   ",
+                r"  ★     ★  ",
+                r" ★       ★ ",
+                r"  ★     ★  ",
+                r"   ★★★★★   "
+            ]
         }
     ]
-    
-    # Add ascii_art to each card based on its name and type
-    for card in sample_cards:
-        card["ascii_art"] = get_card_ascii(card["name"], card["type"])
     
     return sample_cards

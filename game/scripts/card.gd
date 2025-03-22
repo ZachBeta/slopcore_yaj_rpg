@@ -27,6 +27,7 @@ class_name Card
 # Visuals
 @export var art_path: String
 @export var color: Color
+@export var ascii_art: Array = []  # Array of strings representing ASCII art for the card
 
 # Card generation and instantiation
 func _init(card_data: Dictionary = {}) -> void:
@@ -54,6 +55,10 @@ func _init(card_data: Dictionary = {}) -> void:
 	
 	# Set the art path if provided
 	art_path = card_data.get("art_path", "")
+	
+	# Set ASCII art if provided
+	if card_data.has("ascii_art"):
+		ascii_art = card_data.get("ascii_art", [])
 	
 	# Set card color based on type
 	color = get_color_for_type(card_type)
@@ -193,6 +198,10 @@ func remove_counter(counter_type: String, amount: int = 1) -> bool:
 func host_card(card: Card) -> void:
 	hosted_cards.append(card)
 
+# Get ASCII art for this card
+func get_ascii_art() -> Array:
+	return ascii_art
+
 # To dictionary for serialization
 func to_dict() -> Dictionary:
 	return {
@@ -211,5 +220,6 @@ func to_dict() -> Dictionary:
 		"is_installed": is_installed,
 		"is_rezzed": is_rezzed,
 		"counters": counters,
-		"owner_id": owner_id
+		"owner_id": owner_id,
+		"ascii_art": ascii_art
 	}
