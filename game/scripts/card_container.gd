@@ -14,14 +14,17 @@ var container
 
 func _ready():
 	# Create container for cards
-	container = HBoxContainer.new() if horizontal_layout else VBoxContainer.new()
+	if horizontal_layout:
+		container = HBoxContainer.new()
+	else:
+		container = VBoxContainer.new()
 	container.size_flags_horizontal = SIZE_EXPAND_FILL
 	container.size_flags_vertical = SIZE_EXPAND_FILL
 	add_child(container)
 	
 	# Set container properties for cards
 	if horizontal_layout:
-		container.alignment = BoxContainer.ALIGNMENT_CENTER_LEFT
+		container.alignment = BoxContainer.ALIGNMENT_BEGIN
 	else:
 		container.alignment = BoxContainer.ALIGNMENT_CENTER
 	
@@ -45,7 +48,7 @@ func add_card(card_node):
 
 # Remove a card from the container
 func remove_card(card_node):
-	if container.is_a_parent_of(card_node):
+	if container.get_children().has(card_node):
 		container.remove_child(card_node)
 	
 	if cards.has(card_node):

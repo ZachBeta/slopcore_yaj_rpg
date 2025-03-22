@@ -1,0 +1,50 @@
+{
+	"cards": [
+		{
+			"cost": 4,
+			"faction": "Corporation",
+			"id": "c01",
+			"name": "Firewall",
+			"strength": 3,
+			"subtype": "Barrier",
+			"text": "[Subroutine] End the run.",
+			"type": "ICE"
+		},
+		{
+			"cost": 5,
+			"faction": "Corporation",
+			"id": "c02",
+			"name": "Neural Tracker",
+			"strength": 4,
+			"subtype": "Sentry",
+			"text": "[Subroutine] Deal 1 neural damage.\n[Subroutine] End the run.",
+			"type": "ICE"
+		},
+		{
+			"cost": 3,
+			"faction": "Corporation",
+			"id": "c03",
+			"name": "Corporate Server",
+			"text": "Gain 2[credit] at the start of your turn.",
+			"trash_cost": 4,
+			"type": "Asset"
+		},
+		{
+			"advancement_requirement": 2,
+			"agenda_points": 1,
+			"faction": "Corporation",
+			"id": "c04",
+			"name": "Hostile Takeover",
+			"text": "When you score this agenda, gain 5[credit].",
+			"type": "Agenda"
+		},
+		{
+			"cost": 1,
+			"faction": "Corporation",
+			"id": "c05",
+			"name": "Operation Cleanup",
+			"text": "Purge all virus counters and gain 2[credit].",
+			"type": "Operation"
+		}
+	]
+}

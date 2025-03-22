@@ -1,0 +1,48 @@
+{
+	"cards": [
+		{
+			"cost": 3,
+			"faction": "Runner",
+			"id": "r01",
+			"memory_units": 1,
+			"name": "Basic Icebreaker",
+			"strength": 2,
+			"subtype": "AI",
+			"text": "2[credit]: Break ice subroutine.",
+			"type": "Icebreaker"
+		},
+		{
+			"cost": 2,
+			"faction": "Runner",
+			"id": "r02",
+			"memory_units": 1,
+			"name": "Virus Implant",
+			"text": "When installed, place 3 virus counters on this card.\nHosted virus counter: Deal 1 neural damage.",
+			"type": "Virus"
+		},
+		{
+			"cost": 3,
+			"faction": "Runner",
+			"id": "r03",
+			"name": "Hardened Access Point",
+			"text": "+2 hand size.",
+			"type": "Hardware"
+		},
+		{
+			"cost": 2,
+			"faction": "Runner",
+			"id": "r04",
+			"name": "Data Mining",
+			"text": "Gain 1[credit] whenever you make a successful run.",
+			"type": "Resource"
+		},
+		{
+			"cost": 1,
+			"faction": "Runner",
+			"id": "r05",
+			"name": "Root Access",
+			"text": "Make a run. If successful, gain 4[credit].",
+			"type": "Event"
+		}
+	]
+}

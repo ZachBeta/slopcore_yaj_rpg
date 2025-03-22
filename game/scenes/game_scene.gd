@@ -187,15 +187,15 @@ func create_card_node(card_data, is_hand_card):
 	
 	# If this is a hand card, add ability to install it
 	if is_hand_card:
-		var install_button = Button.new()
-		install_button.text = "Install"
-		install_button.size_flags_vertical = Control.SIZE_SHRINK_END
+		var card_install_button = Button.new()
+		card_install_button.text = "Install"
+		card_install_button.size_flags_vertical = Control.SIZE_SHRINK_END
 		
 		# Store card data in button metadata for reference
-		install_button.set_meta("card_data", card_data)
-		install_button.connect("pressed", Callable(self, "_on_card_install_pressed").bind(install_button))
+		card_install_button.set_meta("card_data", card_data)
+		card_install_button.connect("pressed", Callable(self, "_on_card_install_pressed").bind(card_install_button))
 		
-		layout.add_child(install_button)
+		layout.add_child(card_install_button)
 	
 	return card_panel
 

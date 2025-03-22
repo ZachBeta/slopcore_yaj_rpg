@@ -1,5 +1,6 @@
 # todo
 
+* card_test_scene doesn't have any behavior? we can iterate on this
 * cards are not displaying or behaving in an understandable way yet, we need to iterate on that
 * maybe establish the basic deck, and write some tests about how gameplay behaves
 
