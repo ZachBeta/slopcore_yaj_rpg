@@ -8,11 +8,13 @@ The game board renderer is organized into several key components:
 
 ### Core Components
 
-- **ASCII Art Definitions**: The `ascii_art` dictionary contains all the ASCII art for different card types and game elements.
+- **Card Data Model**: The `card_data.py` module contains the unified card data model with card attributes and ASCII art.
+- **ASCII Art Definitions**: The `CARD_ASCII_ART` and `SPECIFIC_CARD_ART` dictionaries in `card_data.py` contain all the ASCII art for different card types and specific cards.
 - **Card Rendering**: The `display_mini_card()` function renders individual cards with appropriate styling.
 - **Layout Functions**: Functions like `merge_horizontally()` handle arranging multiple elements.
 - **Section Renderers**: Functions like `display_servers()`, `display_runner_area()`, etc., render specific sections.
 - **Main Display**: The `display_board()` function orchestrates the entire display process.
+- **Integration Script**: The `integrate_board_renderer.py` script connects the renderer with the terminal game.
 
 ### Key Functions
 
@@ -30,26 +32,54 @@ display_ice_encounter(ice)     # Shows ICE encounter during a run
 display_run_success(server)    # Shows run success animation
 ```
 
-## Extending the Renderer
+## Unified Card Data Model
 
-### Adding a New Card Type
+The card data module (`card_data.py`) provides a unified model for cards that includes:
 
-1. Add ASCII art for the new card type to the `ascii_art` dictionary:
+- Card attributes (name, type, subtype, cost, etc.)
+- Card abilities and effects
+- Card flavor text
+- ASCII art representations
 
+Each card in the model has an `ascii_art` field that contains the ASCII art for rendering. This art is determined by:
+
+1. First checking for specific art for that card name in `SPECIFIC_CARD_ART`
+2. Then falling back to the card type art from `CARD_ASCII_ART`
+
+Example card data structure:
 ```python
-ascii_art = {
-    # ... existing art
-    "new_card_type": [
-        r"   /---\   ",
-        r"  |     |  ",
-        r"  |     |  ",
-        r"  |     |  ",
-        r"   \---/   "
+{
+    "name": "Icebreaker.exe",
+    "type": "Program",
+    "subtype": "Icebreaker",
+    "cost": 2,
+    "mu": 1,
+    "strength": 3,
+    "description": "Break ICE subroutines at a cost of 1 credit each.",
+    "flavor_text": "Sometimes the simplest solution is the best.",
+    "ascii_art": [
+        # ASCII art lines here
     ]
 }
 ```
 
-2. Add a color mapping in the `get_card_color()` function:
+## Extending the Renderer
+
+### Adding a New Card Type
+
+1. Add ASCII art for the new card type to the `CARD_ASCII_ART` dictionary in `card_data.py`:
+
+```python
+CARD_ASCII_ART["new_card_type"] = [
+    r"   /---\   ",
+    r"  |     |  ",
+    r"  |     |  ",
+    r"  |     |  ",
+    r"   \---/   "
+]
+```
+
+2. Add a color mapping in the `get_card_color()` function in `game_board_render.py`:
 
 ```python
 def get_card_color(card_type):
@@ -59,7 +89,32 @@ def get_card_color(card_type):
     return type_color
 ```
 
-3. Update the renderer to handle any special layouts needed for this card type.
+3. Update the card data module to include sample cards of this new type:
+
+```python
+{
+    "name": "New Card Example",
+    "type": "New_Card_Type",
+    "cost": 3,
+    "description": "Example of a new card type",
+    "flavor_text": "Innovation takes many forms."
+}
+```
+
+### Adding Specific Card Art
+
+To create unique ASCII art for a specific card:
+
+```python
+SPECIFIC_CARD_ART["Unique Card Name"] = [
+    r"  ╭─────╮  ",
+    r"  │ ╭─╮ │  ",
+    r"  │ ╰─╯ │  ",
+    r"  ╰─────╯  "
+]
+```
+
+The renderer will automatically use this art when displaying cards with the matching name.
 
 ### Custom Board Layouts
 
@@ -88,47 +143,40 @@ def display_custom_board(options=None):
     # ...
 ```
 
-### Adding New Game Elements
+### Integration with Terminal Game
 
-To add an entirely new game element:
+The `integrate_board_renderer.py` script connects the ASCII renderer with the terminal game. To extend it:
 
-1. Create the ASCII art for the element:
+1. Add event handlers for new game events:
 
 ```python
-ascii_art["new_element"] = [
-    r"  /=======\  ",
-    r" /         \ ",
-    r"|  NEW ELEM  |",
-    r" \         / ",
-    r"  \=======/  "
-]
+# In run_game_with_renderer function
+if "NEW_GAME_EVENT" in line:
+    # Parse relevant information
+    event_data = parse_event_data(line)
+    
+    # Update the board to reflect the event
+    try:
+        game_board_render.display_board({
+            'event_type': 'new_event',
+            'event_data': event_data,
+            'credits': credits,
+            'memory': memory,
+            'clicks': clicks
+        })
+        time.sleep(0.5)  # Brief pause to show the event
+    except Exception as e:
+        print(f"Error handling event: {e}")
 ```
 
-2. Create a rendering function for the element:
+2. Add new command-line options if needed:
 
 ```python
-def display_new_element(data):
-    """Display the new game element"""
-    print(f"\n{Colors.BRIGHT_WHITE}{Colors.BOLD}NEW ELEMENT{Colors.RESET}")
-    print(f"{Colors.BRIGHT_BLACK}{'=' * 80}{Colors.RESET}\n")
-    
-    # Render your element using the ASCII art
-    for line in ascii_art["new_element"]:
-        print(f"{Colors.BRIGHT_GREEN}{line}{Colors.RESET}")
-    
-    # Render any additional information
-    # ...
-```
-
-3. Update the main `display_board()` function to include your new element:
-
-```python
-def display_board(options=None):
-    # ... existing code
-    
-    # Display your new element when needed
-    if options.get('show_new_element'):
-        display_new_element(options.get('new_element_data'))
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='Run the terminal game with ASCII game board visualization')
+    # ... existing arguments
+    parser.add_argument('--new-option', type=str, help='Description of new option')
+    return parser.parse_args()
 ```
 
 ## Advanced Customization
@@ -169,20 +217,7 @@ def generate_dynamic_art(card):
     return art
 ```
 
-Then use this function to generate art when rendering cards:
-
-```python
-def display_mini_card(card, width=20):
-    # ... existing code
-    
-    # Get dynamic art for certain card types
-    if card_type.lower() == "special_type":
-        art_lines = generate_dynamic_art(card)
-    else:
-        art_lines = ascii_art.get(card_type, [])
-    
-    # ... continue rendering
-```
+Then use this function to generate art when rendering cards.
 
 ### Adding Animations
 
@@ -228,6 +263,19 @@ terminal_height = shutil.get_terminal_size().lines
 
 You can use these values to adjust rendering for different terminal sizes.
 
+### ANSI Escape Code Handling
+
+When parsing terminal output that contains ANSI codes, use the `clean_ansi` function:
+
+```python
+def clean_ansi(text):
+    """Remove ANSI escape codes from text"""
+    ansi_escape = re.compile(r'\x1b[^m]*m')
+    return ansi_escape.sub('', text)
+```
+
+This is important when processing output from the terminal game that contains colored text.
+
 ## Performance Optimization
 
 For better performance:
@@ -250,12 +298,12 @@ def test_rendering():
     # Test with edge cases (empty sections, maximum cards, etc.)
 ```
 
-## Contributing
+## Contribution Guidelines
 
-When contributing extensions:
+When contributing to the ASCII game board renderer:
 
-1. Maintain the existing code style
-2. Document your functions with docstrings
-3. Keep the ASCII art consistent in style
-4. Test your changes in different terminal environments
-5. Consider backward compatibility with existing integrations 
+1. Follow the existing code style and conventions
+2. Document all new functions and parameters
+3. Test your changes with different terminal sizes and configurations
+4. Update the README and DEVELOPER.md when adding new features
+5. Ensure backward compatibility when modifying existing features 
