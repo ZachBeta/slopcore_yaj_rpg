@@ -1,2 +1,1 @@
-* [ ] get test suite going for python version
-* clean up main todo.md
+* more flavor text on cards
