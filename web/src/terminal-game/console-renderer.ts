@@ -181,6 +181,15 @@ export class ConsoleRenderer {
         document.body.removeChild(modalOverlay);
       });
 
+      const demoModeButton = document.createElement('button');
+      demoModeButton.textContent = 'Start Demo Mode';
+      demoModeButton.style.cssText = buttonStyle;
+      demoModeButton.style.backgroundColor = '#9933cc';
+      demoModeButton.addEventListener('click', () => {
+        document.body.removeChild(modalOverlay);
+        this.startDemoMode();
+      });
+
       const resetButton = document.createElement('button');
       resetButton.textContent = 'Restart Game';
       resetButton.style.cssText = buttonStyle;
@@ -214,6 +223,7 @@ export class ConsoleRenderer {
       // Append elements to modal
       modalContent.appendChild(title);
       modalContent.appendChild(continueButton);
+      modalContent.appendChild(demoModeButton);
       modalContent.appendChild(resetButton);
       modalContent.appendChild(mainMenuButton);
       modalOverlay.appendChild(modalContent);
@@ -230,6 +240,115 @@ export class ConsoleRenderer {
     } catch (e) {
       // Ignore any errors with DOM manipulation
     }
+  }
+
+  /**
+   * Start demo mode with automated command execution
+   */
+  public startDemoMode(): void {
+    // Create an overlay to show "Demo Mode" indicator
+    const demoOverlay = document.createElement('div');
+    demoOverlay.style.position = 'fixed';
+    demoOverlay.style.top = '50px';
+    demoOverlay.style.right = '10px';
+    demoOverlay.style.backgroundColor = 'rgba(153, 51, 204, 0.8)';
+    demoOverlay.style.color = 'white';
+    demoOverlay.style.padding = '10px 15px';
+    demoOverlay.style.borderRadius = '5px';
+    demoOverlay.style.zIndex = '9999';
+    demoOverlay.style.fontSize = '14px';
+    demoOverlay.style.fontFamily = 'Arial, sans-serif';
+    demoOverlay.style.fontWeight = 'bold';
+    demoOverlay.style.boxShadow = '0 0 10px rgba(153, 51, 204, 0.5)';
+    demoOverlay.innerHTML = '<span style="color: #ffcc00;">⚡</span> DEMO MODE <span style="color: #ffcc00;">⚡</span>';
+    
+    // Create a stop button
+    const stopButton = document.createElement('button');
+    stopButton.textContent = 'Stop Demo';
+    stopButton.style.position = 'fixed';
+    stopButton.style.top = '90px';
+    stopButton.style.right = '10px';
+    stopButton.style.backgroundColor = '#cc3333';
+    stopButton.style.color = 'white';
+    stopButton.style.border = 'none';
+    stopButton.style.padding = '8px 12px';
+    stopButton.style.borderRadius = '5px';
+    stopButton.style.zIndex = '9999';
+    stopButton.style.fontSize = '12px';
+    stopButton.style.fontFamily = 'Arial, sans-serif';
+    stopButton.style.fontWeight = 'bold';
+    stopButton.style.cursor = 'pointer';
+
+    document.body.appendChild(demoOverlay);
+    document.body.appendChild(stopButton);
+
+    // Define the sequence of demo commands
+    const demoCommands = [
+      { command: 'help', delay: 1000 },
+      { command: 'info', delay: 2000 },
+      { command: 'system', delay: 2000 },
+      { command: 'hand', delay: 2000 },
+      { command: 'draw', delay: 2000 },
+      { command: 'credits', delay: 2000 },
+      { command: 'memory', delay: 2000 },
+      { command: 'hand', delay: 2000 },
+      { command: 'install 0', delay: 3000 },
+      { command: 'installed', delay: 2000 },
+      { command: 'draw', delay: 2000 },
+      { command: 'hand', delay: 2000 },
+      { command: 'run R&D', delay: 3000 },
+      { command: 'end', delay: 4000 }
+    ];
+
+    let currentIndex = 0;
+    let isRunning = true;
+
+    // Function to stop the demo
+    const stopDemo = () => {
+      isRunning = false;
+      document.body.removeChild(demoOverlay);
+      document.body.removeChild(stopButton);
+      // Add a message that demo was stopped
+      console.log("%cDemo mode stopped. You can now enter your own commands.", "color: #cc3333; font-weight: bold;");
+    };
+
+    // Add stop event
+    stopButton.addEventListener('click', stopDemo);
+
+    // Function to run the next command in sequence
+    const runNextCommand = () => {
+      if (!isRunning || currentIndex >= demoCommands.length) {
+        if (isRunning) {
+          // Demo completed
+          console.log("%cDemo mode completed. You can now enter your own commands.", "color: #9933cc; font-weight: bold;");
+          document.body.removeChild(demoOverlay);
+          document.body.removeChild(stopButton);
+        }
+        return;
+      }
+
+      const { command, delay } = demoCommands[currentIndex];
+      
+      // Display a highlighted message showing the command
+      console.log(`%c> ${command}`, "color: #9933cc; font-weight: bold; font-size: 14px;");
+      
+      // Execute the command using the global processCommand function
+      (window as any).processCommand(command);
+      
+      // Move to the next command after the specified delay
+      currentIndex++;
+      setTimeout(runNextCommand, delay);
+    };
+
+    // Display demo mode info
+    console.clear();
+    console.log("%c=== DEMO MODE ACTIVATED ===", "color: #9933cc; font-weight: bold; font-size: 16px;");
+    console.log("%cWatch as the game automatically demonstrates key features.", "color: #ffffff; font-size: 14px;");
+    console.log("%cClick 'Stop Demo' button to take control at any time.", "color: #ffffff; font-size: 14px;");
+    console.log("");
+    
+    // Start the demo sequence
+    setTimeout(runNextCommand, 2000);
   }
 
   /**
