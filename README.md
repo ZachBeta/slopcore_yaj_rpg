@@ -107,8 +107,28 @@ docs/                 # DOCUMENTATION
 
 ### Running Tests
 
+The game includes a comprehensive test suite to verify game mechanics and functionality.
+
+Run all tests with the test runner script:
+
 ```bash
+./run_tests.sh
+```
+
+Additional options:
+```bash
+./run_tests.sh --verbose                  # Detailed test output
+./run_tests.sh test_game_basics.py        # Run a specific test file
+./run_tests.sh --help                     # Show all options
+```
+
+Alternative methods:
+```bash
+# Run using the Python unittest framework
 python3 -m unittest discover -s cmd/terminal_game/tests
+
+# Run a specific test file directly
+python3 cmd/terminal_game/tests/test_game_basics.py
 ```
 
 ### Testing Best Practices
