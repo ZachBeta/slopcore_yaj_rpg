@@ -14,7 +14,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Additional memory unit (5 MU total)
 
 - Enhanced Run Mechanics
-  - New `jack_out` command to abort runs
   - Run approach options (stealth, aggressive, careful)
   - ICE-specific interactions with different approaches
 
@@ -23,7 +22,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhanced ICE representations
   - Run progress visualization
 
-## [0.5.1] - Current Version
+## [0.6.0] - Current Version
+
+### Added
+- More flavor text on cards
+- Jack out command to abort runs
+- Improved card ability system
+
+## [0.5.1] - Previous Version
 
 ### Added
 - Card ability system with triggers and effects

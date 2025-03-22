@@ -31,12 +31,13 @@
   - [ ] Improve card ability system
 
 ## Recently Completed
+* ✅ Added more flavor text on cards
+* ✅ Implemented jack-out command
 * ✅ Created terminal-based implementation
 * ✅ Implemented full game loop with win/lose conditions 
 * ✅ Added resource management systems
 * ✅ Implemented basic run mechanics
 * ✅ Built testing framework with mock renderers
-* ✅ Implemented jack-out command
 
 ## Upcoming
 * Implement Corporation AI improvements

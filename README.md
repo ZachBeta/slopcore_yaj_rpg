@@ -4,7 +4,7 @@ A cyberpunk card game where you play as a hacker (Runner) breaking into corporat
 
 ## Current Version
 
-**v0.5.1** - Terminal Implementation with Strategic AI
+**v0.6.0** - Terminal Implementation with Enhanced Card Abilities
 
 ## Game Overview
 

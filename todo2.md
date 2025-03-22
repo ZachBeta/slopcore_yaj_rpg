@@ -1,1 +1,0 @@
-* more flavor text on cards
