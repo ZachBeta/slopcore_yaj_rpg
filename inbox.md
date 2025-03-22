@@ -1,8 +1,7 @@
 
 # top
-* move all pythonfiles into the python directory, root directory should have only shell scripts for easy onramp and a few top level docs
 * ignore pycache?
-
+* add a demo run with no delay for the agent to iterate faster
 
 # unsorted
 * render ascii versions of the game board and the cards, I should see my entire hand as a series of ascii cards

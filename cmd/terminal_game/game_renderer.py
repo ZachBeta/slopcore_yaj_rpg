@@ -482,15 +482,16 @@ class TerminalRenderer:
         # Show the run animation
         self.output_ascii_art("run")
         
-        # Show server visualization based on target
+        # Normalize the server name to match the keys in the ascii_art dictionary
+        server_key = ""
         if target_server == "R&D":
-            server_art = self.ascii_art["rd_server"]
+            server_key = "rd_server"
             color = Colors.BRIGHT_CYAN
         elif target_server == "HQ": 
-            server_art = self.ascii_art["hq_server"]
+            server_key = "hq_server"
             color = Colors.BRIGHT_BLUE
         elif target_server == "ARCHIVES":
-            server_art = self.ascii_art["archives_server"]
+            server_key = "archives_server"
             color = Colors.BRIGHT_GREEN
         elif target_server.startswith("REMOTE"):
             # Get the remote server number
@@ -500,16 +501,24 @@ class TerminalRenderer:
                 server_art = self.ascii_art["remote_server"].copy()
                 server_art[1] = server_art[1].format(server_num)
                 color = Colors.BRIGHT_YELLOW
+                
+                # Print the server visualization
+                print()  # Add spacing
+                for line in server_art:
+                    print(f"{color}{line}{Colors.RESET}")
+                print()  # Add spacing after visualization
+                return
             except:
                 # Fallback
-                server_art = None
+                server_key = None
                 color = Colors.RESET
         else:
-            server_art = None
+            server_key = None
             color = Colors.RESET
             
-        # Print the server visualization
-        if server_art:
+        # Print the server visualization if server_key is valid
+        if server_key and server_key in self.ascii_art:
+            server_art = self.ascii_art[server_key]
             print()  # Add spacing
             for line in server_art:
                 print(f"{color}{line}{Colors.RESET}")
