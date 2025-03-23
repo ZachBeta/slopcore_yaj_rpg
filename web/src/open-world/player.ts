@@ -308,18 +308,19 @@ export class Player {
    */
   public setColor(color: THREE.Color): void {
     this.color = color;
-    // Update all meshes with the new color
+    
+    // Update all meshes in the player model
     this.object.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        (child.material as THREE.MeshLambertMaterial).color = this.color;
+      if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshLambertMaterial) {
+        child.material.color = color.clone();
       }
     });
   }
 
   /**
-   * Get the player's color
+   * Get the player's current color
    */
   public getColor(): THREE.Color {
-    return this.color;
+    return this.color.clone();
   }
 } 

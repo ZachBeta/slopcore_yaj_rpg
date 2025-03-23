@@ -97,6 +97,13 @@ export class GameServer {
 
     this.setupEventHandlers();
     this.startDiagnostics();
+    
+    // Start periodic state verification
+    if (!this.isTestMode) {
+      setInterval(() => {
+        this.verifyAllClientsState();
+      }, 5000); // Check every 5 seconds
+    }
   }
 
   private generateSpawnPosition(): Position {
@@ -302,6 +309,28 @@ export class GameServer {
     }, 1000 / 60); // 60Hz tick rate
   }
 
+  /**
+   * Verify the state of all connected clients
+   */
+  private verifyAllClientsState(): void {
+    this.players.forEach((player, socketId) => {
+      const expectedColor = this.lockedColors.get(socketId);
+      if (!expectedColor) return;
+
+      const socket = this.io.sockets.sockets.get(socketId);
+      if (!socket) return;
+
+      // Request client's current state
+      socket.emit('request_client_state', {
+        timestamp: Date.now(),
+        expectedState: {
+          color: expectedColor,
+          position: player.position
+        }
+      });
+    });
+  }
+
   private setupEventHandlers(): void {
     this.io.on('connection', (socket: Socket) => {
       console.log(`Player connected: ${socket.id}`);
@@ -309,6 +338,37 @@ export class GameServer {
       // Handle ping
       socket.on(GameEvent.PING, () => {
         socket.emit(GameEvent.PONG, { timestamp: Date.now() });
+      });
+
+      // Add debug state request handler
+      socket.on('debug_request_state', () => {
+        const debugState = {
+          players: Array.from(this.players.entries()).map(([id, player]) => ({
+            id,
+            position: player.position,
+            color: player.color,
+            expectedColor: this.lockedColors.get(id)
+          })),
+          colorPool: {
+            available: this.availableColors,
+            locked: Array.from(this.lockedColors.entries()),
+            random: Array.from(this.usedRandomColors),
+            total: this.colorPool
+          },
+          diagnostics: {
+            uptime: Math.floor((Date.now() - this.startTime) / 1000),
+            fps: this.fps,
+            playerCount: this.players.size,
+            colorPoolSize: this.colorPool.length,
+            availableColors: this.availableColors.length,
+            lockedColors: this.lockedColors.size,
+            randomColors: this.usedRandomColors.size,
+            connections: this.io.engine.clientsCount
+          }
+        };
+
+        // Send debug state back to the requesting client
+        socket.emit('debug_state', debugState);
       });
 
       // Handle player join
@@ -386,6 +446,50 @@ export class GameServer {
           id: socket.id,
           message: message
         });
+      });
+
+      // Handle client state response
+      socket.on('client_state_response', (clientState: { 
+        position: Position; 
+        color: Color;
+        timestamp: number;
+      }) => {
+        const player = this.players.get(socket.id);
+        const expectedColor = this.lockedColors.get(socket.id);
+        
+        if (!player || !expectedColor) {
+          socket.emit('state_verification_failed', { error: 'Player not found' });
+          return;
+        }
+
+        const colorDrift = Math.abs(clientState.color.r - expectedColor.r) +
+                         Math.abs(clientState.color.g - expectedColor.g) +
+                         Math.abs(clientState.color.b - expectedColor.b);
+
+        const positionDrift = Math.abs(clientState.position.x - player.position.x) +
+                            Math.abs(clientState.position.y - player.position.y) +
+                            Math.abs(clientState.position.z - player.position.z);
+
+        const driftReport = {
+          colorDrift,
+          positionDrift,
+          expectedState: {
+            color: expectedColor,
+            position: player.position
+          },
+          needsCorrection: colorDrift > 0.01 || positionDrift > 0.1,
+          timestamp: clientState.timestamp
+        };
+
+        socket.emit('state_verification_result', driftReport);
+
+        // If significant drift detected, force correction
+        if (driftReport.needsCorrection) {
+          socket.emit('force_state_correction', {
+            color: expectedColor,
+            position: player.position
+          });
+        }
       });
     });
   }

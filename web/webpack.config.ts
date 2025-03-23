@@ -18,7 +18,13 @@ const config: WebpackConfigWithDevServer = {
     rules: [
       {
         test: /\.tsx?$/,
-        use: 'ts-loader',
+        use: {
+          loader: 'ts-loader',
+          options: {
+            transpileOnly: true,
+            configFile: 'tsconfig.json'
+          }
+        },
         exclude: /node_modules/,
       },
     ],
@@ -39,7 +45,8 @@ const config: WebpackConfigWithDevServer = {
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify('development'),
       'process.env.SOCKET_SERVER_URL': JSON.stringify('http://localhost:8080')
-    })
+    }),
+    new webpack.HotModuleReplacementPlugin()
   ],
   devServer: {
     static: [
@@ -72,12 +79,15 @@ const config: WebpackConfigWithDevServer = {
         throw new Error('webpack-dev-server HTTP server is not defined');
       }
 
-      // Server is now guaranteed to exist and be listening
       console.log('Attaching Socket.IO server...');
       new GameServer(server, 8080);
       console.log('Socket.IO server attached successfully');
     }
   },
+  optimization: {
+    moduleIds: 'named',
+    runtimeChunk: 'single'
+  }
 };
 
 export default config; 

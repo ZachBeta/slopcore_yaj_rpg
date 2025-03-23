@@ -243,6 +243,13 @@ export class OpenWorldGame {
    */
   private onKeyDown(event: KeyboardEvent): void {
     this.localPlayer.handleKeyDown(event.code);
+
+    // Request state verification when V is pressed
+    if (event.code === 'KeyV') {
+      event.preventDefault();
+      this.networkManager.verifyClientState();
+      console.log('State verification requested...');
+    }
   }
   
   /**

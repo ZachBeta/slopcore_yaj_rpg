@@ -49,6 +49,8 @@ export class NetworkManager implements GameEventEmitter {
   private diagnosticsDiv: HTMLDivElement | null = null;
   private pingInterval: number = 1000;
   private eventHandlers: Map<GameEvent, Set<(payload: any) => void>> = new Map();
+  private debugState: any = null;
+  private debugStateListeners: Set<(state: any) => void> = new Set();
 
   // Default server URL for development
   private static readonly DEFAULT_SERVER_URL = 'http://localhost:3000';
@@ -94,6 +96,57 @@ export class NetworkManager implements GameEventEmitter {
     this.setupDiagnostics();
     this.socket = io(NetworkManager.getServerUrl());
     this.setupSocketEvents();
+
+    // Add debug state listener
+    this.socket?.on('debug_state', (state: any) => {
+      this.debugState = state;
+      this.debugStateListeners.forEach(listener => listener(state));
+      
+      // Log color mismatches
+      const localPlayerState = state.players.find((p: any) => p.id === this.socket?.id);
+      if (localPlayerState) {
+        const currentColor = this.localPlayer.getColor();
+        const expectedColor = localPlayerState.expectedColor;
+        
+        if (expectedColor && (
+          Math.abs(currentColor.r - expectedColor.r) > 0.01 ||
+          Math.abs(currentColor.g - expectedColor.g) > 0.01 ||
+          Math.abs(currentColor.b - expectedColor.b) > 0.01
+        )) {
+          console.warn('Color mismatch detected!');
+          console.table({
+            current: {
+              r: currentColor.r.toFixed(3),
+              g: currentColor.g.toFixed(3),
+              b: currentColor.b.toFixed(3)
+            },
+            expected: {
+              r: expectedColor.r.toFixed(3),
+              g: expectedColor.g.toFixed(3),
+              b: expectedColor.b.toFixed(3)
+            }
+          });
+        }
+      }
+
+      // Pretty print the debug state
+      console.group('Server State');
+      console.log('Players:', state.players.length);
+      console.table(state.players.map((p: any) => ({
+        id: p.id,
+        color: `rgb(${p.color.r * 255}, ${p.color.g * 255}, ${p.color.b * 255})`,
+        x: p.position.x.toFixed(2),
+        y: p.position.y.toFixed(2),
+        z: p.position.z.toFixed(2)
+      })));
+      console.log('Color Pool:', {
+        available: state.colorPool.available.length,
+        locked: state.colorPool.locked.length,
+        random: state.colorPool.random.length
+      });
+      console.log('Diagnostics:', state.diagnostics);
+      console.groupEnd();
+    });
   }
 
   private setupDiagnostics() {
@@ -214,9 +267,42 @@ export class NetworkManager implements GameEventEmitter {
 
     // Handle color assignment from server
     this.socket.on('color_assigned', (data: { color: { r: number, g: number, b: number } }) => {
+      console.group('Color Assignment');
       console.log('Received color assignment:', data);
-      this.playerColor = new THREE.Color(data.color.r, data.color.g, data.color.b);
-      this.localPlayer.setColor(this.playerColor);
+      
+      // Create a new color instance with the assigned RGB values
+      const assignedColor = new THREE.Color(
+        data.color.r,
+        data.color.g,
+        data.color.b
+      );
+      
+      console.log('Previous color:', {
+        r: this.playerColor.r.toFixed(4),
+        g: this.playerColor.g.toFixed(4),
+        b: this.playerColor.b.toFixed(4)
+      });
+      
+      // Update both the network manager's color and the player's color
+      this.playerColor = assignedColor.clone();
+      this.localPlayer.setColor(assignedColor);
+      
+      console.log('New color set:', {
+        r: this.playerColor.r.toFixed(4),
+        g: this.playerColor.g.toFixed(4),
+        b: this.playerColor.b.toFixed(4)
+      });
+      
+      // Verify the color was properly applied
+      const verifyColor = this.localPlayer.getColor();
+      console.log('Verification - player color:', {
+        r: verifyColor.r.toFixed(4),
+        g: verifyColor.g.toFixed(4),
+        b: verifyColor.b.toFixed(4)
+      });
+      
+      // Request immediate state verification to confirm
+      this.verifyClientState();
     });
 
     // Handle connect error
@@ -311,6 +397,174 @@ export class NetworkManager implements GameEventEmitter {
       this.lastPingTime = Date.now() - data.timestamp;
       this.updateDiagnostics({ ping: this.lastPingTime });
     });
+
+    // Handle state verification results
+    this.socket.on('state_verification_result', (report: any) => {
+      console.group('State Verification Report');
+      console.log('Color drift:', report.colorDrift.toFixed(4));
+      console.log('Position drift:', report.positionDrift.toFixed(4));
+      console.log('Needs correction:', report.needsCorrection);
+      
+      if (report.needsCorrection) {
+        console.warn('State correction needed!');
+        
+        const currentColor = this.localPlayer.getColor();
+        const expectedColor = report.expectedState.color;
+        const currentPos = this.localPlayer.getPosition();
+        const expectedPos = report.expectedState.position;
+        
+        console.group('Color State');
+        console.log('Current color (RGB):', {
+          r: currentColor.r.toFixed(4),
+          g: currentColor.g.toFixed(4),
+          b: currentColor.b.toFixed(4)
+        });
+        console.log('Expected color (RGB):', {
+          r: expectedColor.r.toFixed(4),
+          g: expectedColor.g.toFixed(4),
+          b: expectedColor.b.toFixed(4)
+        });
+        console.log('Color differences:', {
+          r: Math.abs(currentColor.r - expectedColor.r).toFixed(4),
+          g: Math.abs(currentColor.g - expectedColor.g).toFixed(4),
+          b: Math.abs(currentColor.b - expectedColor.b).toFixed(4)
+        });
+        console.groupEnd();
+
+        console.group('Position State');
+        console.log('Current position:', {
+          x: currentPos.x.toFixed(4),
+          y: currentPos.y.toFixed(4),
+          z: currentPos.z.toFixed(4)
+        });
+        console.log('Expected position:', {
+          x: expectedPos.x.toFixed(4),
+          y: expectedPos.y.toFixed(4),
+          z: expectedPos.z.toFixed(4)
+        });
+        console.log('Position differences:', {
+          x: Math.abs(currentPos.x - expectedPos.x).toFixed(4),
+          y: Math.abs(currentPos.y - expectedPos.y).toFixed(4),
+          z: Math.abs(currentPos.z - expectedPos.z).toFixed(4)
+        });
+        console.groupEnd();
+      }
+      console.groupEnd();
+    });
+
+    // Handle forced state corrections
+    this.socket.on('force_state_correction', (correctState: any) => {
+      console.warn('Applying forced state correction');
+      
+      // Create a new color instance with the correct RGB values
+      const correctedColor = new THREE.Color(
+        correctState.color.r,
+        correctState.color.g,
+        correctState.color.b
+      );
+      
+      // Update both the network manager's color and the player's color
+      this.playerColor = correctedColor.clone();
+      this.localPlayer.setColor(correctedColor);
+
+      // Update position if needed
+      if (correctState.position) {
+        this.localPlayer.setPosition(new THREE.Vector3(
+          correctState.position.x,
+          correctState.position.y,
+          correctState.position.z
+        ));
+      }
+    });
+
+    // Handle player join response
+    this.socket.on('player_join_response', (data: any) => {
+      console.group('Player Join Response');
+      console.log('Received join response:', data);
+      
+      if (data.color) {
+        console.log('Color included in join response');
+        // Create a new color instance with the assigned RGB values
+        const assignedColor = new THREE.Color(
+          data.color.r,
+          data.color.g,
+          data.color.b
+        );
+        
+        console.log('Previous color:', {
+          r: this.playerColor.r.toFixed(4),
+          g: this.playerColor.g.toFixed(4),
+          b: this.playerColor.b.toFixed(4)
+        });
+        
+        // Update both the network manager's color and the player's color
+        this.playerColor = assignedColor.clone();
+        this.localPlayer.setColor(assignedColor);
+        
+        console.log('New color set:', {
+          r: this.playerColor.r.toFixed(4),
+          g: this.playerColor.g.toFixed(4),
+          b: this.playerColor.b.toFixed(4)
+        });
+        
+        // Verify the color was properly applied
+        const verifyColor = this.localPlayer.getColor();
+        console.log('Verification - player color:', {
+          r: verifyColor.r.toFixed(4),
+          g: verifyColor.g.toFixed(4),
+          b: verifyColor.b.toFixed(4)
+        });
+        
+        // Request immediate state verification to confirm
+        this.verifyClientState();
+      } else {
+        console.warn('No color in join response');
+      }
+      console.groupEnd();
+    });
+
+    // Handle server request for client state
+    this.socket.on('request_client_state', (data: { timestamp: number, expectedState: any }) => {
+      console.group('Server State Verification Request');
+      console.log('Server expects:', data.expectedState);
+      
+      const currentState = {
+        position: this.localPlayer.getPosition(),
+        color: this.localPlayer.getColor(),
+        timestamp: data.timestamp
+      };
+      
+      console.log('Current client state:', {
+        position: {
+          x: currentState.position.x.toFixed(4),
+          y: currentState.position.y.toFixed(4),
+          z: currentState.position.z.toFixed(4)
+        },
+        color: {
+          r: currentState.color.r.toFixed(4),
+          g: currentState.color.g.toFixed(4),
+          b: currentState.color.b.toFixed(4)
+        }
+      });
+
+      // Send our current state back to the server
+      this.socket?.emit('client_state_response', {
+        position: {
+          x: currentState.position.x,
+          y: currentState.position.y,
+          z: currentState.position.z
+        },
+        color: {
+          r: currentState.color.r,
+          g: currentState.color.g,
+          b: currentState.color.b
+        },
+        timestamp: data.timestamp
+      });
+      
+      console.log('Sent state response to server');
+      console.groupEnd();
+    });
   }
 
   /**
@@ -394,4 +648,61 @@ export class NetworkManager implements GameEventEmitter {
       handlers.delete(listener);
     }
   }
+
+  /**
+   * Request current server state
+   */
+  public requestDebugState(): void {
+    this.socket?.emit('debug_request_state');
+  }
+
+  /**
+   * Subscribe to debug state updates
+   */
+  public onDebugState(callback: (state: any) => void): () => void {
+    this.debugStateListeners.add(callback);
+    if (this.debugState) {
+      callback(this.debugState);
+    }
+    return () => this.debugStateListeners.delete(callback);
+  }
+
+  /**
+   * Request state verification from server
+   */
+  public verifyClientState(): void {
+    if (!this.socket || !this.isConnected) {
+      console.warn('Cannot verify state: not connected to server');
+      return;
+    }
+
+    const currentPosition = this.localPlayer.getPosition();
+    const currentColor = this.localPlayer.getColor();
+
+    const stateData = {
+      position: {
+        x: currentPosition.x,
+        y: currentPosition.y,
+        z: currentPosition.z
+      },
+      color: {
+        r: currentColor.r,
+        g: currentColor.g,
+        b: currentColor.b
+      }
+    };
+
+    console.log('Sending state verification request:', stateData);
+    this.socket.emit('verify_client_state', stateData);
+  }
+}
+
+// Enable Hot Module Replacement
+declare const module: any;
+if (module.hot) {
+  module.hot.accept((err: Error) => {
+    if (err) {
+      console.error('Error accepting HMR update', err);
+    }
+  });
 } 

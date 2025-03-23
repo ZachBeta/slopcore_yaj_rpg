@@ -2,6 +2,8 @@
 
 ## open world game
 
+* server diagnostics is getting noisy in dev logs
+
 * convert js to ts
   * extract types out wherever possible
 
