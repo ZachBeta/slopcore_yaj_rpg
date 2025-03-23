@@ -1,4 +1,4 @@
-import { Color, Position, Rotation, Player, ServerDiagnostics } from './types';
+import { Position, Rotation, Player, ServerDiagnostics } from './types';
 
 export enum GameEvent {
   // Player events

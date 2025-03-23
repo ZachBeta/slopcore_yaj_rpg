@@ -2,7 +2,7 @@
  * Terminal Game - Core game logic for the browser console-based mode
  */
 
-import { Card, CARD_DATA, getCardById, createStarterDeck, shuffleDeck } from './card-data';
+import { Card, createStarterDeck } from './card-data';
 import { ConsoleRenderer } from './console-renderer';
 import { AIOpponent } from './ai-opponent';
 import { GamePhase } from './game-phases';
@@ -27,7 +27,15 @@ const validCommands: Record<string, string> = {
 };
 
 // Command manual pages
-const commandManPages: Record<string, any> = {
+interface CommandManPage {
+  NAME: string;
+  SYNOPSIS: string;
+  DESCRIPTION: string;
+  EXAMPLES: string;
+  SEE_ALSO: string;
+}
+
+const commandManPages: Record<string, CommandManPage> = {
   help: {
     NAME: "help - display available commands",
     SYNOPSIS: "help [command]",
@@ -129,7 +137,7 @@ export class TerminalGame {
   private servers: Record<string, Server> = {};
 
   // Command handlers map
-  private commandHandlers: Record<string, CommandHandler>;
+  private commandHandlers: Record<string, CommandHandler> = {};
 
   constructor(randomSeed: number = Math.floor(Math.random() * 100000)) {
     // Set up dependencies
@@ -295,7 +303,7 @@ export class TerminalGame {
   /**
    * Process abilities of played cards based on a trigger
    */
-  private processCardAbilities(trigger: string, context: any = null): void {
+  private processCardAbilities(trigger: string, _context: Record<string, unknown> | null = null): void {
     // Iterate through installed/played cards and check for matching abilities
     this.playedCards.forEach(card => {
       if (card.type === 'program' && trigger === 'turn_start') {
@@ -528,7 +536,7 @@ export class TerminalGame {
   /**
    * Command handler for 'hand'
    */
-  private cmdHand(args: string[]): void {
+  private cmdHand(_args: string[]): void {
     if (this.handCards.length === 0) {
       this.renderer.renderMessage("Your hand is empty.", 'info');
       return;
@@ -730,7 +738,7 @@ export class TerminalGame {
   /**
    * Command handler for 'info'
    */
-  private cmdInfo(args: string[]): void {
+  private cmdInfo(_args: string[]): void {
     this.renderer.renderMessage("\nGame Information:", 'info');
     this.renderer.renderMessage(`Turn: ${this.turnNumber}`, 'info');
     this.renderer.renderMessage(`Phase: ${this.getPhaseDescription()}`, 'info');
@@ -782,7 +790,7 @@ export class TerminalGame {
   /**
    * Command handler for 'system'
    */
-  private cmdSystem(args: string[]): void {
+  private cmdSystem(_args: string[]): void {
     // Get trace level from AI opponent
     const traceLevel = this.aiOpponent ? this.aiOpponent.getTraceLevel() : 25;
     
@@ -807,7 +815,7 @@ export class TerminalGame {
   /**
    * Command handler for 'installed'
    */
-  private cmdInstalled(args: string[]): void {
+  private cmdInstalled(_args: string[]): void {
     if (this.playedCards.length === 0) {
       this.renderer.renderMessage("You have no installed programs or hardware.", 'info');
       return;
@@ -819,7 +827,7 @@ export class TerminalGame {
   /**
    * Command handler for 'credits'
    */
-  private cmdCredits(args: string[]): void {
+  private cmdCredits(_args: string[]): void {
     this.renderer.renderMessage("\nCredit Account:", 'info');
     this.renderer.renderMessage(`Available Credits: ${this.playerCredits}`, 'info');
     
@@ -841,7 +849,7 @@ export class TerminalGame {
   /**
    * Command handler for 'memory'
    */
-  private cmdMemory(args: string[]): void {
+  private cmdMemory(_args: string[]): void {
     this.renderer.renderMessage("\nMemory Status:", 'info');
     this.renderer.renderMessage(`Total MU: ${this.memoryUnitsAvailable}`, 'info');
     this.renderer.renderMessage(`Used MU: ${this.memoryUnitsUsed}`, 'info');
@@ -860,7 +868,7 @@ export class TerminalGame {
   /**
    * Command handler for 'jack_out'
    */
-  private cmdJackOut(args: string[]): void {
+  private cmdJackOut(_args: string[]): void {
     if (!this.currentRun || !this.currentRun.active) {
       this.renderer.renderError("You are not currently on a run.");
       return;

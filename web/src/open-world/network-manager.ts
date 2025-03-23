@@ -1,13 +1,13 @@
 import * as THREE from 'three';
 import { Player } from './player';
-import { Socket, io } from 'socket.io-client';
-import { GameEvent, GameEventPayloads, GameEventEmitter } from '../constants';
+import { io, Socket } from 'socket.io-client';
+import { GameEvent, GameEventPayloads, ConnectionStatus } from '../constants';
 
 // Define the callback types
 type PlayerJoinCallback = (id: string, position: THREE.Vector3, color: THREE.Color) => void;
 type PlayerLeaveCallback = (id: string) => void;
 type PlayerPositionUpdateCallback = (id: string, position: THREE.Vector3) => void;
-type ConnectionStatusCallback = (status: 'connected' | 'disconnected' | 'error', error?: any) => void;
+type ConnectionStatusCallback = (status: ConnectionStatus, error?: Error) => void;
 
 // Define HSL type
 interface HSL {
@@ -27,30 +27,36 @@ interface Diagnostics {
   connections: number;
 }
 
-export class NetworkManager implements GameEventEmitter {
-  private localPlayer: Player;
-  private onPlayerJoin: PlayerJoinCallback;
-  private onPlayerLeave: PlayerLeaveCallback;
-  private onPlayerPositionUpdate: PlayerPositionUpdateCallback;
-  private onConnectionStatus?: ConnectionStatusCallback;
-  private lastPositionUpdate: number = 0;
-  private updateInterval: number = 100; // Update every 100ms
+type EventHandler<T extends GameEvent> = (payload: GameEventPayloads[T]) => void;
+
+export class NetworkManager {
   private socket: Socket | null = null;
+  private localPlayer: Player;
+  private onPlayerJoin: (id: string, position: THREE.Vector3, color: THREE.Color) => void;
+  private onPlayerLeave: (id: string) => void;
+  private onPositionUpdate: (id: string, position: THREE.Vector3) => void;
+  private onConnectionStatus: (status: ConnectionStatus, error?: Error) => void;
+  private lastPositionUpdate: number = 0;
+  private updateInterval: number = 1000 / 30; // 30 updates per second
+  private isConnected: boolean = false;
+  private reconnectAttempts: number = 0;
+  private maxReconnectAttempts: number = 5;
+  private reconnectDelay: number = 1000;
+  private reconnectTimer: NodeJS.Timeout | null = null;
+  private eventHandlers: Map<GameEvent, Set<EventHandler<GameEvent>>> = new Map();
   private playerColor: THREE.Color;
   private static usedHues: Set<number> = new Set();
   private otherPlayers: Map<string, boolean> = new Map(); // Track other players we've seen
   private connectionAttempts: number = 0;
   private maxConnectionAttempts: number = 5;
   private connectionUrl: string = '';
-  private isConnected: boolean = false;
-  private connectionRetryTimeout: any = null;
+  private connectionRetryTimeout: NodeJS.Timeout | null = null;
   private lastPing: number = 0;
   private lastPingTime: number = 0;
   private diagnosticsDiv: HTMLDivElement | null = null;
   private pingInterval: number = 1000;
-  private eventHandlers: Map<GameEvent, Set<(payload: any) => void>> = new Map();
-  private debugState: any = null;
-  private debugStateListeners: Set<(state: any) => void> = new Set();
+  private debugState: Record<string, unknown> | null = null;
+  private debugStateListeners: Set<(state: Record<string, unknown>) => void> = new Set();
 
   // Default server URL for development
   private static readonly DEFAULT_SERVER_URL = 'http://localhost:3000';
@@ -74,20 +80,20 @@ export class NetworkManager implements GameEventEmitter {
    * @param localPlayer The local player instance
    * @param onPlayerJoin Callback for when a player joins
    * @param onPlayerLeave Callback for when a player leaves
-   * @param onPlayerPositionUpdate Callback for when a player's position updates
+   * @param onPositionUpdate Callback for when a player's position updates
    * @param onConnectionStatus Optional callback for connection status updates
    */
   constructor(
     localPlayer: Player,
-    onPlayerJoin: PlayerJoinCallback,
-    onPlayerLeave: PlayerLeaveCallback,
-    onPlayerPositionUpdate: PlayerPositionUpdateCallback,
-    onConnectionStatus?: ConnectionStatusCallback
+    onPlayerJoin: (id: string, position: THREE.Vector3, color: THREE.Color) => void,
+    onPlayerLeave: (id: string) => void,
+    onPositionUpdate: (id: string, position: THREE.Vector3) => void,
+    onConnectionStatus: (status: ConnectionStatus, error?: Error) => void
   ) {
     this.localPlayer = localPlayer;
     this.onPlayerJoin = onPlayerJoin;
     this.onPlayerLeave = onPlayerLeave;
-    this.onPlayerPositionUpdate = onPlayerPositionUpdate;
+    this.onPositionUpdate = onPositionUpdate;
     this.onConnectionStatus = onConnectionStatus;
     
     // Don't set the color here, wait for server assignment
@@ -227,7 +233,7 @@ export class NetworkManager implements GameEventEmitter {
   private connectToServer(): void {
     if (this.connectionAttempts >= this.maxConnectionAttempts) {
       console.error(`Failed to connect after ${this.maxConnectionAttempts} attempts.`);
-      this.onConnectionStatus?.('error', new Error('Max connection attempts reached'));
+      this.onConnectionStatus?.(ConnectionStatus.ERROR, new Error('Max connection attempts reached'));
       return;
     }
 
@@ -254,7 +260,7 @@ export class NetworkManager implements GameEventEmitter {
       console.log('Connected to server with ID:', this.socket?.id);
       this.isConnected = true;
       this.connectionAttempts = 0;
-      this.onConnectionStatus?.('connected');
+      this.onConnectionStatus?.(ConnectionStatus.CONNECTED);
       
       // Send initial player data without color
       const playerData = {
@@ -308,11 +314,13 @@ export class NetworkManager implements GameEventEmitter {
     // Handle connect error
     this.socket.on('connect_error', (error) => {
       console.error('Connection error:', error);
-      this.onConnectionStatus?.('error', error);
+      this.onConnectionStatus?.(ConnectionStatus.ERROR, error);
       
       // Try to reconnect
       if (this.connectionAttempts < this.maxConnectionAttempts) {
-        clearTimeout(this.connectionRetryTimeout);
+        if (this.connectionRetryTimeout) {
+          clearTimeout(this.connectionRetryTimeout);
+        }
         this.connectionRetryTimeout = setTimeout(() => {
           this.connectToServer();
         }, 2000);
@@ -323,7 +331,7 @@ export class NetworkManager implements GameEventEmitter {
     this.socket.on('disconnect', () => {
       console.log('Disconnected from server');
       this.isConnected = false;
-      this.onConnectionStatus?.('disconnected');
+      this.onConnectionStatus?.(ConnectionStatus.DISCONNECTED);
       this.otherPlayers.clear(); // Clear other players on disconnect
     });
 
@@ -377,7 +385,7 @@ export class NetworkManager implements GameEventEmitter {
 
     // Handle player movement updates
     this.socket.on('player_moved', (data: any) => {
-      this.onPlayerPositionUpdate(
+      this.onPositionUpdate(
         data.id,
         new THREE.Vector3(
           data.position.x,
@@ -607,7 +615,9 @@ export class NetworkManager implements GameEventEmitter {
       this.socket = null;
     }
     
-    clearTimeout(this.connectionRetryTimeout);
+    if (this.connectionRetryTimeout) {
+      clearTimeout(this.connectionRetryTimeout);
+    }
     this.isConnected = false;
     this.otherPlayers.clear();
   }
@@ -631,22 +641,15 @@ export class NetworkManager implements GameEventEmitter {
     });
   }
 
-  on<T extends GameEvent>(event: T, listener: (payload: GameEventPayloads[T]) => void): void {
+  public on<T extends GameEvent>(event: T, listener: EventHandler<T>): void {
     if (!this.eventHandlers.has(event)) {
       this.eventHandlers.set(event, new Set());
     }
-    this.eventHandlers.get(event)!.add(listener);
+    this.eventHandlers.get(event)?.add(listener as EventHandler<GameEvent>);
   }
 
-  emit<T extends GameEvent>(event: T, payload: GameEventPayloads[T]): void {
-    this.socket?.emit(event, payload);
-  }
-
-  off<T extends GameEvent>(event: T, listener: (payload: GameEventPayloads[T]) => void): void {
-    const handlers = this.eventHandlers.get(event);
-    if (handlers) {
-      handlers.delete(listener);
-    }
+  public off<T extends GameEvent>(event: T, listener: EventHandler<T>): void {
+    this.eventHandlers.get(event)?.delete(listener as EventHandler<GameEvent>);
   }
 
   /**
@@ -659,7 +662,7 @@ export class NetworkManager implements GameEventEmitter {
   /**
    * Subscribe to debug state updates
    */
-  public onDebugState(callback: (state: any) => void): () => void {
+  public onDebugState(callback: (state: Record<string, unknown>) => void): () => void {
     this.debugStateListeners.add(callback);
     if (this.debugState) {
       callback(this.debugState);
@@ -695,12 +698,43 @@ export class NetworkManager implements GameEventEmitter {
     console.log('Sending state verification request:', stateData);
     this.socket.emit('verify_client_state', stateData);
   }
+
+  private handleError(error: Error): void {
+    console.error('Network error:', error);
+    this.isConnected = false;
+    this.onConnectionStatus(ConnectionStatus.ERROR, error);
+  }
+
+  private handleMaxConnectionAttempts(): void {
+    console.error('Max connection attempts reached');
+    this.isConnected = false;
+    this.onConnectionStatus?.(ConnectionStatus.ERROR, new Error('Max connection attempts reached'));
+  }
+
+  private handleSocketConnect(): void {
+    console.log('Connected to server');
+    this.isConnected = true;
+    this.reconnectAttempts = 0;
+    this.onConnectionStatus?.(ConnectionStatus.CONNECTED);
+  }
+
+  private handleSocketError(error: Error): void {
+    console.error('Socket error:', error);
+    this.isConnected = false;
+    this.onConnectionStatus?.(ConnectionStatus.ERROR, error);
+  }
+
+  private handleSocketDisconnect(): void {
+    console.log('Disconnected from server');
+    this.isConnected = false;
+    this.onConnectionStatus?.(ConnectionStatus.DISCONNECTED);
+  }
 }
 
 // Enable Hot Module Replacement
-declare const module: any;
+declare const module: { hot?: { accept: (callback: (err: Error | null) => void) => void } };
 if (module.hot) {
-  module.hot.accept((err: Error) => {
+  module.hot.accept((err: Error | null) => {
     if (err) {
       console.error('Error accepting HMR update', err);
     }

@@ -37,7 +37,7 @@ class TestGameServer extends GameServer {
     return this.usedRandomColors;
   }
 
-  getPlayers(): Map<string, any> {
+  getPlayers(): Map<string, Player> {
     return this.players;
   }
 
@@ -147,8 +147,8 @@ describe('Color Management', () => {
 
     // Final cleanup
     clientSockets = [];
-    gameServer = null as any;
-    httpServer = null as any;
+    gameServer = null as unknown as TestGameServer;
+    httpServer = null as unknown as HttpServer;
   }, TEST_TIMEOUT);
 
   beforeEach(async () => {

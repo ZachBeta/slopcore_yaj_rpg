@@ -33,6 +33,21 @@ export const Colors = {
   ICE: 'color: #00bcd4; font-weight: bold',
 };
 
+declare global {
+  interface Window {
+    processCommand: (command: string) => void;
+  }
+}
+
+interface Card {
+  name: string;
+  type: string;
+  cost: number;
+  description?: string;
+  ascii_art?: string[];
+  memoryUsage?: number;
+}
+
 export class ConsoleRenderer {
   private commandPrefix: string = '>';
   private colors = {
@@ -113,7 +128,7 @@ export class ConsoleRenderer {
         document.body.appendChild(consoleTip);
         document.body.appendChild(menuButton);
       }
-    } catch (e) {
+    } catch {
       // Ignore any errors with DOM manipulation
     }
   }
@@ -237,7 +252,7 @@ export class ConsoleRenderer {
 
       document.body.appendChild(modalOverlay);
 
-    } catch (e) {
+    } catch {
       // Ignore any errors with DOM manipulation
     }
   }
@@ -333,7 +348,7 @@ export class ConsoleRenderer {
       console.log(`%c> ${command}`, "color: #9933cc; font-weight: bold; font-size: 14px;");
       
       // Execute the command using the global processCommand function
-      (window as any).processCommand(command);
+      window.processCommand(command);
       
       // Move to the next command after the specified delay
       currentIndex++;
@@ -395,7 +410,7 @@ export class ConsoleRenderer {
    * Render the player's hand of cards
    * @param hand The array of cards in the player's hand
    */
-  public renderHand(hand: any[]): void {
+  public renderHand(hand: Card[]): void {
     if (hand.length === 0) {
       this.renderMessage('Your hand is empty.', 'info');
       return;
@@ -423,7 +438,7 @@ export class ConsoleRenderer {
    * Render installed cards
    * @param installed The array of installed cards
    */
-  public renderInstalledCards(installed: any[]): void {
+  public renderInstalledCards(installed: Card[]): void {
     if (installed.length === 0) {
       this.renderMessage('No cards installed.', 'info');
       return;

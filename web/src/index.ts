@@ -264,7 +264,7 @@ function createGameInstructions(): void {
   ];
   
   for (let i = 0; i < steps.length; i++) {
-    if (i === 1 || i === 3 || i === 5 || i === 8 || i === 12) {
+    if (i === 1 || i === 3 || i === 5 || i === 8) {
       const strong = document.createElement('strong');
       if (i === 8) strong.style.color = '#00ffff';
       strong.textContent = steps[i];
