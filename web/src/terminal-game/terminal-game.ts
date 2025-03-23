@@ -505,7 +505,7 @@ export class TerminalGame {
   /**
    * Command handler for 'draw'
    */
-  private cmdDraw(args: string[]): void {
+  private cmdDraw(_args: string[]): void {
     if (this.currentPhase !== GamePhase.ACTION) {
       this.renderer.renderError("You can only draw cards during the action phase.");
       return;
@@ -688,7 +688,7 @@ export class TerminalGame {
   /**
    * Command handler for 'end'
    */
-  private cmdEnd(args: string[]): void {
+  private cmdEnd(_args: string[]): void {
     // Check if we need to discard cards (max hand size)
     const maxHandSize = 5;
     if (this.handCards.length > maxHandSize) {

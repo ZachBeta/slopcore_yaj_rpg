@@ -348,7 +348,7 @@ export class ConsoleRenderer {
       console.log(`%c> ${command}`, "color: #9933cc; font-weight: bold; font-size: 14px;");
       
       // Execute the command using the global processCommand function
-      window.processCommand(command);
+      globalThis.processCommand(command);
       
       // Move to the next command after the specified delay
       currentIndex++;

@@ -126,7 +126,7 @@ function initializeOpenWorldGame(): void {
 }
 
 // Create a function to handle console input
-window.processCommand = function(command: string): void {
+globalThis.processCommand = function(command: string): void {
   if (game && command && typeof command === 'string') {
     game.processCommand(command);
   } else {
@@ -206,6 +206,54 @@ document.addEventListener('DOMContentLoaded', () => {
       alert('Neon Dominance is a cyberpunk card game inspired by Android: Netrunner. Play as a hacker running against corporate servers in a dystopian future.');
     });
   }
+  
+  // Add event listener for page unload to clean up resources
+  globalThis.addEventListener('beforeunload', () => {
+    console.log('Page unloading, cleaning up resources...');
+    
+    // Clean up the open world game
+    if (openWorldGame) {
+      openWorldGame.dispose();
+      openWorldGame = null;
+    }
+    
+    // Clean up the Three.js scene
+    if (threeScene) {
+      threeScene.stop();
+      threeScene = null;
+    }
+    
+    // Clean up the terminal game
+    if (game) {
+      game = null;
+    }
+    
+    // Remove any event listeners
+    const startButton = document.getElementById('start-game');
+    if (startButton) {
+      startButton.replaceWith(startButton.cloneNode(true));
+    }
+    
+    const demoButton = document.getElementById('demo-mode');
+    if (demoButton) {
+      demoButton.replaceWith(demoButton.cloneNode(true));
+    }
+    
+    const openWorldButton = document.getElementById('open-world-game');
+    if (openWorldButton) {
+      openWorldButton.replaceWith(openWorldButton.cloneNode(true));
+    }
+    
+    const optionsButton = document.getElementById('options');
+    if (optionsButton) {
+      optionsButton.replaceWith(optionsButton.cloneNode(true));
+    }
+    
+    const aboutButton = document.getElementById('about');
+    if (aboutButton) {
+      aboutButton.replaceWith(aboutButton.cloneNode(true));
+    }
+  });
 });
 
 // Function to create game instructions panel

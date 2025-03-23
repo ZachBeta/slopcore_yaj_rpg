@@ -53,7 +53,7 @@ export class OpenWorldGame {
     // Set up the camera
     this.mainCamera = new THREE.PerspectiveCamera(
       75,
-      window.innerWidth / window.innerHeight,
+      globalThis.innerWidth / globalThis.innerHeight,
       0.1,
       1000
     );
@@ -79,8 +79,8 @@ export class OpenWorldGame {
     
     // Set up the renderer
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setSize(globalThis.innerWidth, globalThis.innerHeight);
+    this.renderer.setPixelRatio(globalThis.devicePixelRatio);
     this.renderer.shadowMap.enabled = true;
     container.appendChild(this.renderer.domElement);
 
@@ -90,7 +90,7 @@ export class OpenWorldGame {
     // Chase camera PIP
     this.chasePipRenderer = new THREE.WebGLRenderer({ antialias: true });
     this.chasePipRenderer.setSize(pipSize, pipSize);
-    this.chasePipRenderer.setPixelRatio(window.devicePixelRatio);
+    this.chasePipRenderer.setPixelRatio(globalThis.devicePixelRatio);
     this.chasePipRenderer.shadowMap.enabled = true;
     this.chasePipRenderer.domElement.style.position = 'absolute';
     this.chasePipRenderer.domElement.style.bottom = '20px';
@@ -102,7 +102,7 @@ export class OpenWorldGame {
     // Orbit camera PIP
     this.orbitPipRenderer = new THREE.WebGLRenderer({ antialias: true });
     this.orbitPipRenderer.setSize(pipSize, pipSize);
-    this.orbitPipRenderer.setPixelRatio(window.devicePixelRatio);
+    this.orbitPipRenderer.setPixelRatio(globalThis.devicePixelRatio);
     this.orbitPipRenderer.shadowMap.enabled = true;
     this.orbitPipRenderer.domElement.style.position = 'absolute';
     this.orbitPipRenderer.domElement.style.bottom = '20px';
@@ -141,7 +141,7 @@ export class OpenWorldGame {
     this.networkManager.connect();
     
     // Set up event listeners
-    window.addEventListener('resize', this.onWindowResize);
+    globalThis.addEventListener('resize', this.onWindowResize);
     document.addEventListener('keydown', this.onKeyDown);
     document.addEventListener('keyup', this.onKeyUp);
 
@@ -368,9 +368,9 @@ export class OpenWorldGame {
    */
   private onWindowResize = (): void => {
     // Update main camera aspect ratio
-    this.mainCamera.aspect = window.innerWidth / window.innerHeight;
+    this.mainCamera.aspect = globalThis.innerWidth / globalThis.innerHeight;
     this.mainCamera.updateProjectionMatrix();
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setSize(globalThis.innerWidth, globalThis.innerHeight);
     
     // No need to resize PIP cameras as they maintain square aspect ratio
   }
@@ -531,7 +531,7 @@ export class OpenWorldGame {
     this.stop();
     
     // Clean up event listeners
-    window.removeEventListener('resize', this.onWindowResize);
+    globalThis.removeEventListener('resize', this.onWindowResize);
     document.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('keyup', this.onKeyUp);
     

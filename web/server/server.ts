@@ -1,7 +1,6 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
-import cors from 'cors';
 import path from 'path';
 
 interface Player {
@@ -21,6 +20,7 @@ interface Player {
     g: number;
     b: number;
   };
+  lastActivity: number; // Track last activity time
 }
 
 interface ServerDiagnostics {
@@ -32,6 +32,7 @@ interface ServerDiagnostics {
   lockedColors: number;
   randomColors: number;
   connections: number;
+  memoryUsage: NodeJS.MemoryUsage;
 }
 
 const app: Express = express();
@@ -40,7 +41,9 @@ const io = new Server(server, {
   cors: {
     origin: "*", // In production, replace with your actual domain
     methods: ["GET", "POST"]
-  }
+  },
+  pingTimeout: 60000, // 60 second ping timeout (default is 20s)
+  pingInterval: 25000, // 25 second ping interval (default is 25s)
 });
 
 // Set proper MIME types
@@ -63,17 +66,30 @@ const usedHues: Set<string> = new Set();
 
 // Server diagnostics state
 const startTime: number = Date.now();
-let lastTick: number = Date.now();
 let tickCount: number = 0;
 let fps: number = 0;
 const fpsUpdateInterval: number = 1000; // Update FPS every second
 let lastFpsUpdate: number = Date.now();
 
+// Player inactivity cleanup - remove players that haven't been active for 5 minutes
+const PLAYER_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const playerCleanupInterval = setInterval(() => {
+  const now = Date.now();
+  for (const [id, player] of players.entries()) {
+    if (now - player.lastActivity > PLAYER_TIMEOUT) {
+      console.log(`Removing inactive player: ${id}`);
+      // Remove the used color
+      const key = `${player.color.r},${player.color.g},${player.color.b}`;
+      usedHues.delete(key);
+      players.delete(id);
+      io.emit('player_left', id);
+    }
+  }
+}, 60000); // Check every minute
+
 // Start diagnostics broadcast
-setInterval(() => {
+const diagnosticsInterval = setInterval(() => {
   const now: number = Date.now();
-  const delta: number = now - lastTick;
-  lastTick = now;
   tickCount++;
 
   // Update FPS every second
@@ -91,11 +107,20 @@ setInterval(() => {
       availableColors: 12 - usedHues.size,
       lockedColors: usedHues.size,
       randomColors: 0, // We don't use random colors in this implementation
-      connections: io.engine.clientsCount
+      connections: io.engine.clientsCount,
+      memoryUsage: process.memoryUsage()
     };
 
     io.emit('server_diagnostics', diagnostics);
-    console.log('Server Diagnostics:', diagnostics);
+    console.log('Server Diagnostics:', {
+      ...diagnostics,
+      memoryUsage: {
+        rss: Math.round(diagnostics.memoryUsage.rss / 1024 / 1024) + 'MB',
+        heapTotal: Math.round(diagnostics.memoryUsage.heapTotal / 1024 / 1024) + 'MB',
+        heapUsed: Math.round(diagnostics.memoryUsage.heapUsed / 1024 / 1024) + 'MB',
+        external: Math.round(diagnostics.memoryUsage.external / 1024 / 1024) + 'MB'
+      }
+    });
   }
 }, 1000 / 60); // 60Hz tick rate
 
@@ -167,7 +192,8 @@ io.on('connection', (socket: Socket) => {
         y: Math.random() * Math.PI * 2, // Random initial facing direction
         z: 0
       },
-      color: playerColor
+      color: playerColor,
+      lastActivity: Date.now()
     };
     players.set(socket.id, player);
 
@@ -197,6 +223,7 @@ io.on('connection', (socket: Socket) => {
     if (player) {
       player.position = data.position;
       player.rotation = data.rotation;
+      player.lastActivity = Date.now(); // Update activity timestamp
       socket.broadcast.emit('player_moved', {
         id: socket.id,
         position: data.position,
@@ -206,8 +233,8 @@ io.on('connection', (socket: Socket) => {
   });
 
   // Handle player disconnect
-  socket.on('disconnect', () => {
-    console.log(`Player disconnected: ${socket.id}`);
+  socket.on('disconnect', (reason) => {
+    console.log(`Player disconnected: ${socket.id}, reason: ${reason}`);
     const player = players.get(socket.id);
     if (player) {
       // Remove the used color
@@ -216,14 +243,26 @@ io.on('connection', (socket: Socket) => {
       players.delete(socket.id);
       io.emit('player_left', socket.id);
     }
+    
+    // Cleanup socket handlers
+    socket.removeAllListeners();
   });
 
   // Handle chat messages
   socket.on('chat_message', (message: string) => {
-    io.emit('chat_message', {
-      id: socket.id,
-      message: message
-    });
+    const player = players.get(socket.id);
+    if (player) {
+      player.lastActivity = Date.now(); // Update activity timestamp
+      io.emit('chat_message', {
+        id: socket.id,
+        message: message
+      });
+    }
+  });
+  
+  // Handle error events
+  socket.on('error', (error) => {
+    console.error(`Socket error for player ${socket.id}:`, error);
   });
 });
 
@@ -231,6 +270,24 @@ io.on('connection', (socket: Socket) => {
 const PORT: number = process.env.PORT ? parseInt(process.env.PORT) : 8080;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+// Proper cleanup on server shutdown
+process.on('SIGINT', () => {
+  console.log('Server shutting down...');
+  
+  // Clear intervals
+  clearInterval(playerCleanupInterval);
+  clearInterval(diagnosticsInterval);
+  
+  // Close all socket connections
+  io.disconnectSockets();
+  
+  // Close the server
+  server.close(() => {
+    console.log('Server shutdown complete.');
+    process.exit(0);
+  });
 });
 
 export { server as Server }; 

@@ -8,7 +8,9 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "build": "webpack --mode production",
-    "dev": "webpack serve --mode development --open"
+    "dev": "webpack serve --mode development --open",
+    "lint": "deno lint",
+    "lint:fix": "deno lint --fix"
   },
   "keywords": [
     "rpg",

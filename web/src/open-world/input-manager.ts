@@ -95,7 +95,7 @@ export class InputManager {
     this.state.demoModeIndex = 0;
 
     // Start the demo mode interval
-    this.demoModeInterval = window.setInterval(() => {
+    this.demoModeInterval = globalThis.setInterval(() => {
       if (this.state.demoModeIndex >= this.state.demoModeActions.length) {
         this.state.demoModeIndex = 0;
       }

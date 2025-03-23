@@ -2,7 +2,8 @@
 
 ## bash commands
 
-* prefix the result of `cd $(pwd)` so we are guaranteed to be in the correct directory when we run
+* run npm from web directory
+* prefix the the correct directory for npm stuff so we are guaranteed to be in the correct directory when we run
 * prefer ts over js in web
 
 ## Testing

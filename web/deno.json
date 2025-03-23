@@ -1,0 +1,21 @@
+{
+  "lint": {
+    "include": ["src/**/*.ts"],
+    "exclude": ["node_modules/", "dist/", "coverage/", "**/__tests__/**"],
+    "rules": {
+      "tags": ["recommended"],
+      "exclude": ["no-explicit-any", "no-window"]
+    }
+  },
+  "fmt": {
+    "include": ["src/**/*.ts"],
+    "exclude": ["node_modules/", "dist/", "coverage/", "**/__tests__/**"],
+    "options": {
+      "useTabs": false,
+      "lineWidth": 80,
+      "indentWidth": 2,
+      "singleQuote": true,
+      "proseWrap": "preserve"
+    }
+  }
+} 

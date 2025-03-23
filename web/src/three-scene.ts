@@ -45,7 +45,7 @@ export class ThreeScene {
     // Set up the camera
     this.camera = new THREE.PerspectiveCamera(
       75,
-      window.innerWidth / window.innerHeight,
+      globalThis.innerWidth / globalThis.innerHeight,
       0.1,
       1000
     );
@@ -53,8 +53,8 @@ export class ThreeScene {
 
     // Set up the renderer
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setSize(globalThis.innerWidth, globalThis.innerHeight);
+    this.renderer.setPixelRatio(globalThis.devicePixelRatio);
     container.appendChild(this.renderer.domElement);
 
     // Set up lighting
@@ -104,7 +104,7 @@ export class ThreeScene {
     this.scene.add(this.d20);
 
     // Add event listeners
-    window.addEventListener('resize', this.onWindowResize.bind(this));
+    globalThis.addEventListener('resize', this.onWindowResize.bind(this));
     container.addEventListener('mousedown', this.onMouseDown.bind(this));
     document.addEventListener('mousemove', this.onMouseMove.bind(this));
     document.addEventListener('mouseup', this.onMouseUp.bind(this));
@@ -151,9 +151,9 @@ export class ThreeScene {
    * Handle window resize event
    */
   private onWindowResize(): void {
-    this.camera.aspect = window.innerWidth / window.innerHeight;
+    this.camera.aspect = globalThis.innerWidth / globalThis.innerHeight;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setSize(globalThis.innerWidth, globalThis.innerHeight);
   }
 
   /**
@@ -188,8 +188,8 @@ export class ThreeScene {
     
     if (this.d20FollowingMouse) {
       // Convert mouse position to 3D coordinates
-      const mouseX = (event.clientX / window.innerWidth) * 2 - 1;
-      const mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+      const mouseX = (event.clientX / globalThis.innerWidth) * 2 - 1;
+      const mouseY = -(event.clientY / globalThis.innerHeight) * 2 + 1;
       
       // Update d20 position
       this.d20.position.x = mouseX * 5;
@@ -216,7 +216,7 @@ export class ThreeScene {
     this.stop();
     
     // Clean up event listeners
-    window.removeEventListener('resize', this.onWindowResize.bind(this));
+    globalThis.removeEventListener('resize', this.onWindowResize.bind(this));
     
     // Dispose of geometries and materials
     this.scene.traverse((object) => {

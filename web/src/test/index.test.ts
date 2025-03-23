@@ -1,5 +1,5 @@
-import { TerminalGame } from '../terminal-game/terminal-game';
-import { MockConsoleRenderer } from './setupTests';
+import { TerminalGame as _TerminalGame } from '../terminal-game/terminal-game';
+import { MockConsoleRenderer as _MockConsoleRenderer } from './setupTests';
 
 // Mock TerminalGame class
 jest.mock('../terminal-game/terminal-game', () => {
@@ -48,10 +48,10 @@ describe('Index', () => {
   
   beforeEach(() => {
     // Save original console
-    originalConsole = global.console;
+    originalConsole = globalThis.console;
     
     // Mock console
-    global.console = {
+    globalThis.console = {
       log: jest.fn(),
       error: jest.fn(),
       warn: jest.fn(),
@@ -111,7 +111,7 @@ describe('Index', () => {
   
   afterEach(() => {
     // Restore original console
-    global.console = originalConsole;
+    globalThis.console = originalConsole;
     
     // Clean up DOM
     document.body.innerHTML = '';
@@ -133,7 +133,7 @@ describe('Index', () => {
     (window as any).testMockGame = mockGame;
     
     // Override processCommand to use our mock
-    window.processCommand = function(command: string) {
+    globalThis.processCommand = function(command: string) {
       if ((window as any).testMockGame && command && typeof command === 'string') {
         (window as any).testMockGame.processCommand(command);
       } else {
@@ -142,7 +142,7 @@ describe('Index', () => {
     };
     
     // Call processCommand from window
-    window.processCommand('help');
+    globalThis.processCommand('help');
     
     // Check if game.processCommand was called
     expect(mockProcessCommand).toHaveBeenCalledWith('help');
@@ -153,16 +153,16 @@ describe('Index', () => {
   
   test('processCommand should show error if game is not initialized', () => {
     // Reset window.processCommand to simulate uninitialized game
-    window.processCommand = function(command: string) {
-      if (false && command && typeof command === 'string') {
-        // This won't be called
+    globalThis.processCommand = function(command: string) {
+      if (command === null || command === undefined) {
+        // This won't be called because command is a string
       } else {
         console.error("Game not initialized or invalid command. Please provide a valid command as a string.");
       }
     };
     
     // Call processCommand
-    window.processCommand('help');
+    globalThis.processCommand('help');
     
     // Check if error was displayed
     expect(console.error).toHaveBeenCalledWith(
@@ -175,7 +175,7 @@ describe('Index', () => {
     jest.resetModules();
     
     // Load index.ts after DOM setup
-    const indexModule = require('../index');
+    const _indexModule = require('../index');
     
     // Verify event listeners were added
     expect(mockStartButton.addEventListener).toHaveBeenCalledWith('click', expect.any(Function));

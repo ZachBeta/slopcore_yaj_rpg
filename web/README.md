@@ -37,6 +37,22 @@ This is the web implementation of Neon Dominance (formerly Slopcore YAJ RPG) usi
 
    This will open the application in your default web browser.
 
+### Linting
+
+The project uses Deno's linter for code quality checks. To run the linter:
+
+```
+npm run lint
+```
+
+To automatically fix linting issues where possible:
+
+```
+npm run lint:fix
+```
+
+Linting configuration is defined in `deno.json`.
+
 ### Building for Production
 
 To create a production build:

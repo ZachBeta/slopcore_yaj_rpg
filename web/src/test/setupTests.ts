@@ -19,7 +19,7 @@ class MockConsoleRenderer {
 }
 
 // Mock console methods
-global.console = {
+globalThis.console = {
   ...console,
   log: jest.fn(),
   error: jest.fn(),
@@ -45,7 +45,7 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 // Mock document methods
-document.createElement = jest.fn().mockImplementation(tag => {
+document.createElement = jest.fn().mockImplementation(_tag => {
   const element = {
     style: {},
     innerHTML: '',

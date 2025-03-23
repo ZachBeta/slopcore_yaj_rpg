@@ -3,6 +3,7 @@ import { Player } from './player';
 import { io, Socket } from 'socket.io-client';
 import { GameEvent, GameEventPayloads, ConnectionStatus } from '../constants';
 import { DebugState } from '../types';
+import process from "node:process";
 
 // Define EventHandler type
 type EventHandler<T extends GameEvent> = (payload: GameEventPayloads[T]) => void;
@@ -263,46 +264,24 @@ export class NetworkManager {
     this.connectionAttempts++;
     console.log(`Attempting to connect to Socket.io server at ${this.connectionUrl} (attempt ${this.connectionAttempts}/${this.maxConnectionAttempts})`);
     
-    // Socket.io connection options
-    const connectionOpts = {
-      reconnectionAttempts: this.maxConnectionAttempts,
-      timeout: 10000,
-      transports: ['websocket'] as string[],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      forceNew: true
-    };
-
-    // First try WebSocket
-    this.socket = io(this.connectionUrl, connectionOpts);
-
-    // Handle transport error - fallback to polling if WebSocket fails
-    this.socket.on('connect_error', (error) => {
-      console.warn('WebSocket connection failed:', error);
+    try {
+      // Create socket with both WebSocket and polling transports
+      this.socket = io(this.connectionUrl, {
+        reconnectionAttempts: this.maxConnectionAttempts,
+        timeout: 10000,
+        // Try WebSocket first, fall back to polling
+        transports: ['websocket', 'polling'], 
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        forceNew: true
+      });
       
-      const currentTransports = this.socket?.io.opts.transports;
-      if (Array.isArray(currentTransports) && currentTransports.includes('websocket')) {
-        console.log('Falling back to polling transport...');
-        // Cleanup current socket
-        this.socket.removeAllListeners();
-        this.socket.disconnect();
-        
-        // Try again with polling
-        const pollingOpts = {
-          ...connectionOpts,
-          transports: ['polling'] as string[]
-        };
-        
-        this.socket = io(this.connectionUrl, pollingOpts);
-        this.setupEventHandlers();
-      } else {
-        // If we're already using polling and still getting errors
-        this.handleConnectionError(error);
-      }
-    });
-
-    this.setupEventHandlers();
+      this.setupEventHandlers();
+    } catch (error) {
+      console.error('Failed to create socket connection:', error);
+      this.handleConnectionError(error instanceof Error ? error : new Error(String(error)));
+    }
   }
 
   /**
@@ -354,9 +333,10 @@ export class NetworkManager {
       this.connectionAttempts = 0;
       
       // Log transport being used
-      const transport = this.socket?.io.engine.transport;
-      if (transport && typeof transport === 'object' && 'name' in transport) {
-        console.log('Using transport:', transport.name);
+      try {
+        console.log('Using transport:', this.socket?.io.engine.transport.name);
+      } catch (_e) {
+        console.log('Could not determine transport type');
       }
       
       // Notify listeners
@@ -375,8 +355,12 @@ export class NetworkManager {
       });
     });
 
-    // Handle connect error
-    this.socket.on('connect_error', this.handleConnectionError.bind(this));
+    // Handle connect error with limited retries
+    this.socket.on('connect_error', (error) => {
+      console.error('Connection error:', error);
+      this.onConnectionStatus?.(ConnectionStatus.ERROR, error);
+      this.handleConnectionError(error);
+    });
 
     // Handle disconnect
     this.socket.on('disconnect', (reason) => {
@@ -385,8 +369,8 @@ export class NetworkManager {
       this.onConnectionStatus?.(ConnectionStatus.DISCONNECTED);
       this.otherPlayers.clear(); // Clear other players on disconnect
       
-      // If the disconnect was due to a transport error, try reconnecting
-      if (reason === 'transport error' || reason === 'transport close') {
+      // If server closed the connection or there was a transport error, try to reconnect
+      if (['transport close', 'transport error', 'ping timeout', 'io server disconnect'].includes(reason)) {
         this.handleConnectionError(new Error(reason));
       }
     });
