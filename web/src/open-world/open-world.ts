@@ -2,8 +2,9 @@ import * as THREE from 'three';
 import { Player } from './player';
 import { WorldManager } from './world-manager';
 import { NetworkManager } from './network-manager';
-import { ConnectionStatus, Position, Rotation } from '../types';
-import { GameEvent, GAME_CONFIG, GameEventPayloads } from '../constants';
+import { ConnectionStatus } from '../types';
+import { GameEvent, GameEventPayloads } from '../constants';
+import { InputAction, getActionFromKeyCode } from '../constants/input';
 
 export class OpenWorldGame {
   // Core three.js components
@@ -75,16 +76,16 @@ export class OpenWorldGame {
       (id: string, position: THREE.Vector3, color: THREE.Color) => this.handlePlayerJoin(id, position, color),
       (id: string) => this.handlePlayerLeave(id),
       (id: string, position: THREE.Vector3) => this.updatePlayerPosition(id, position),
-      (status: ConnectionStatus, error?: any) => this.handleConnectionStatus(status, error)
+      (status: ConnectionStatus, error?: Error) => this.handleConnectionStatus(status, error)
     );
     
     // Connect to the server
     this.networkManager.connect();
     
     // Set up event listeners
-    window.addEventListener('resize', this.onWindowResize.bind(this));
-    document.addEventListener('keydown', this.onKeyDown.bind(this));
-    document.addEventListener('keyup', this.onKeyUp.bind(this));
+    window.addEventListener('resize', this.onWindowResize);
+    document.addEventListener('keydown', this.onKeyDown);
+    document.addEventListener('keyup', this.onKeyUp);
 
     // Add instructions
     this.addControlsInstructions(container);
@@ -214,8 +215,10 @@ export class OpenWorldGame {
     if (this.players.has(id)) {
       console.log(`Player ${id} left`);
       const player = this.players.get(id);
-      this.scene.remove(player.getObject());
-      this.players.delete(id);
+      if (player) {
+        this.scene.remove(player.getObject());
+        this.players.delete(id);
+      }
     }
   }
   
@@ -225,14 +228,16 @@ export class OpenWorldGame {
   private updatePlayerPosition(id: string, position: THREE.Vector3): void {
     if (this.players.has(id)) {
       const player = this.players.get(id);
-      player.setPosition(position);
+      if (player) {
+        player.setPosition(position);
+      }
     }
   }
   
   /**
    * Handle window resize event
    */
-  private onWindowResize(): void {
+  private onWindowResize = (): void => {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -241,28 +246,42 @@ export class OpenWorldGame {
   /**
    * Handle key down events for player movement
    */
-  private onKeyDown(event: KeyboardEvent): void {
-    this.localPlayer.handleKeyDown(event.code);
+  private onKeyDown = (event: KeyboardEvent): void => {
+    console.log('Key down:', event.code);
+    const action = getActionFromKeyCode(event.code);
+    if (action) {
+      console.log('Mapped to action:', action);
+      this.localPlayer.handleActionDown(action);
 
-    // Request state verification when V is pressed
-    if (event.code === 'KeyV') {
-      event.preventDefault();
-      this.networkManager.verifyClientState();
-      console.log('State verification requested...');
+      // Handle special actions
+      if (action === InputAction.VERIFY_STATE) {
+        event.preventDefault();
+        this.networkManager.verifyClientState();
+        console.log('State verification requested...');
+      }
+    } else {
+      console.log('No action mapped for key:', event.code);
     }
   }
   
   /**
    * Handle key up events for player movement
    */
-  private onKeyUp(event: KeyboardEvent): void {
-    this.localPlayer.handleKeyUp(event.code);
+  private onKeyUp = (event: KeyboardEvent): void => {
+    console.log('Key up:', event.code);
+    const action = getActionFromKeyCode(event.code);
+    if (action) {
+      console.log('Mapped to action:', action);
+      this.localPlayer.handleActionUp(action);
+    } else {
+      console.log('No action mapped for key:', event.code);
+    }
   }
   
   /**
    * Handle connection status changes
    */
-  private handleConnectionStatus(status: ConnectionStatus, error?: any): void {
+  private handleConnectionStatus(status: ConnectionStatus, error?: Error): void {
     console.log(`Connection status: ${status}`, error || '');
     
     // You can add UI indicators here to show connection status
@@ -360,9 +379,9 @@ export class OpenWorldGame {
     this.stop();
     
     // Clean up event listeners
-    window.removeEventListener('resize', this.onWindowResize.bind(this));
-    document.removeEventListener('keydown', this.onKeyDown.bind(this));
-    document.removeEventListener('keyup', this.onKeyUp.bind(this));
+    window.removeEventListener('resize', this.onWindowResize);
+    document.removeEventListener('keydown', this.onKeyDown);
+    document.removeEventListener('keyup', this.onKeyUp);
     
     // Disconnect from network
     this.networkManager.disconnect();

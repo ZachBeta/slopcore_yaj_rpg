@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { InputAction } from '../constants/input';
 
 export class Player {
   private id: string;
@@ -6,17 +7,7 @@ export class Player {
   private object: THREE.Group;
   private body: THREE.Mesh;
   private velocity: THREE.Vector3 = new THREE.Vector3();
-  private movementKeys: { [key: string]: boolean } = {
-    'KeyW': false,
-    'KeyA': false,
-    'KeyS': false,
-    'KeyD': false,
-    'Space': false,
-    'KeyI': false,
-    'KeyJ': false,
-    'KeyK': false,
-    'KeyL': false
-  };
+  private activeActions: Set<InputAction> = new Set();
   private moveSpeed: number = 5;
   private gravity: number = 9.8;
   private jumpForce: number = 5;
@@ -24,7 +15,7 @@ export class Player {
   private collisionEffect: THREE.Mesh | null = null;
   private collisionEffectDuration: number = 0.5;
   private collisionEffectTimer: number = 0;
-  private rotation: THREE.Euler = new THREE.Euler(0, 0, 0, 'YXZ');
+  private rotation: THREE.Euler = new THREE.Euler(0, Math.PI, 0, 'YXZ');
   private lookSpeed: number = 2.0;
   private color: THREE.Color;
 
@@ -160,82 +151,94 @@ export class Player {
   }
   
   /**
-   * Handle player movement based on keyboard input
+   * Handle player movement based on active input actions
    */
   private handleMovement(deltaTime: number): void {
     // Reset velocity for horizontal movement
     this.velocity.x = 0;
     this.velocity.z = 0;
     
+    const frameSpeed = this.moveSpeed * deltaTime;
+    
     // Forward/Backward movement
-    if (this.movementKeys['KeyW']) {
-      this.velocity.z = -this.moveSpeed;
-    } else if (this.movementKeys['KeyS']) {
-      this.velocity.z = this.moveSpeed;
+    if (this.activeActions.has(InputAction.MOVE_FORWARD)) {
+      console.log('Moving forward');
+      this.velocity.z = -frameSpeed;
+    } else if (this.activeActions.has(InputAction.MOVE_BACKWARD)) {
+      console.log('Moving backward');
+      this.velocity.z = frameSpeed;
     }
     
     // Left/Right movement
-    if (this.movementKeys['KeyA']) {
-      this.velocity.x = -this.moveSpeed;
-    } else if (this.movementKeys['KeyD']) {
-      this.velocity.x = this.moveSpeed;
+    if (this.activeActions.has(InputAction.MOVE_LEFT)) {
+      console.log('Moving left');
+      this.velocity.x = -frameSpeed;
+    } else if (this.activeActions.has(InputAction.MOVE_RIGHT)) {
+      console.log('Moving right');
+      this.velocity.x = frameSpeed;
     }
     
     // Normalize diagonal movement
-    if ((this.movementKeys['KeyW'] || this.movementKeys['KeyS']) && 
-        (this.movementKeys['KeyA'] || this.movementKeys['KeyD'])) {
+    if ((this.activeActions.has(InputAction.MOVE_FORWARD) || this.activeActions.has(InputAction.MOVE_BACKWARD)) && 
+        (this.activeActions.has(InputAction.MOVE_LEFT) || this.activeActions.has(InputAction.MOVE_RIGHT))) {
+      console.log('Normalizing diagonal movement');
       const length = Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.z * this.velocity.z);
       this.velocity.x /= length;
       this.velocity.z /= length;
-      this.velocity.x *= this.moveSpeed;
-      this.velocity.z *= this.moveSpeed;
+      this.velocity.x *= frameSpeed;
+      this.velocity.z *= frameSpeed;
     }
     
     // Jump
-    if (this.movementKeys['Space'] && this.isGrounded) {
+    if (this.activeActions.has(InputAction.JUMP) && this.isGrounded) {
+      console.log('Jumping');
       this.velocity.y = this.jumpForce;
       this.isGrounded = false;
     }
   }
   
   /**
-   * Handle player rotation based on keyboard input (IJKL)
+   * Handle player rotation based on active input actions
    */
   private handleRotation(deltaTime: number): void {
-    // Look up/down (I/K)
-    if (this.movementKeys['KeyI']) {
+    // Look up/down
+    if (this.activeActions.has(InputAction.LOOK_UP)) {
+      console.log('Looking up');
       this.rotation.x -= this.lookSpeed * deltaTime;
-    } else if (this.movementKeys['KeyK']) {
+    } else if (this.activeActions.has(InputAction.LOOK_DOWN)) {
+      console.log('Looking down');
       this.rotation.x += this.lookSpeed * deltaTime;
     }
     
     // Limit up/down look to prevent flipping over
     this.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.rotation.x));
     
-    // Look left/right (J/L)
-    if (this.movementKeys['KeyJ']) {
+    // Look left/right
+    if (this.activeActions.has(InputAction.LOOK_LEFT)) {
+      console.log('Looking left');
       this.rotation.y += this.lookSpeed * deltaTime;
-    } else if (this.movementKeys['KeyL']) {
+    } else if (this.activeActions.has(InputAction.LOOK_RIGHT)) {
+      console.log('Looking right');
       this.rotation.y -= this.lookSpeed * deltaTime;
     }
   }
   
   /**
-   * Handle key down event for player movement
+   * Handle input action activation
    */
-  public handleKeyDown(keyCode: string): void {
-    if (keyCode in this.movementKeys) {
-      this.movementKeys[keyCode] = true;
-    }
+  public handleActionDown(action: InputAction): void {
+    console.log('Player action down:', action);
+    this.activeActions.add(action);
+    console.log('Active actions:', Array.from(this.activeActions));
   }
   
   /**
-   * Handle key up event for player movement
+   * Handle input action deactivation
    */
-  public handleKeyUp(keyCode: string): void {
-    if (keyCode in this.movementKeys) {
-      this.movementKeys[keyCode] = false;
-    }
+  public handleActionUp(action: InputAction): void {
+    console.log('Player action up:', action);
+    this.activeActions.delete(action);
+    console.log('Active actions:', Array.from(this.activeActions));
   }
   
   /**
