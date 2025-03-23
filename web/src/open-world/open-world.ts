@@ -72,8 +72,12 @@ export class OpenWorldGame {
       this.localPlayer, 
       (id: string, position: THREE.Vector3, color: THREE.Color) => this.handlePlayerJoin(id, position, color),
       (id: string) => this.handlePlayerLeave(id),
-      (id: string, position: THREE.Vector3) => this.updatePlayerPosition(id, position)
+      (id: string, position: THREE.Vector3) => this.updatePlayerPosition(id, position),
+      (status: 'connected' | 'disconnected' | 'error', error?: any) => this.handleConnectionStatus(status, error)
     );
+    
+    // Connect to the server
+    this.networkManager.connect();
     
     // Set up event listeners
     window.addEventListener('resize', this.onWindowResize.bind(this));
@@ -82,6 +86,11 @@ export class OpenWorldGame {
 
     // Add instructions
     this.addControlsInstructions(container);
+    
+    // Start the animation loop
+    this.animating = true;
+    this.lastTime = performance.now();
+    this.animate();
   }
 
   /**
@@ -173,13 +182,17 @@ export class OpenWorldGame {
    * Handle player joining the game
    */
   private handlePlayerJoin(id: string, position: THREE.Vector3, color: THREE.Color): void {
+    console.log(`handlePlayerJoin called for ${id} at position:`, position);
     if (id !== this.localPlayer.getId() && !this.players.has(id)) {
-      console.log(`Player ${id} joined`);
+      console.log(`Creating new player object for ${id} with color:`, color);
       const player = new Player(id, false);
       player.setPosition(position);
       player.setColor(color);
       this.scene.add(player.getObject());
+      console.log(`Added player ${id} to scene. Current player count:`, this.players.size + 1);
       this.players.set(id, player);
+    } else {
+      console.log(`Skipping player join for ${id}. Local player: ${this.localPlayer.getId()}, Already exists: ${this.players.has(id)}`);
     }
   }
   
@@ -226,6 +239,22 @@ export class OpenWorldGame {
    */
   private onKeyUp(event: KeyboardEvent): void {
     this.localPlayer.handleKeyUp(event.code);
+  }
+  
+  /**
+   * Handle connection status changes
+   */
+  private handleConnectionStatus(status: 'connected' | 'disconnected' | 'error', error?: any): void {
+    console.log(`Connection status: ${status}`, error || '');
+    
+    // You can add UI indicators here to show connection status
+    if (status === 'connected') {
+      console.log('Successfully connected to multiplayer server');
+    } else if (status === 'disconnected') {
+      console.log('Disconnected from multiplayer server');
+    } else if (status === 'error') {
+      console.error('Error connecting to multiplayer server:', error);
+    }
   }
   
   /**

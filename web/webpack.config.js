@@ -1,5 +1,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const webpack = require('webpack');
+const { GameServer } = require('./server/game-server');
 
 module.exports = {
   entry: './src/index.ts',
@@ -23,6 +25,10 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './public/index.html',
     }),
+    new webpack.DefinePlugin({
+      'process.env.NODE_ENV': JSON.stringify('development'),
+      'process.env.SOCKET_SERVER_URL': JSON.stringify('http://localhost:8080')
+    })
   ],
   devServer: {
     static: {
@@ -33,5 +39,20 @@ module.exports = {
     host: '0.0.0.0',
     hot: true,
     allowedHosts: 'all',
+    onListening: function(devServer) {
+      if (!devServer) {
+        throw new Error('webpack-dev-server is not defined');
+      }
+
+      const server = devServer.server;
+      if (!server) {
+        throw new Error('webpack-dev-server HTTP server is not defined');
+      }
+
+      // Server is now guaranteed to exist and be listening
+      console.log('Attaching Socket.IO server...');
+      new GameServer(server, 8080);
+      console.log('Socket.IO server attached successfully');
+    }
   },
 }; 

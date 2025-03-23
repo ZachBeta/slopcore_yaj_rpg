@@ -2,9 +2,11 @@
 
 ## open world game
 
+* shorten timeout in integration test
 * player colors are not consistent - red player should be red on both clients, blue player same
 * maps are different - let's generate that on server start and find a way to relay that to the player
 * generate a random username in the form "adjective noun"
+* track player in the browser session
 
 ## soon
 
