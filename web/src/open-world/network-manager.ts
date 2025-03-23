@@ -3,7 +3,6 @@ import { Player } from './player';
 import { io, Socket } from 'socket.io-client';
 import { GameEvent, GameEventPayloads, ConnectionStatus } from '../constants';
 import { DebugState } from '../types';
-import process from "node:process";
 
 // Define EventHandler type
 type EventHandler<T extends GameEvent> = (payload: GameEventPayloads[T]) => void;
@@ -265,12 +264,12 @@ export class NetworkManager {
     console.log(`Attempting to connect to Socket.io server at ${this.connectionUrl} (attempt ${this.connectionAttempts}/${this.maxConnectionAttempts})`);
     
     try {
-      // Create socket with both WebSocket and polling transports
+      // Create socket with better connection options
       this.socket = io(this.connectionUrl, {
         reconnectionAttempts: this.maxConnectionAttempts,
         timeout: 10000,
-        // Try WebSocket first, fall back to polling
-        transports: ['websocket', 'polling'], 
+        // Start with polling, which is more reliable for initial connection
+        transports: ['polling', 'websocket'],
         reconnection: true,
         reconnectionDelay: 1000,
         reconnectionDelayMax: 5000,
@@ -335,7 +334,7 @@ export class NetworkManager {
       // Log transport being used
       try {
         console.log('Using transport:', this.socket?.io.engine.transport.name);
-      } catch (_e) {
+      } catch (_error) {
         console.log('Could not determine transport type');
       }
       

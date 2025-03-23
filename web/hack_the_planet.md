@@ -4,6 +4,8 @@
 
 * consistent map
 * deno lint over eslint
+* we need to keep our test timeouts short
+* we avoid mocks, and use real objects as much as possible
 
 * server diagnostics is getting noisy in dev logs
 * tests are slow as hell

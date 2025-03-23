@@ -176,14 +176,7 @@ export class OpenWorldGame {
         { key: 'KeyS', label: 'S', position: 'bottom' },
         { key: 'KeyA', label: 'A', position: 'left' },
         { key: 'KeyD', label: 'D', position: 'right' }
-      ],
-      throttle: {
-        key: 'throttle',
-        upKey: 'KeyR',
-        downKey: 'KeyF',
-        upLabel: 'R',
-        downLabel: 'F'
-      }
+      ]
     };
     
     // Attitude Controls Stick configuration

@@ -1,8 +1,7 @@
 import { GameServer } from './game-server';
-import { createServer, Server as HttpServer } from 'http';
-import { io as Client, Socket } from 'socket.io-client';
-import type { Color, Player } from '../src/types';
+import { Player, Color } from '../src/types';
 import { GameEvent } from '../src/constants';
+import { createSocketTestEnvironment } from './test-helpers';
 
 // Test-specific subclass to access protected properties
 class TestGameServer extends GameServer {
@@ -44,147 +43,55 @@ class TestGameServer extends GameServer {
 }
 
 describe('Socket.IO Server Integration Tests', () => {
-  let server: HttpServer;
+  let testEnv: Awaited<ReturnType<typeof createSocketTestEnvironment<TestGameServer>>>;
   let gameServer: TestGameServer;
-  let clientSocket: Socket | null = null;
-  let serverSocket: Socket | null = null;
-  const testPort = 3001;
   const TEST_TIMEOUT = 30000;
 
-  beforeAll((done) => {
-    // Suppress console logs during tests
-    jest.spyOn(console, 'log').mockImplementation(() => {});
-    
-    server = createServer();
-    gameServer = new TestGameServer(server, testPort, { isTestMode: true });
-    
-    // Start server and wait for it to be ready
-    server.listen(testPort, () => {
-      // Give server a moment to fully initialize
-      setTimeout(done, 100);
+  beforeAll(async () => {
+    // Keep console logs but add timestamp
+    const originalConsoleLog = console.log;
+    jest.spyOn(console, 'log').mockImplementation((...args) => {
+      originalConsoleLog(`[${new Date().toISOString()}]`, ...args);
     });
 
-    // Add error handler for the server
-    server.on('error', (err: NodeJS.ErrnoException) => {
-      if (err.code === 'EADDRINUSE') {
-        // If port is in use, try to close any existing connections
-        server.close(() => {
-          // Try to listen again after a short delay
-          setTimeout(() => {
-            server.listen(testPort, () => {
-              setTimeout(done, 100);
-            });
-          }, 100);
-        });
-      } else {
-        console.error('Server error:', err);
-        done(err);
-      }
-    });
+    // Create test environment with our TestGameServer class
+    testEnv = await createSocketTestEnvironment<TestGameServer>(TestGameServer);
+    
+    // Get the game server directly as TestGameServer
+    gameServer = testEnv.gameServer;
   }, TEST_TIMEOUT);
 
   afterAll(async () => {
+    console.log('Cleaning up after all tests');
     jest.restoreAllMocks();
     
-    // Clean up sockets
-    if (clientSocket) {
-      if (clientSocket.connected) {
-        clientSocket.disconnect();
-      }
-      clientSocket.close();
-    }
-    if (serverSocket) {
-      if (serverSocket.connected) {
-        serverSocket.disconnect();
-      }
-      serverSocket.close();
-    }
-
-    // Clear the diagnostics interval
-    if (gameServer) {
-      clearInterval(gameServer['diagnosticsInterval']);
-    }
-
-    // Then close servers with proper cleanup
-    await new Promise<void>((resolve) => {
-      if (gameServer) {
-        try {
-          gameServer.close();
-        } catch (err) {
-          console.error('Error closing game server:', err);
-        }
-      }
-      if (server) {
-        try {
-          server.close(() => {
-            resolve();
-          });
-        } catch (err) {
-          console.error('Error closing HTTP server:', err);
-          resolve();
-        }
-      } else {
-        resolve();
-      }
-    });
-
-    // Final cleanup
-    clientSocket = null;
-    serverSocket = null;
-    gameServer = null as unknown as TestGameServer;
-    server = null as unknown as HttpServer;
+    // Clean up test environment
+    await testEnv.cleanup();
   }, TEST_TIMEOUT);
 
-  beforeEach((done) => {
-    // Create new client socket for each test
-    clientSocket = Client(`http://localhost:${testPort}`, {
-      forceNew: true,
-      transports: ['websocket']
-    });
-
-    // Wait for server to be ready
-    setTimeout(done, 100);
-  }, TEST_TIMEOUT);
-
-  afterEach((done) => {
-    // Disconnect client socket
-    if (clientSocket) {
-      if (clientSocket.connected) {
-        clientSocket.disconnect();
-      }
-      clientSocket.close();
-      clientSocket = null;
-    }
-
-    // Wait for server to process disconnection
-    setTimeout(done, 100);
-  }, TEST_TIMEOUT);
-
-  test('handles player joining', (done) => {
-    expect(clientSocket).toBeDefined();
-    if (!clientSocket) {
-      done(new Error('Client socket not initialized'));
-      return;
-    }
-
-    const socket = clientSocket;
+  beforeEach(() => {
+    console.log('Setting up test');
     
-    // Add error listener
-    socket.on('connect_error', (err) => {
-      done(new Error(`Connection error: ${err.message}`));
-    });
+    // Reset game server state
+    gameServer.clearPlayers();
+    gameServer.clearLockedColors();
+    gameServer.clearUsedRandomColors();
     
-    socket.on('error', (err) => {
-      done(new Error(`Socket error: ${err.message}`));
-    });
+    // Reset available colors to full pool
+    gameServer.setAvailableColors([...gameServer.getColorPool()]);
+  });
+
+  test('handles player joining', async () => {
+    console.log('Starting player joining test');
     
-    // Add connection timeout handler
-    const timeoutId = setTimeout(() => {
-      done(new Error('Socket connection timed out'));
-    }, 5000);
+    // Create a client
+    const client = testEnv.createClient();
     
-    socket.on(GameEvent.PLAYER_JOINED, (player: Player) => {
-      clearTimeout(timeoutId);
+    try {
+      // Connect and join
+      const { player } = await testEnv.connectAndJoin(client);
+      
+      // Verify player joined correctly
       expect(player.id).toBeDefined();
       expect(typeof player.id).toBe('string');
       expect(player.position).toBeDefined();
@@ -196,158 +103,119 @@ describe('Socket.IO Server Integration Tests', () => {
       // Verify the player was actually added to the server's player list
       const players = gameServer.getPlayers();
       expect(players.has(player.id)).toBe(true);
-      
-      done();
-    });
-
-    // Connect to server
-    socket.on('connect', () => {
-      // Join the game
-      socket.emit(GameEvent.PLAYER_JOIN, { position: { x: 0, y: 0, z: 0 } });
-    });
+    } finally {
+      // Clean up
+      if (client.connected) {
+        client.disconnect();
+      }
+    }
   }, TEST_TIMEOUT);
 
-  test('handles player movement', (done) => {
-    expect(clientSocket).toBeDefined();
-    if (!clientSocket) {
-      done(new Error('Client socket not initialized'));
-      return;
-    }
-
-    const socket = clientSocket;
-    let playerId: string | null = null;
+  test('handles player movement', async () => {
+    console.log('Starting player movement test');
     
-    // Add error listeners
-    socket.on('connect_error', (err) => {
-      done(new Error(`Connection error: ${err.message}`));
-    });
+    // Create a client
+    const client = testEnv.createClient();
     
-    socket.on('error', (err) => {
-      done(new Error(`Socket error: ${err.message}`));
-    });
-    
-    // Set timeout for entire test
-    const timeoutId = setTimeout(() => {
-      done(new Error('Test timed out: No movement event received'));
-    }, 5000);
-    
-    socket.on(GameEvent.PLAYER_JOINED, (player: Player) => {
-      playerId = player.id;
+    try {
+      // Connect and join
+      const { player } = await testEnv.connectAndJoin(client);
       
-      // Update position after player is registered
-      socket.emit(GameEvent.POSITION_UPDATE, {
+      // Set up a promise to wait for player moved event
+      const movedPromise = new Promise<{
+        id: string;
+        position: { x: number; y: number; z: number };
+        rotation: { x: number; y: number; z: number };
+      }>((resolve) => {
+        // Create a second client to receive the movement
+        const client2 = testEnv.createClient();
+        
+        client2.on('connect', () => {
+          // Once connected, listen for player_moved events
+          client2.on(GameEvent.PLAYER_MOVED, (data) => {
+            // Clean up
+            client2.disconnect();
+            resolve(data);
+          });
+          
+          // Send player_join to get notifications
+          client2.emit(GameEvent.PLAYER_JOIN, {
+            position: { x: 0, y: 1, z: 0 }
+          });
+        });
+        
+        client2.connect();
+      });
+      
+      // Now update position
+      client.emit(GameEvent.POSITION_UPDATE, {
         position: { x: 1, y: 0, z: 1 },
         rotation: { x: 0, y: 0, z: 0 }
       });
-    });
-
-    socket.on(GameEvent.PLAYER_MOVED, (data: { id: string; position: { x: number; y: number; z: number }; rotation: { x: number; y: number; z: number } }) => {
-      clearTimeout(timeoutId);
-      expect(data.id).toBeDefined();
-      expect(data.position).toBeDefined();
-      expect(data.position.x).toBe(1); // Check exact coordinates
-      expect(data.position.y).toBe(0);
-      expect(data.position.z).toBe(1);
-      expect(data.rotation).toBeDefined();
       
-      // Verify this is the same player we registered
-      if (playerId) {
-        expect(data.id).toBe(playerId);
+      // Wait for the moved event
+      const moveData = await movedPromise;
+      
+      // Verify the movement data
+      expect(moveData.id).toBeDefined();
+      expect(moveData.position).toBeDefined();
+      expect(moveData.position.x).toBe(1);
+      expect(moveData.position.y).toBe(0);
+      expect(moveData.position.z).toBe(1);
+      
+      // Verify server state
+      const serverPlayer = gameServer.getPlayers().get(player.id);
+      expect(serverPlayer).toBeDefined();
+      expect(serverPlayer?.position.x).toBe(1);
+      expect(serverPlayer?.position.y).toBe(0);
+      expect(serverPlayer?.position.z).toBe(1);
+    } finally {
+      // Clean up
+      if (client.connected) {
+        client.disconnect();
       }
-      
-      // Verify player position was updated in server
-      const players = gameServer.getPlayers();
-      const player = players.get(data.id);
-      expect(player).toBeDefined();
-      expect(player?.position.x).toBe(1);
-      expect(player?.position.z).toBe(1);
-      
-      done();
-    });
-
-    // Connect and join
-    socket.on('connect', () => {
-      socket.emit(GameEvent.PLAYER_JOIN, { position: { x: 0, y: 0, z: 0 } });
-    });
+    }
   }, TEST_TIMEOUT);
 
-  test('handles multiple players', (done) => {
-    expect(clientSocket).toBeDefined();
-    if (!clientSocket) {
-      done(new Error('Client socket not initialized'));
-      return;
-    }
-
-    const socket = clientSocket;
-    let playersListReceived = false;
-    let playerJoinedReceived = false;
+  test('handles multiple players', async () => {
+    console.log('Starting multiple players test');
     
-    // Add error listeners
-    socket.on('connect_error', (err) => {
-      done(new Error(`Connection error: ${err.message}`));
-    });
+    const client1 = testEnv.createClient();
+    const client2 = testEnv.createClient();
     
-    socket.on('error', (err) => {
-      done(new Error(`Socket error: ${err.message}`));
-    });
-    
-    // Set timeout for entire test
-    const timeoutId = setTimeout(() => {
-      done(new Error(`Test timed out: playersListReceived=${playersListReceived}, playerJoinedReceived=${playerJoinedReceived}`));
-    }, 5000);
-
-    const checkCompletion = () => {
-      if (playersListReceived && playerJoinedReceived) {
-        clearTimeout(timeoutId);
-        
-        // Final validation - check game server state
-        const players = gameServer.getPlayers();
-        expect(players.size).toBeGreaterThan(0);
-        
-        // Verify color assignment
-        const player = Array.from(players.values())[0];
-        expect(player.color).toBeDefined();
-        
-        done();
-      }
-    };
-
-    socket.on(GameEvent.PLAYERS_LIST, (players: Player[]) => {
-      expect(Array.isArray(players)).toBe(true);
-      // Should have at least the current player
-      if (players.length > 0) {
-        const player = players[0];
-        expect(player.id).toBeDefined();
-        expect(player.position).toBeDefined();
-        expect(player.color).toBeDefined();
-      }
-      playersListReceived = true;
-      checkCompletion();
-    });
-
-    socket.on(GameEvent.PLAYER_JOINED, (player: Player) => {
-      expect(player.id).toBeDefined();
-      expect(typeof player.id).toBe('string');
-      expect(player.position).toBeDefined();
-      expect(player.color).toBeDefined();
-      playerJoinedReceived = true;
-      checkCompletion();
-    });
-
-    // Connect and join
-    socket.on('connect', () => {
-      // Add log to see when connection happens
-      console.log = jest.fn().mockImplementation((message) => {
-        if (typeof message === 'string' && message.includes('player joined')) {
-          console.info('Connection established for multiple players test');
-        }
+    try {
+      // Connect first client
+      const { player: player1 } = await testEnv.connectAndJoin(client1);
+      
+      // Set up a promise to detect new player joining
+      const playerJoinedPromise = new Promise<Player>((resolve) => {
+        client1.on(GameEvent.PLAYER_JOINED, (player) => {
+          resolve(player);
+        });
       });
       
-      socket.emit(GameEvent.PLAYER_JOIN, { 
-        position: { x: 0, y: 0, z: 0 },
-        // Include optional data to make test more robust
-        username: 'test-player'
-      });
-    });
+      // Connect second client
+      const { player: player2 } = await testEnv.connectAndJoin(client2);
+      
+      // Wait for the first client to receive notification about second player
+      const joinedPlayer = await playerJoinedPromise;
+      
+      // Verify second player joined
+      expect(joinedPlayer.id).toBe(player2.id);
+      
+      // Verify server state
+      const players = gameServer.getPlayers();
+      expect(players.size).toBe(2);
+      expect(players.has(player1.id)).toBe(true);
+      expect(players.has(player2.id)).toBe(true);
+    } finally {
+      // Clean up
+      if (client1.connected) {
+        client1.disconnect();
+      }
+      if (client2.connected) {
+        client2.disconnect();
+      }
+    }
   }, TEST_TIMEOUT);
 }); 

@@ -31,6 +31,9 @@ const config: WebpackConfigWithDevServer = {
   },
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
+    fallback: {
+      process: require.resolve('process/browser'),
+    }
   },
   output: {
     filename: '[name].js',
@@ -46,7 +49,10 @@ const config: WebpackConfigWithDevServer = {
       'process.env.NODE_ENV': JSON.stringify('development'),
       'process.env.SOCKET_SERVER_URL': JSON.stringify('http://localhost:8080')
     }),
-    new webpack.HotModuleReplacementPlugin()
+    new webpack.HotModuleReplacementPlugin(),
+    new webpack.ProvidePlugin({
+      process: 'process/browser',
+    })
   ],
   devServer: {
     static: [

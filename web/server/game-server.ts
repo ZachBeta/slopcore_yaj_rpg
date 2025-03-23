@@ -534,20 +534,29 @@ export class GameServer {
     return this.io;
   }
 
+  /**
+   * Closes the game server and cleans up resources
+   */
   public close(): void {
-    // Clear diagnostics interval
+    // Clear the diagnostics interval
     if (this.diagnosticsInterval) {
       clearInterval(this.diagnosticsInterval);
       this.diagnosticsInterval = undefined;
     }
-
-    // Close all socket connections
-    this.io.sockets.sockets.forEach(socket => {
-      socket.disconnect(true);
-    });
-
-    // Close the Socket.IO server
-    this.io.close();
+    
+    // Clear any other intervals or timers
+    
+    // Clear data structures
+    this.players.clear();
+    this.lockedColors.clear();
+    this.usedRandomColors.clear();
+    this.availableColors = [...this.colorPool];
+    this.pendingJoins.clear();
+    this.colorKeyCache.clear();
+    
+    // Reset the mutex
+    this.colorAssignmentMutex = Promise.resolve();
+    this.colorAssignmentPromise = Promise.resolve();
   }
 
   private handlePlayerJoin(socket: Socket, data: { position: { x: number; y: number; z: number } }): void {

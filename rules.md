@@ -15,6 +15,7 @@
 
 ## Versioning
 
+* make sure the package.json version stays up to date
 - Follow [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html): MAJOR.MINOR.PATCH
 - Use consistent git tag format: `0.5.1` (without 'v' prefix)
 - Keep CHANGELOG.md updated with every version
