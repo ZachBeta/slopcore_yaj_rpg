@@ -22,6 +22,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhanced ICE representations
   - Run progress visualization
 
+## [0.7.0] - 2025-03-23
+
+### Added
+- Open World prototype with Three.js implementation
+- 3D environment with player movement and physics
+- Multiplayer functionality with Socket.io integration
+- Advanced movement controls with 6 degrees of freedom
+- Player collision detection and interaction
+- Integrated with existing game UI
+
+### Changed
+- Updated input system to support more complex movement
+- Enhanced 3D rendering with improved performance
+- Expanded networking capabilities for multiplayer support
+
 ## [0.6.1] - 2025-03-22
 
 ### Added

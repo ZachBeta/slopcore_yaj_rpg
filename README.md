@@ -4,7 +4,7 @@ A cyberpunk card game where you play as a hacker (Runner) breaking into corporat
 
 ## Current Version
 
-**v0.6.1** - Web Enhancements with Three.js Integration
+**v0.7.0** - Open World Prototype with Three.js and Multiplayer Support
 
 ## Game Overview
 
@@ -20,6 +20,7 @@ Neon Dominance is an asymmetric deckbuilder set in a cyberpunk world. You play a
 - **Jack Out Mechanics**: Strategic choices during runs
 - **ASCII Art Interface**: Visual feedback with colored text
 - **3D Web Version**: Three.js integration with interactive elements and easter eggs
+- **Open World Prototype**: Multiplayer environment with 3D movement and physics
 
 ## Getting Started
 
@@ -97,6 +98,23 @@ During gameplay, the following commands are available:
 - `discard <card_num>` - Discard a card from your hand
 - `end` - End your turn
 
+### Open World Controls
+
+In the open world prototype, the following controls are available:
+
+- `W` - Ascend (Move Up in elevation)
+- `S` - Descend (Move Down in elevation)
+- `A` - Rotate Left (Yaw)
+- `D` - Rotate Right (Yaw)
+- `I` - Look Up (Pitch)
+- `K` - Look Down (Pitch)
+- `J` - Roll Left
+- `L` - Roll Right
+- `R` - Move Forward (Throttle)
+- `F` - Move Backward (Throttle)
+- `Space` - Jump
+- `X` - Toggle Debug Mode
+
 ## AI Opponent
 
 The game features a Corporation AI opponent with:
@@ -114,11 +132,13 @@ The game features a Corporation AI opponent with:
 - [x] Resource management (credits and memory units)
 - [x] Server run mechanics with ICE encounters
 - [x] Jack out command implementation
+- [x] Open world prototype with multiplayer support
 
 🔄 **IN PROGRESS**:
 - [ ] Enhanced run approach options
 - [ ] Visual improvements for server visualization
 - [ ] Economic rebalancing
+- [ ] Advanced open world environment features
 
 ## Project Structure
 

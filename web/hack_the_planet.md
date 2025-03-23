@@ -2,6 +2,8 @@
 
 ## open world game
 
+* consistent map
+
 * server diagnostics is getting noisy in dev logs
 * tests are slow as hell
 
