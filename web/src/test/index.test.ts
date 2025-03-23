@@ -50,53 +50,71 @@ describe('Index', () => {
     // Save original console
     originalConsole = global.console;
     
-    // Mock console methods
+    // Mock console
     global.console = {
-      ...console,
       log: jest.fn(),
       error: jest.fn(),
+      warn: jest.fn(),
+      info: jest.fn(),
+      debug: jest.fn(),
       clear: jest.fn()
     } as unknown as Console;
     
     // Set up DOM elements
-    mockStartButton = document.createElement('button') as HTMLButtonElement;
+    mockStartButton = document.createElement('button');
     mockStartButton.id = 'start-game';
-    
-    mockOptionsButton = document.createElement('button') as HTMLButtonElement;
+    mockStartButton.addEventListener = jest.fn();
+
+    mockOptionsButton = document.createElement('button');
     mockOptionsButton.id = 'options';
-    
-    mockAboutButton = document.createElement('button') as HTMLButtonElement;
+    mockOptionsButton.addEventListener = jest.fn();
+
+    mockAboutButton = document.createElement('button');
     mockAboutButton.id = 'about';
-    
-    mockMenuContainer = document.createElement('div') as HTMLDivElement;
+    mockAboutButton.addEventListener = jest.fn();
+
+    mockMenuContainer = document.createElement('div');
     mockMenuContainer.className = 'menu-container';
-    
-    mockCanvasContainer = document.createElement('div') as HTMLDivElement;
+    mockMenuContainer.appendChild(mockStartButton);
+    mockMenuContainer.appendChild(mockOptionsButton);
+    mockMenuContainer.appendChild(mockAboutButton);
+
+    mockCanvasContainer = document.createElement('div');
     mockCanvasContainer.id = 'canvas-container';
-    
-    // Mock document.getElementById and querySelector
-    jest.spyOn(document, 'getElementById').mockImplementation((id) => {
-      if (id === 'start-game') return mockStartButton;
-      if (id === 'options') return mockOptionsButton;
-      if (id === 'about') return mockAboutButton;
-      if (id === 'canvas-container') return mockCanvasContainer;
-      return null;
+
+    document.body.appendChild(mockMenuContainer);
+    document.body.appendChild(mockCanvasContainer);
+
+    // Mock document.getElementById
+    document.getElementById = jest.fn((id) => {
+      switch (id) {
+        case 'start-game':
+          return mockStartButton;
+        case 'options':
+          return mockOptionsButton;
+        case 'about':
+          return mockAboutButton;
+        case 'canvas-container':
+          return mockCanvasContainer;
+        default:
+          return null;
+      }
     });
     
-    jest.spyOn(document, 'querySelector').mockImplementation((selector) => {
+    // Mock document.querySelector
+    document.querySelector = jest.fn((selector) => {
       if (selector === '.menu-container') return mockMenuContainer;
+      if (selector === '#canvas-container') return mockCanvasContainer;
       return null;
-    });
-    
-    // Load index.ts
-    jest.isolateModules(() => {
-      require('../index');
     });
   });
   
   afterEach(() => {
     // Restore original console
     global.console = originalConsole;
+    
+    // Clean up DOM
+    document.body.innerHTML = '';
     
     // Clear all mocks
     jest.clearAllMocks();
@@ -153,9 +171,11 @@ describe('Index', () => {
   });
   
   test('DOMContentLoaded event should set up event listeners', () => {
-    // Simulate DOMContentLoaded event
-    const domContentLoadedEvent = new Event('DOMContentLoaded');
-    document.dispatchEvent(domContentLoadedEvent);
+    // Clear the module cache to ensure fresh load
+    jest.resetModules();
+    
+    // Load index.ts after DOM setup
+    const indexModule = require('../index');
     
     // Verify event listeners were added
     expect(mockStartButton.addEventListener).toHaveBeenCalledWith('click', expect.any(Function));

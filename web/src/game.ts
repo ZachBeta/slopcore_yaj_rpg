@@ -1,15 +1,38 @@
-// Import socket.io client
-const socket = io();
+import { Socket, io } from 'socket.io-client';
+
+interface ServerDiagnostics {
+  fps: number;
+  playerCount: number;
+  uptime: number;
+  availableColors: number;
+  colorPoolSize: number;
+  connections: number;
+}
+
+interface PongData {
+  timestamp: number;
+}
+
+interface DiagnosticsData {
+  status?: string;
+}
 
 class Game {
+  private socket: Socket;
+  private lastPingTime: number;
+  private pingInterval: number;
+  private lastPing: number;
+  private diagnosticsDiv: HTMLDivElement | null;
+
   constructor() {
-    this.socket = socket;
+    // Import socket.io client
+    this.socket = io();
     this.lastPingTime = 0;
     this.pingInterval = 1000; // Ping every second
     this.lastPing = Date.now();
+    this.diagnosticsDiv = null;
     
     // Add connection status to diagnostics
-    this.diagnosticsDiv = null;
     this.setupDiagnostics();
     
     // Setup socket event handlers
@@ -18,12 +41,12 @@ class Game {
       this.updateDiagnostics({ status: 'Connected' });
     });
 
-    this.socket.on('connect_error', (error) => {
+    this.socket.on('connect_error', (error: Error) => {
       console.error('Connection error:', error);
       this.updateDiagnostics({ status: 'Connection Error' });
     });
 
-    this.socket.on('disconnect', (reason) => {
+    this.socket.on('disconnect', (reason: string) => {
       console.log('Disconnected:', reason);
       this.updateDiagnostics({ status: 'Disconnected' });
     });
@@ -31,7 +54,7 @@ class Game {
     this.setupEventHandlers();
   }
 
-  updateDiagnostics(data) {
+  private updateDiagnostics(data: DiagnosticsData): void {
     if (!this.diagnosticsDiv) return;
     
     const currentContent = this.diagnosticsDiv.innerHTML;
@@ -49,7 +72,7 @@ class Game {
     this.diagnosticsDiv.innerHTML = lines.join('<br>');
   }
 
-  setupDiagnostics() {
+  private setupDiagnostics(): void {
     // Create diagnostics overlay
     this.diagnosticsDiv = document.createElement('div');
     this.diagnosticsDiv.id = 'diagnostics';
@@ -80,7 +103,7 @@ class Game {
     }, this.pingInterval);
 
     // Listen for server diagnostics
-    this.socket.on('server_diagnostics', (data) => {
+    this.socket.on('server_diagnostics', (data: ServerDiagnostics) => {
       const ping = Date.now() - this.lastPing;
       const diagnostics = {
         status: this.socket.connected ? 'Connected' : 'Disconnected',
@@ -92,18 +115,18 @@ class Game {
         connections: `${data.connections} connected`
       };
 
-      this.diagnosticsDiv.innerHTML = Object.entries(diagnostics)
+      this.diagnosticsDiv!.innerHTML = Object.entries(diagnostics)
         .map(([key, value]) => `${key}: ${value}`)
         .join('<br>');
     });
 
     // Listen for pong
-    this.socket.on('pong', (data) => {
+    this.socket.on('pong', (data: PongData) => {
       this.lastPingTime = Date.now() - data.timestamp;
     });
   }
 
-  setupEventHandlers() {
+  private setupEventHandlers(): void {
     // ... existing event handlers ...
   }
 }
@@ -111,5 +134,5 @@ class Game {
 // Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize the game
-  window.game = new Game();
+  (window as any).game = new Game();
 }); 

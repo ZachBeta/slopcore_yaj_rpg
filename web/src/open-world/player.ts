@@ -39,16 +39,25 @@ export class Player {
     this.object = new THREE.Group();
     this.object.position.set(0, 1, 0);
     
-    // Set default color
-    this.color = new THREE.Color(isLocal ? 0x00ff00 : 0xff0000);
+    // Set initial color to gray (will be updated by server)
+    this.color = new THREE.Color(0xCCCCCC);
     
-    // Create the player body (a simple cylinder for now)
-    const geometry = new THREE.CylinderGeometry(0.5, 0.5, 2, 16);
+    // Create the player body (a cylinder with a sphere on top)
+    const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.5, 1.5, 16);
+    const headGeometry = new THREE.SphereGeometry(0.5, 16, 16);
     const material = new THREE.MeshLambertMaterial({ color: this.color });
-    this.body = new THREE.Mesh(geometry, material);
+    
+    this.body = new THREE.Mesh(bodyGeometry, material);
+    this.body.position.y = 0.75; // Center the body
     this.body.castShadow = true;
     this.body.receiveShadow = true;
     this.object.add(this.body);
+    
+    const head = new THREE.Mesh(headGeometry, material);
+    head.position.y = 1.75; // Place the head on top of the body
+    head.castShadow = true;
+    head.receiveShadow = true;
+    this.object.add(head);
     
     // For non-local players, add a name tag
     if (!isLocal) {
@@ -299,7 +308,12 @@ export class Player {
    */
   public setColor(color: THREE.Color): void {
     this.color = color;
-    (this.body.material as THREE.MeshLambertMaterial).color = color;
+    // Update all meshes with the new color
+    this.object.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        (child.material as THREE.MeshLambertMaterial).color = this.color;
+      }
+    });
   }
 
   /**

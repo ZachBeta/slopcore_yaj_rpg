@@ -1,17 +1,15 @@
-module.exports = {
+/** @type {import('@jest/types').Config.InitialOptions} */
+const config = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   transform: {
-    '^.+\\.tsx?$': 'ts-jest',
+    '^.+\\.tsx?$': ['ts-jest', {
+      tsconfig: 'tsconfig.test.json'
+    }]
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   testMatch: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],
-  globals: {
-    'ts-jest': {
-      tsconfig: 'tsconfig.json',
-    },
-  },
-  testPathIgnorePatterns: ['/node_modules/'],
+  testPathIgnorePatterns: ['/node_modules/', 'setupTests.ts'],
   // Run integration tests serially
   testSequencer: './jest.sequencer.js',
   // Configure different test environments
@@ -22,7 +20,9 @@ module.exports = {
       testEnvironment: 'jsdom',
       preset: 'ts-jest',
       transform: {
-        '^.+\\.tsx?$': 'ts-jest',
+        '^.+\\.tsx?$': ['ts-jest', {
+          tsconfig: 'tsconfig.test.json'
+        }]
       },
     },
     {
@@ -31,7 +31,9 @@ module.exports = {
       testEnvironment: 'node',
       preset: 'ts-jest',
       transform: {
-        '^.+\\.tsx?$': 'ts-jest',
+        '^.+\\.tsx?$': ['ts-jest', {
+          tsconfig: 'tsconfig.test.json'
+        }]
       },
     },
     {
@@ -40,8 +42,12 @@ module.exports = {
       testEnvironment: 'node',
       preset: 'ts-jest',
       transform: {
-        '^.+\\.tsx?$': 'ts-jest',
+        '^.+\\.tsx?$': ['ts-jest', {
+          tsconfig: 'tsconfig.test.json'
+        }]
       },
     }
   ]
-}; 
+};
+
+module.exports = config; 

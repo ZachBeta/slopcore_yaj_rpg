@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Player } from './player';
 import { Socket, io } from 'socket.io-client';
+import { GameEvent, GameEventPayloads, GameEventEmitter } from '../constants';
 
 // Define the callback types
 type PlayerJoinCallback = (id: string, position: THREE.Vector3, color: THREE.Color) => void;
@@ -26,7 +27,7 @@ interface Diagnostics {
   connections: number;
 }
 
-export class NetworkManager {
+export class NetworkManager implements GameEventEmitter {
   private localPlayer: Player;
   private onPlayerJoin: PlayerJoinCallback;
   private onPlayerLeave: PlayerLeaveCallback;
@@ -47,6 +48,7 @@ export class NetworkManager {
   private lastPingTime: number = 0;
   private diagnosticsDiv: HTMLDivElement | null = null;
   private pingInterval: number = 1000;
+  private eventHandlers: Map<GameEvent, Set<(payload: any) => void>> = new Map();
 
   // Default server URL for development
   private static readonly DEFAULT_SERVER_URL = 'http://localhost:3000';
@@ -86,10 +88,12 @@ export class NetworkManager {
     this.onPlayerPositionUpdate = onPlayerPositionUpdate;
     this.onConnectionStatus = onConnectionStatus;
     
-    // Generate a random color for this player
-    this.playerColor = this.generateRandomColor();
+    // Don't set the color here, wait for server assignment
+    this.playerColor = new THREE.Color(0xCCCCCC); // Temporary gray color
     this.localPlayer.setColor(this.playerColor);
     this.setupDiagnostics();
+    this.socket = io(NetworkManager.getServerUrl());
+    this.setupSocketEvents();
   }
 
   private setupDiagnostics() {
@@ -199,18 +203,20 @@ export class NetworkManager {
       this.connectionAttempts = 0;
       this.onConnectionStatus?.('connected');
       
-      // Send initial player data
+      // Send initial player data without color
       const playerData = {
         position: this.localPlayer.getPosition(),
-        rotation: this.localPlayer.getRotation(),
-        color: {
-          r: this.playerColor.r,
-          g: this.playerColor.g,
-          b: this.playerColor.b
-        }
+        rotation: this.localPlayer.getRotation()
       };
       console.log('Sending player_join with data:', playerData);
       this.socket?.emit('player_join', playerData);
+    });
+
+    // Handle color assignment from server
+    this.socket.on('color_assigned', (data: { color: { r: number, g: number, b: number } }) => {
+      console.log('Received color assignment:', data);
+      this.playerColor = new THREE.Color(data.color.r, data.color.g, data.color.b);
+      this.localPlayer.setColor(this.playerColor);
     });
 
     // Handle connect error
@@ -242,60 +248,38 @@ export class NetworkManager {
         if (player.id !== this.socket?.id && !this.otherPlayers.has(player.id)) {
           this.otherPlayers.set(player.id, true);
           console.log('Adding existing player from players_list:', player.id);
-          const color = player.color ? 
-            new THREE.Color(
-              player.color.r || 1,
-              player.color.g || 0,
-              player.color.b || 0
-            ) : 
-            new THREE.Color(1, 0, 0); // Default red color
-
-          this.onPlayerJoin(
-            player.id,
-            new THREE.Vector3(
-              player.position?.x || 0,
-              player.position?.y || 1,
-              player.position?.z || 0
-            ),
-            color
+          const position = new THREE.Vector3(
+            player.position.x,
+            player.position.y,
+            player.position.z
           );
+          const color = new THREE.Color(
+            player.color.r,
+            player.color.g,
+            player.color.b
+          );
+          this.onPlayerJoin(player.id, position, color);
         }
       });
     });
 
     // Handle new player joining
-    this.socket.on('player_joined', (player: any) => {
-      console.log('Received player_joined event with player:', player);
-      // Skip if this is our own join event or if we've already seen this player
-      if (player.id === this.socket?.id) {
-        console.log('This is my own join event, skipping');
-        return;
+    this.socket.on('player_joined', (data: any) => {
+      console.log('Player joined:', data);
+      if (data.id !== this.socket?.id && !this.otherPlayers.has(data.id)) {
+        this.otherPlayers.set(data.id, true);
+        const position = new THREE.Vector3(
+          data.position.x,
+          data.position.y,
+          data.position.z
+        );
+        const color = new THREE.Color(
+          data.color.r,
+          data.color.g,
+          data.color.b
+        );
+        this.onPlayerJoin(data.id, position, color);
       }
-      
-      if (this.otherPlayers.has(player.id)) {
-        console.log('Player already tracked, skipping:', player.id);
-        return;
-      }
-
-      console.log('Adding new player from player_joined:', player.id);
-      this.otherPlayers.set(player.id, true);
-      const color = player.color ? 
-        new THREE.Color(
-          player.color.r || 1,
-          player.color.g || 0,
-          player.color.b || 0
-        ) : 
-        new THREE.Color(1, 0, 0); // Default red color
-
-      this.onPlayerJoin(
-        player.id,
-        new THREE.Vector3(
-          player.position?.x || 0,
-          player.position?.y || 1,
-          player.position?.z || 0
-        ),
-        color
-      );
     });
 
     // Handle player leaving
@@ -327,46 +311,6 @@ export class NetworkManager {
       this.lastPingTime = Date.now() - data.timestamp;
       this.updateDiagnostics({ ping: this.lastPingTime });
     });
-  }
-
-  /**
-   * Generate a random vibrant color that's distinct from existing colors
-   */
-  private generateRandomColor(): THREE.Color {
-    const numHueSegments = 12; // Divide the color wheel into 12 segments
-    const hueStep = 1 / numHueSegments;
-    
-    // Find an unused hue segment
-    let hue = 0;
-    for (let i = 0; i < numHueSegments; i++) {
-      const potentialHue = i * hueStep;
-      if (!NetworkManager.usedHues.has(potentialHue)) {
-        hue = potentialHue;
-        NetworkManager.usedHues.add(potentialHue);
-        break;
-      }
-    }
-    
-    // If all segments are used, pick a random one
-    if (hue === 0 && NetworkManager.usedHues.size === numHueSegments) {
-      hue = Math.floor(Math.random() * numHueSegments) * hueStep;
-    }
-    
-    // Use high saturation and lightness for vibrant colors
-    const saturation = 0.8 + Math.random() * 0.2; // 0.8-1.0
-    const lightness = 0.5 + Math.random() * 0.1; // 0.5-0.6
-    
-    // Create and return the color
-    return new THREE.Color().setHSL(hue, saturation, lightness);
-  }
-
-  /**
-   * Clean up a color when a player disconnects
-   */
-  private cleanupColor(color: THREE.Color): void {
-    const hsl: HSL = { h: 0, s: 0, l: 0 };
-    color.getHSL(hsl);
-    NetworkManager.usedHues.delete(hsl.h);
   }
 
   /**
@@ -403,7 +347,8 @@ export class NetworkManager {
   public disconnect(): void {
     if (this.socket) {
       // Clean up our color
-      this.cleanupColor(this.playerColor);
+      this.playerColor = new THREE.Color(0xCCCCCC); // Temporary gray color
+      this.localPlayer.setColor(this.playerColor);
       this.socket.disconnect();
       this.socket = null;
     }
@@ -418,5 +363,35 @@ export class NetworkManager {
    */
   public isConnectedToServer(): boolean {
     return this.isConnected;
+  }
+
+  private setupSocketEvents(): void {
+    // Forward all socket events to our event handlers
+    Object.values(GameEvent).forEach(event => {
+      this.socket?.on(event, (payload: any) => {
+        const handlers = this.eventHandlers.get(event);
+        if (handlers) {
+          handlers.forEach(handler => handler(payload));
+        }
+      });
+    });
+  }
+
+  on<T extends GameEvent>(event: T, listener: (payload: GameEventPayloads[T]) => void): void {
+    if (!this.eventHandlers.has(event)) {
+      this.eventHandlers.set(event, new Set());
+    }
+    this.eventHandlers.get(event)!.add(listener);
+  }
+
+  emit<T extends GameEvent>(event: T, payload: GameEventPayloads[T]): void {
+    this.socket?.emit(event, payload);
+  }
+
+  off<T extends GameEvent>(event: T, listener: (payload: GameEventPayloads[T]) => void): void {
+    const handlers = this.eventHandlers.get(event);
+    if (handlers) {
+      handlers.delete(listener);
+    }
   }
 } 

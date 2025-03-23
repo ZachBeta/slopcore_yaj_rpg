@@ -3,6 +3,7 @@ import { createServer, Server as HttpServer } from 'http';
 import { io as Client, Socket } from 'socket.io-client';
 import { GameServer } from './game-server';
 import { execSync } from 'child_process';
+import { GameEvent, ConnectionStatus, GameEventPayloads } from '../src/constants';
 
 // Set environment to test mode
 process.env.NODE_ENV = 'test';
@@ -122,7 +123,7 @@ describe('Socket.IO Server Integration Tests', () => {
 
       // Close the HTTP server
       if (server) {
-        await new Promise<void>((resolve) => server.close(resolve));
+        await new Promise<void>((resolve) => server.close(() => resolve()));
       }
 
       // Kill any remaining process on the test port
@@ -172,7 +173,7 @@ describe('Socket.IO Server Integration Tests', () => {
     };
 
     const checkPlayersState = (players: Player[]) => {
-      const clientId = this?.id || 'unknown';
+      const clientId = (this as any)?.id || 'unknown';
       console.log(`[Client ${clientId}] Received players_list with ${players.length} players`);
       
       // Update our tracking for each player
@@ -246,13 +247,25 @@ describe('Socket.IO Server Integration Tests', () => {
     thirdClient.on('error', onError);
 
     // Set up players_list and player_joined handlers for all clients
-    clientSocket.on('players_list', checkPlayersState);
-    secondClient.on('players_list', checkPlayersState);
-    thirdClient.on('players_list', checkPlayersState);
+    clientSocket.on(GameEvent.PLAYERS_LIST, (players: GameEventPayloads[typeof GameEvent.PLAYERS_LIST]) => {
+      checkPlayersState(players);
+    });
+    secondClient.on(GameEvent.PLAYERS_LIST, (players: GameEventPayloads[typeof GameEvent.PLAYERS_LIST]) => {
+      checkPlayersState(players);
+    });
+    thirdClient.on(GameEvent.PLAYERS_LIST, (players: GameEventPayloads[typeof GameEvent.PLAYERS_LIST]) => {
+      checkPlayersState(players);
+    });
 
-    clientSocket.on('player_joined', onPlayerJoined);
-    secondClient.on('player_joined', onPlayerJoined);
-    thirdClient.on('player_joined', onPlayerJoined);
+    clientSocket.on(GameEvent.PLAYER_JOINED, (player: GameEventPayloads[typeof GameEvent.PLAYER_JOINED]) => {
+      onPlayerJoined(player);
+    });
+    secondClient.on(GameEvent.PLAYER_JOINED, (player: GameEventPayloads[typeof GameEvent.PLAYER_JOINED]) => {
+      onPlayerJoined(player);
+    });
+    thirdClient.on(GameEvent.PLAYER_JOINED, (player: GameEventPayloads[typeof GameEvent.PLAYER_JOINED]) => {
+      onPlayerJoined(player);
+    });
 
     // Use different positions for each client
     const positions = [
@@ -263,19 +276,19 @@ describe('Socket.IO Server Integration Tests', () => {
     
     // Connect clients in sequence with longer delays
     console.log('Connecting first client...');
-    clientSocket.emit('player_join', { position: positions[0] });
+    clientSocket.emit(GameEvent.PLAYER_JOIN, { position: positions[0] });
     
     setTimeout(() => {
       if (!testCompleted) {
         console.log('Connecting second client...');
-        secondClient.emit('player_join', { position: positions[1] });
+        secondClient.emit(GameEvent.PLAYER_JOIN, { position: positions[1] });
       }
     }, 500);
 
     setTimeout(() => {
       if (!testCompleted) {
         console.log('Connecting third client...');
-        thirdClient.emit('player_join', { position: positions[2] });
+        thirdClient.emit(GameEvent.PLAYER_JOIN, { position: positions[2] });
       }
     }, 1000);
 
@@ -292,22 +305,16 @@ describe('Socket.IO Server Integration Tests', () => {
   test('should handle player position updates', (done) => {
     let positionUpdateReceived = false;
 
-    clientSocket.on('player_moved', (data: { id: string; position: Player['position']; rotation: Player['rotation'] }) => {
-      expect(data.id).toBeDefined();
-      expect(data.position).toBeDefined();
-      expect(data.position.x).toBeDefined();
-      expect(data.position.y).toBeDefined();
-      expect(data.position.z).toBeDefined();
-      expect(data.rotation).toBeDefined();
-      expect(data.rotation.x).toBeDefined();
-      expect(data.rotation.y).toBeDefined();
-      expect(data.rotation.z).toBeDefined();
+    clientSocket.on(GameEvent.PLAYER_MOVED, (data: GameEventPayloads[typeof GameEvent.PLAYER_MOVED]) => {
+      expect(data.id).toBe(clientSocket.id);  // Use actual socket ID
+      expect(data.position).toEqual({ x: 1, y: 2, z: 3 });
+      expect(data.rotation).toEqual({ x: 0, y: 0, z: 0 });
       positionUpdateReceived = true;
       done();
     });
 
     // Emit a position update
-    clientSocket.emit('position_update', {
+    clientSocket.emit(GameEvent.POSITION_UPDATE, {
       position: { x: 1, y: 2, z: 3 },
       rotation: { x: 0, y: 0, z: 0 }
     });
@@ -323,7 +330,7 @@ describe('Socket.IO Server Integration Tests', () => {
   test('should handle chat messages', (done) => {
     let chatMessageReceived = false;
 
-    clientSocket.on('chat_message', (data: { id: string; message: string }) => {
+    clientSocket.on(GameEvent.CHAT_MESSAGE, (data: GameEventPayloads[typeof GameEvent.CHAT_MESSAGE]) => {
       expect(data.id).toBeDefined();
       expect(data.message).toBeDefined();
       expect(data.message).toBe('Hello, World!');
@@ -332,7 +339,7 @@ describe('Socket.IO Server Integration Tests', () => {
     });
 
     // Emit a chat message
-    clientSocket.emit('chat_message', 'Hello, World!');
+    clientSocket.emit(GameEvent.CHAT_MESSAGE, { id: clientSocket.id, message: 'Hello, World!' });
 
     // Add timeout for the test
     setTimeout(() => {

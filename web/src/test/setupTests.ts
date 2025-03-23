@@ -77,4 +77,10 @@ Object.defineProperty(document, 'body', {
 });
 
 // Export mocks for use in tests
-export { MockConsoleRenderer }; 
+export { MockConsoleRenderer };
+
+describe('Test Environment Setup', () => {
+  test('Jest is working', () => {
+    expect(true).toBe(true);
+  });
+}); 

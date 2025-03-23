@@ -3,15 +3,18 @@
     "outDir": "./dist/",
     "sourceMap": true,
     "noImplicitAny": true,
-    "module": "es6",
-    "target": "es5",
+    "module": "commonjs",
+    "target": "es2015",
     "jsx": "react",
     "allowJs": true,
     "moduleResolution": "node",
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "types": ["jest", "node"]
   },
   "include": [
     "src/**/*",
-    "server/**/*"
+    "server/**/*",
+    "client/**/*",
+    "*.ts"
   ]
 } 

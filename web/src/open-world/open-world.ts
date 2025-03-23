@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { Player } from './player';
 import { WorldManager } from './world-manager';
 import { NetworkManager } from './network-manager';
+import { ConnectionStatus, Position, Rotation } from '../types';
+import { GameEvent, GAME_CONFIG, GameEventPayloads } from '../constants';
 
 export class OpenWorldGame {
   // Core three.js components
@@ -73,7 +75,7 @@ export class OpenWorldGame {
       (id: string, position: THREE.Vector3, color: THREE.Color) => this.handlePlayerJoin(id, position, color),
       (id: string) => this.handlePlayerLeave(id),
       (id: string, position: THREE.Vector3) => this.updatePlayerPosition(id, position),
-      (status: 'connected' | 'disconnected' | 'error', error?: any) => this.handleConnectionStatus(status, error)
+      (status: ConnectionStatus, error?: any) => this.handleConnectionStatus(status, error)
     );
     
     // Connect to the server
@@ -91,6 +93,15 @@ export class OpenWorldGame {
     this.animating = true;
     this.lastTime = performance.now();
     this.animate();
+
+    // Update event handlers with type-safe events
+    this.networkManager.on(GameEvent.CONNECTION_STATUS, (status: GameEventPayloads[typeof GameEvent.CONNECTION_STATUS]) => {
+      this.handleConnectionStatus(status);
+    });
+
+    this.networkManager.on(GameEvent.PLAYER_MOVED, (data: GameEventPayloads[typeof GameEvent.PLAYER_MOVED]) => {
+      // ... existing code ...
+    });
   }
 
   /**
@@ -168,7 +179,7 @@ export class OpenWorldGame {
     // Make the camera look at the player with the x-rotation applied
     const lookAtPosition = playerPosition.clone();
     const lookDirection = new THREE.Vector3(0, 0, -1);
-    lookDirection.applyEuler(playerRotation);
+    lookDirection.applyEuler(new THREE.Euler(playerRotation.x, playerRotation.y, playerRotation.z));
     lookDirection.multiplyScalar(10); // Look 10 units ahead
     lookAtPosition.add(lookDirection);
     
@@ -244,7 +255,7 @@ export class OpenWorldGame {
   /**
    * Handle connection status changes
    */
-  private handleConnectionStatus(status: 'connected' | 'disconnected' | 'error', error?: any): void {
+  private handleConnectionStatus(status: ConnectionStatus, error?: any): void {
     console.log(`Connection status: ${status}`, error || '');
     
     // You can add UI indicators here to show connection status

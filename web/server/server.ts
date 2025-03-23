@@ -233,4 +233,4 @@ server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-export { Server: server }; 
+export { server as Server }; 

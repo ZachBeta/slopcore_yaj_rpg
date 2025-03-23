@@ -1,59 +1,33 @@
 import { Server, Socket } from 'socket.io';
 import { Server as HttpServer } from 'http';
-
-interface Color {
-  r: number;
-  g: number;
-  b: number;
-}
-
-interface Player {
-  id: string;
-  position: {
-    x: number;
-    y: number;
-    z: number;
-  };
-  rotation: {
-    x: number;
-    y: number;
-    z: number;
-  };
-  color: Color;
-}
+import { Color, Player, Position, Rotation, ServerDiagnostics } from '../src/types';
+import { GameEvent, ConnectionStatus, GAME_CONFIG, GameEventPayloads } from '../src/constants';
 
 interface GameServerOptions {
   isTestMode?: boolean;
 }
 
-interface ServerDiagnostics {
-  uptime: number;
-  fps: number;
-  playerCount: number;
-  colorPoolSize: number;
-  availableColors: number;
-  lockedColors: number;
-  randomColors: number;
-  connections: number;
-}
-
 export class GameServer {
+  protected colorPool: Color[];
+  protected availableColors: Color[];
+  protected lockedColors: Map<string, Color>;
+  protected usedRandomColors: Set<Color>;
+  protected players: Map<string, Player>;
   private io: Server;
-  private players: Map<string, Player>;
+  private port: number;
+  private server: HttpServer;
+  private lastDiagnosticsUpdate: number;
+  private diagnosticsInterval: NodeJS.Timeout;
+  private fps: number;
+  private startTime: number;
   private isTestMode: boolean;
-  private colorPool: Color[];
-  private availableColors: Color[];
-  private lockedColors: Map<string, Color>;
   private pendingJoins: Map<string, Promise<void>>;
   private colorAssignmentPromise: Promise<void>;
   private readonly COLOR_TOLERANCE: number = 0.001;
-  private usedRandomColors: Set<Color>;
   private colorAssignmentMutex: Promise<void>;
   private colorKeyCache: Map<string, string>;
-  private startTime: number;
   private lastTick: number;
   private tickCount: number;
-  private fps: number;
   private readonly fpsUpdateInterval: number = 1000;
   private lastFpsUpdate: number;
 
@@ -125,7 +99,7 @@ export class GameServer {
     this.startDiagnostics();
   }
 
-  private generateSpawnPosition(): { x: number; y: number; z: number } {
+  private generateSpawnPosition(): Position {
     const minSpawnRadius = 15;
     const maxSpawnRadius = 40;
     const angle = Math.random() * Math.PI * 2;
@@ -140,55 +114,90 @@ export class GameServer {
 
   // Helper method to generate a color key for comparison
   private getColorKey(color: Color): string {
-    return `${color.r.toFixed(6)},${color.g.toFixed(6)},${color.b.toFixed(6)}`;
+    const precision = 6;
+    return `${color.r.toFixed(precision)},${color.g.toFixed(precision)},${color.b.toFixed(precision)}`;
   }
 
   // Helper method to check if colors are equal within tolerance
   private areColorsEqual(c1: Color, c2: Color): boolean {
-    return Math.abs(c1.r - c2.r) < this.COLOR_TOLERANCE &&
-           Math.abs(c1.g - c2.g) < this.COLOR_TOLERANCE &&
-           Math.abs(c1.b - c2.b) < this.COLOR_TOLERANCE;
+    return this.getColorKey(c1) === this.getColorKey(c2);
   }
 
-  // Helper method to check if a color is from the pool
-  private isColorFromPool(color: Color): boolean {
-    return this.colorPool.some(poolColor => 
-      Math.abs(color.r - poolColor.r) < this.COLOR_TOLERANCE &&
-      Math.abs(color.g - poolColor.g) < this.COLOR_TOLERANCE &&
-      Math.abs(color.b - poolColor.b) < this.COLOR_TOLERANCE
+  private getColorDistance(c1: Color, c2: Color): number {
+    return Math.sqrt(
+      Math.pow(c1.r - c2.r, 2) +
+      Math.pow(c1.g - c2.g, 2) +
+      Math.pow(c1.b - c2.b, 2)
     );
   }
 
-  async generatePlayerColor(): Promise<Color> {
-    // Use a mutex to ensure only one color is being generated at a time
+  private isColorUnique(color: Color, minDistance: number): boolean {
+    // Check against locked colors
+    for (const [_, usedColor] of this.lockedColors) {
+      if (this.getColorDistance(color, usedColor) < minDistance) {
+        return false;
+      }
+    }
+
+    // Check against pool colors
+    for (const poolColor of this.colorPool) {
+      if (this.getColorDistance(color, poolColor) < minDistance) {
+        return false;
+      }
+    }
+
+    // Check against other random colors
+    for (const usedRandomColor of this.usedRandomColors) {
+      if (this.getColorDistance(color, usedRandomColor) < minDistance) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private recycleColor(color: Color): void {
+    // Remove from locked colors (already done in disconnect handler)
+    
+    // Check if it was a random color
+    const colorKey = this.getColorKey(color);
+    for (const usedColor of this.usedRandomColors) {
+      if (this.getColorKey(usedColor) === colorKey) {
+        this.usedRandomColors.delete(usedColor);
+        return;
+      }
+    }
+    
+    // If not a random color, it must be from the pool
+    // Find matching pool color and make it available again
+    for (let i = 0; i < this.colorPool.length; i++) {
+      if (this.areColorsEqual(this.colorPool[i], color)) {
+        this.availableColors.push({ ...this.colorPool[i] });
+        return;
+      }
+    }
+  }
+
+  async generatePlayerColor(socketId: string): Promise<Color> {
     return new Promise((resolve, reject) => {
       this.colorAssignmentMutex = this.colorAssignmentMutex.then(async () => {
         try {
           // Try to get a color from the available pool first
           if (this.availableColors.length > 0) {
             const colorIndex = Math.floor(Math.random() * this.availableColors.length);
-            const color = { ...this.availableColors[colorIndex] }; // Clone to prevent reference issues
+            const color = { ...this.availableColors[colorIndex] };
             this.availableColors.splice(colorIndex, 1);
+            this.lockedColors.set(socketId, color);
             resolve(color);
             return;
           }
 
-          // If no colors are available in the pool, generate a unique random color
-          const getColorDistance = (c1: Color, c2: Color): number => {
-            return Math.sqrt(
-              Math.pow(c1.r - c2.r, 2) +
-              Math.pow(c1.g - c2.g, 2) +
-              Math.pow(c1.b - c2.b, 2)
-            );
-          };
-
           const MIN_COLOR_DISTANCE = 0.4;
-          const MIN_POOL_DISTANCE = 0.4;
           let attempts = 0;
           const MAX_ATTEMPTS = 1000;
 
+          // Try to generate a unique random color
           while (attempts < MAX_ATTEMPTS) {
-            // Generate a random color with at least one high component
             const newColor: Color = {
               r: Math.random(),
               g: Math.random(),
@@ -197,96 +206,62 @@ export class GameServer {
 
             // Ensure at least one component is high (0.8-1.0)
             const maxComponent = Math.random() < 0.33 ? 'r' : Math.random() < 0.5 ? 'g' : 'b';
-            newColor[maxComponent] = 0.8 + (Math.random() * 0.2); // Between 0.8 and 1.0
+            newColor[maxComponent as keyof Color] = 0.8 + (Math.random() * 0.2);
 
-            // Check distance from all used colors
-            let isUnique = true;
-            
-            // First check against locked colors
-            for (const [_, usedColor] of this.lockedColors) {
-              const distance = getColorDistance(newColor, usedColor);
-              if (distance < MIN_COLOR_DISTANCE) {
-                isUnique = false;
-                break;
-              }
-            }
+            // Ensure other components are lower to increase contrast
+            const otherComponents = ['r', 'g', 'b'].filter(c => c !== maxComponent);
+            otherComponents.forEach(c => {
+              newColor[c as keyof Color] = Math.random() * 0.6;
+            });
 
-            // Then check against pool colors
-            if (isUnique) {
-              for (const poolColor of this.colorPool) {
-                const distance = getColorDistance(newColor, poolColor);
-                if (distance < MIN_POOL_DISTANCE) {
-                  isUnique = false;
-                  break;
-                }
-              }
-            }
-
-            // Finally check against other random colors
-            if (isUnique) {
-              for (const usedRandomColor of this.usedRandomColors) {
-                const distance = getColorDistance(newColor, usedRandomColor);
-                if (distance < MIN_COLOR_DISTANCE) {
-                  isUnique = false;
-                  break;
-                }
-              }
-            }
-
-            if (isUnique) {
-              const newColorCopy = { ...newColor }; // Clone to prevent reference issues
+            if (this.isColorUnique(newColor, MIN_COLOR_DISTANCE)) {
+              const newColorCopy = { ...newColor };
               this.usedRandomColors.add(newColorCopy);
-              resolve(newColor);
+              this.lockedColors.set(socketId, newColorCopy);
+              resolve(newColorCopy);
               return;
             }
 
             attempts++;
           }
 
-          // Last resort: generate a color that's guaranteed to be different
+          // Last resort: generate a color with maximum contrast
           const usedMaxComponents = new Set<string>();
           
           // Track all used max components with high precision
           for (const [_, color] of this.lockedColors) {
             const max = Math.max(color.r, color.g, color.b);
-            usedMaxComponents.add(max.toFixed(3));
+            usedMaxComponents.add(max.toFixed(6));
           }
           for (const color of this.colorPool) {
             const max = Math.max(color.r, color.g, color.b);
-            usedMaxComponents.add(max.toFixed(3));
+            usedMaxComponents.add(max.toFixed(6));
           }
           for (const color of this.usedRandomColors) {
             const max = Math.max(color.r, color.g, color.b);
-            usedMaxComponents.add(max.toFixed(3));
+            usedMaxComponents.add(max.toFixed(6));
           }
 
           // Find an unused maximum component value
           let maxValue = 1.0;
-          while (usedMaxComponents.has(maxValue.toFixed(3)) && maxValue > 0.8) {
+          while (usedMaxComponents.has(maxValue.toFixed(6)) && maxValue > 0.6) {
             maxValue -= 0.01;
           }
 
-          // If we couldn't find a unique max value above 0.8, try a lower range
-          if (maxValue <= 0.8) {
-            maxValue = 0.8;
-            while (usedMaxComponents.has(maxValue.toFixed(3)) && maxValue > 0.6) {
-              maxValue -= 0.01;
-            }
-          }
-
           const newColor: Color = {
-            r: Math.random() * 0.3,
-            g: Math.random() * 0.3,
-            b: Math.random() * 0.3
+            r: Math.random() * 0.2,
+            g: Math.random() * 0.2,
+            b: Math.random() * 0.2
           };
 
           // Randomly choose which component gets the max value
           const component = Math.random() < 0.33 ? 'r' : Math.random() < 0.5 ? 'g' : 'b';
-          newColor[component] = maxValue;
+          newColor[component as keyof Color] = maxValue;
 
-          const newColorCopy = { ...newColor }; // Clone to prevent reference issues
+          const newColorCopy = { ...newColor };
           this.usedRandomColors.add(newColorCopy);
-          resolve(newColor);
+          this.lockedColors.set(socketId, newColorCopy);
+          resolve(newColorCopy);
         } catch (error) {
           reject(error);
         }
@@ -319,7 +294,7 @@ export class GameServer {
           connections: this.io.engine.clientsCount
         };
 
-        this.io.emit('server_diagnostics', diagnostics);
+        this.io.emit(GameEvent.SERVER_DIAGNOSTICS, diagnostics);
         if (!this.isTestMode) {
           console.log('Server Diagnostics:', diagnostics);
         }
@@ -332,15 +307,15 @@ export class GameServer {
       console.log(`Player connected: ${socket.id}`);
 
       // Handle ping
-      socket.on('ping', () => {
-        socket.emit('pong', { timestamp: Date.now() });
+      socket.on(GameEvent.PING, () => {
+        socket.emit(GameEvent.PONG, { timestamp: Date.now() });
       });
 
       // Handle player join
-      socket.on('player_join', async (data: { position?: Player['position']; rotation?: Player['rotation'] }) => {
+      socket.on(GameEvent.PLAYER_JOIN, async (data: GameEventPayloads[typeof GameEvent.PLAYER_JOIN]) => {
         // Generate spawn position and color
         const spawnPosition = this.generateSpawnPosition();
-        const playerColor = await this.generatePlayerColor();
+        const playerColor = await this.generatePlayerColor(socket.id);
         
         const player: Player = {
           id: socket.id,
@@ -365,22 +340,23 @@ export class GameServer {
           }));
 
         // First send the player their own data
-        socket.emit('player_joined', player);
+        socket.emit(GameEvent.PLAYER_JOIN, { id: socket.id, position: player.position, rotation: player.rotation, color: player.color });
         
         // Then send them the list of other players
-        socket.emit('players_list', existingPlayers);
+        socket.emit(GameEvent.PLAYERS_LIST, existingPlayers);
 
         // Broadcast new player to all other players
-        socket.broadcast.emit('player_joined', player);
+        socket.broadcast.emit(GameEvent.PLAYER_JOINED, player);
       });
 
       // Handle player position update
-      socket.on('position_update', (data: { position: Player['position']; rotation: Player['rotation'] }) => {
+      socket.on(GameEvent.POSITION_UPDATE, (data: { position: Position; rotation: Rotation }) => {
         const player = this.players.get(socket.id);
         if (player) {
           player.position = data.position;
           player.rotation = data.rotation;
-          socket.broadcast.emit('player_moved', {
+          // Emit to all clients including sender
+          this.io.emit(GameEvent.PLAYER_MOVED, {
             id: socket.id,
             position: data.position,
             rotation: data.rotation
@@ -393,17 +369,20 @@ export class GameServer {
         console.log(`Player disconnected: ${socket.id}`);
         const player = this.players.get(socket.id);
         if (player) {
-          // Remove the used color
-          const key = this.getColorKey(player.color);
-          this.lockedColors.delete(key);
+          // Recycle the color
+          this.recycleColor(player.color);
+          // Remove from locked colors
+          this.lockedColors.delete(socket.id);
+          // Remove from players
           this.players.delete(socket.id);
-          this.io.emit('player_left', socket.id);
+          // Notify other players
+          this.io.emit(GameEvent.PLAYER_LEFT, socket.id);
         }
       });
 
       // Handle chat messages
-      socket.on('chat_message', (message: string) => {
-        this.io.emit('chat_message', {
+      socket.on(GameEvent.CHAT_MESSAGE, (message: string) => {
+        this.io.emit(GameEvent.CHAT_MESSAGE, {
           id: socket.id,
           message: message
         });

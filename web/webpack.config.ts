@@ -1,10 +1,19 @@
-const path = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const webpack = require('webpack');
-const { GameServer } = require('./server/game-server');
+import path from 'path';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
+import webpack from 'webpack';
+import { GameServer } from './server/game-server';
+import type { Configuration as WebpackConfig } from 'webpack';
+import type { Configuration as DevServerConfig } from 'webpack-dev-server';
 
-module.exports = {
-  entry: './src/index.ts',
+interface WebpackConfigWithDevServer extends WebpackConfig {
+  devServer?: DevServerConfig;
+}
+
+const config: WebpackConfigWithDevServer = {
+  entry: {
+    main: './src/index.ts',
+    game: './src/game.ts'
+  },
   module: {
     rules: [
       {
@@ -18,12 +27,14 @@ module.exports = {
     extensions: ['.tsx', '.ts', '.js'],
   },
   output: {
-    filename: 'bundle.js',
+    filename: '[name].js',
     path: path.resolve(__dirname, 'dist'),
+    publicPath: '/',
   },
   plugins: [
     new HtmlWebpackPlugin({
       template: './public/index.html',
+      chunks: ['main', 'game']
     }),
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify('development'),
@@ -31,14 +42,26 @@ module.exports = {
     })
   ],
   devServer: {
-    static: {
-      directory: path.join(__dirname, 'dist'),
-    },
+    static: [
+      {
+        directory: path.join(__dirname, 'dist'),
+        publicPath: '/',
+      },
+      {
+        directory: path.join(__dirname, 'public'),
+        publicPath: '/',
+      }
+    ],
     compress: true,
     port: 8080,
     host: '0.0.0.0',
     hot: true,
     allowedHosts: 'all',
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+      'Access-Control-Allow-Headers': 'X-Requested-With, content-type, Authorization'
+    },
     onListening: function(devServer) {
       if (!devServer) {
         throw new Error('webpack-dev-server is not defined');
@@ -55,4 +78,6 @@ module.exports = {
       console.log('Socket.IO server attached successfully');
     }
   },
-}; 
+};
+
+export default config; 
