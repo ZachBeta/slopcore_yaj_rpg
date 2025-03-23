@@ -1,5 +1,9 @@
 # Neon Dominance Project Rules
 
+## bash commands
+
+* prefix the result of `cd $(pwd)` so we are guaranteed to be in the correct directory when we run
+
 ## Testing
 * Prefer realistic system tests: Avoid using mocks, use real objects wherever possible in tests
 * Use deterministic random seeds in tests for reproducible results

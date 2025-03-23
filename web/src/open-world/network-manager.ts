@@ -15,6 +15,17 @@ interface HSL {
   l: number;
 }
 
+interface Diagnostics {
+  status: string;
+  ping: number;
+  fps: number;
+  playerCount: number;
+  uptime: number;
+  colorPoolSize: number;
+  availableColors: number;
+  connections: number;
+}
+
 export class NetworkManager {
   private localPlayer: Player;
   private onPlayerJoin: PlayerJoinCallback;
@@ -32,6 +43,10 @@ export class NetworkManager {
   private connectionUrl: string = '';
   private isConnected: boolean = false;
   private connectionRetryTimeout: any = null;
+  private lastPing: number = 0;
+  private lastPingTime: number = 0;
+  private diagnosticsDiv: HTMLDivElement | null = null;
+  private pingInterval: number = 1000;
 
   // Default server URL for development
   private static readonly DEFAULT_SERVER_URL = 'http://localhost:3000';
@@ -74,6 +89,65 @@ export class NetworkManager {
     // Generate a random color for this player
     this.playerColor = this.generateRandomColor();
     this.localPlayer.setColor(this.playerColor);
+    this.setupDiagnostics();
+  }
+
+  private setupDiagnostics() {
+    // Create diagnostics overlay
+    this.diagnosticsDiv = document.createElement('div');
+    this.diagnosticsDiv.id = 'diagnostics';
+    this.diagnosticsDiv.style.cssText = `
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #00ff00;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 12px;
+      z-index: 1000;
+      border-radius: 5px;
+      min-width: 200px;
+    `;
+    document.body.appendChild(this.diagnosticsDiv);
+
+    // Initialize with connecting status
+    this.updateDiagnostics({
+      status: 'Connecting...',
+      ping: 0,
+      fps: 0,
+      playerCount: 0,
+      uptime: 0,
+      colorPoolSize: 0,
+      availableColors: 0,
+      connections: 0
+    });
+
+    // Start ping interval
+    setInterval(() => {
+      if (this.socket && this.socket.connected) {
+        this.lastPing = Date.now();
+        this.socket.emit('ping');
+      }
+    }, this.pingInterval);
+  }
+
+  private updateDiagnostics(data: Partial<Diagnostics>) {
+    if (!this.diagnosticsDiv) return;
+
+    const diagnostics = {
+      status: data.status || (this.isConnected ? 'Connected' : 'Disconnected'),
+      ping: `${data.ping || (Date.now() - this.lastPing)}ms`,
+      fps: `${data.fps || 0} FPS`,
+      players: `${data.playerCount || this.otherPlayers.size + 1} players`,
+      uptime: data.uptime ? `${Math.floor(data.uptime / 60)}:${(data.uptime % 60).toString().padStart(2, '0')}` : '0:00',
+      colors: data.colorPoolSize ? `${data.availableColors}/${data.colorPoolSize} available` : 'N/A',
+      connections: `${data.connections || this.otherPlayers.size + 1} connected`
+    };
+
+    this.diagnosticsDiv.innerHTML = Object.entries(diagnostics)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join('<br>');
   }
 
   /**
@@ -241,6 +315,17 @@ export class NetworkManager {
           data.position.z
         )
       );
+    });
+
+    // Handle server diagnostics
+    this.socket.on('server_diagnostics', (data: any) => {
+      this.updateDiagnostics(data);
+    });
+
+    // Handle pong
+    this.socket.on('pong', (data: { timestamp: number }) => {
+      this.lastPingTime = Date.now() - data.timestamp;
+      this.updateDiagnostics({ ping: this.lastPingTime });
     });
   }
 

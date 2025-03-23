@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
@@ -12,9 +13,61 @@ const io = new Server(server, {
   }
 });
 
+// Set proper MIME types
+app.use((req, res, next) => {
+  if (req.path.endsWith('.js')) {
+    res.type('application/javascript');
+  }
+  next();
+});
+
+// Serve static files from public directory
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Serve client directory for game.js
+app.use('/client', express.static(path.join(__dirname, '../client')));
+
 // Store connected players and used colors
 const players = new Map();
 const usedHues = new Set();
+
+// Server diagnostics state
+const startTime = Date.now();
+let lastTick = Date.now();
+let tickCount = 0;
+let fps = 0;
+const fpsUpdateInterval = 1000; // Update FPS every second
+let lastFpsUpdate = Date.now();
+
+// Start diagnostics broadcast
+setInterval(() => {
+  const now = Date.now();
+  const delta = now - lastTick;
+  lastTick = now;
+  tickCount++;
+
+  // Update FPS every second
+  if (now - lastFpsUpdate >= fpsUpdateInterval) {
+    fps = Math.round((tickCount * 1000) / (now - lastFpsUpdate));
+    tickCount = 0;
+    lastFpsUpdate = now;
+
+    // Broadcast diagnostics to all clients
+    const diagnostics = {
+      uptime: Math.floor((now - startTime) / 1000),
+      fps: fps,
+      playerCount: players.size,
+      colorPoolSize: 12, // Number of predefined colors
+      availableColors: 12 - usedHues.size,
+      lockedColors: usedHues.size,
+      randomColors: 0, // We don't use random colors in this implementation
+      connections: io.engine.clientsCount
+    };
+
+    io.emit('server_diagnostics', diagnostics);
+    console.log('Server Diagnostics:', diagnostics);
+  }
+}, 1000 / 60); // 60Hz tick rate
 
 // Generate a random spawn position
 function generateSpawnPosition() {
@@ -64,6 +117,11 @@ function generatePlayerColor() {
 // Socket.io event handling
 io.on('connection', (socket) => {
   console.log(`Player connected: ${socket.id}`);
+
+  // Handle ping
+  socket.on('ping', () => {
+    socket.emit('pong', { timestamp: Date.now() });
+  });
 
   // Handle player join
   socket.on('player_join', (data) => {
@@ -138,7 +196,7 @@ io.on('connection', (socket) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
