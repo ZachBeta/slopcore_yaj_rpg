@@ -1,7 +1,8 @@
 import { Server, Socket } from 'socket.io';
 import { Server as HttpServer } from 'http';
+import { v4 as uuidv4 } from 'uuid';
 import { Color, Player, Position, Rotation, ServerDiagnostics } from '../src/types';
-import { GameEvent, ConnectionStatus, GAME_CONFIG, GameEventPayloads } from '../src/constants';
+import { GameEvent, GameEventPayloads } from '../src/constants';
 
 interface GameServerOptions {
   isTestMode?: boolean;
@@ -142,7 +143,7 @@ export class GameServer {
 
   private isColorUnique(color: Color, minDistance: number): boolean {
     // Check against locked colors
-    for (const [_, usedColor] of this.lockedColors) {
+    for (const [, usedColor] of this.lockedColors) {
       if (this.getColorDistance(color, usedColor) < minDistance) {
         return false;
       }
@@ -232,7 +233,7 @@ export class GameServer {
 
           // Get all used colors (including locked, pool, and random)
           const allUsedColors = new Set<Color>();
-          for (const [_, color] of this.lockedColors) {
+          for (const [, color] of this.lockedColors) {
             allUsedColors.add(color);
           }
           for (const color of this.colorPool) {
@@ -305,7 +306,6 @@ export class GameServer {
 
     this.diagnosticsInterval = setInterval(() => {
       const now = Date.now();
-      const delta = now - this.lastTick;
       this.lastTick = now;
       this.tickCount++;
 
@@ -541,5 +541,103 @@ export class GameServer {
 
     // Close the Socket.IO server
     this.io.close();
+  }
+
+  private handlePlayerJoin(socket: Socket, data: { position: { x: number; y: number; z: number } }): void {
+    const playerId = uuidv4();
+    const color = this.getNextColor();
+    
+    const player: Player = {
+      id: playerId,
+      position: data.position,
+      rotation: { x: 0, y: 0, z: 0 },
+      color
+    };
+
+    this.players.set(playerId, player);
+    socket.data.playerId = playerId;
+
+    // Notify the joining player of their ID and color
+    socket.emit(GameEvent.PLAYER_JOINED, player);
+
+    // Broadcast to all other players
+    socket.broadcast.emit(GameEvent.PLAYER_JOINED, player);
+
+    // Send current players list to the new player
+    socket.emit(GameEvent.PLAYERS_LIST, Array.from(this.players.values()));
+  }
+
+  private handlePositionUpdate(socket: Socket, data: { position: { x: number; y: number; z: number }; rotation: { x: number; y: number; z: number } }): void {
+    const playerId = socket.data.playerId;
+    if (!playerId) return;
+
+    const player = this.players.get(playerId);
+    if (!player) return;
+
+    player.position = data.position;
+    player.rotation = data.rotation;
+
+    // Broadcast to all other players
+    socket.broadcast.emit(GameEvent.PLAYER_MOVED, {
+      id: playerId,
+      position: data.position,
+      rotation: data.rotation
+    });
+  }
+
+  private handlePlayerDisconnect(socket: Socket): void {
+    const playerId = socket.data.playerId;
+    if (!playerId) return;
+
+    const player = this.players.get(playerId);
+    if (!player) return;
+
+    // Release the player's color
+    this.releaseColor(player.color);
+
+    // Remove the player
+    this.players.delete(playerId);
+
+    // Notify other players
+    socket.broadcast.emit(GameEvent.PLAYER_LEFT, playerId);
+  }
+
+  private updateDiagnostics(): void {
+    const now = Date.now();
+    this.lastDiagnosticsUpdate = now;
+
+    const diagnostics: ServerDiagnostics = {
+      uptime: now - this.startTime,
+      playerCount: this.players.size,
+      fps: this.fps,
+      colorPoolSize: this.colorPool.length,
+      availableColors: this.availableColors.length,
+      lockedColors: this.lockedColors.size,
+      randomColors: this.usedRandomColors.size,
+      connections: this.io.engine.clientsCount
+    };
+
+    this.io.emit(GameEvent.SERVER_DIAGNOSTICS, diagnostics);
+  }
+
+  private generateRandomColor(): Color {
+    const hue = Math.random();
+    const saturation = 0.7 + Math.random() * 0.3; // High saturation
+    const lightness = 0.5 + Math.random() * 0.2; // Medium to high brightness
+    return this.hslToRgb(hue, saturation, lightness);
+  }
+
+  private getNextColor(): Color {
+    if (this.availableColors.length > 0) {
+      const colorIndex = Math.floor(Math.random() * this.availableColors.length);
+      const color = { ...this.availableColors[colorIndex] };
+      this.availableColors.splice(colorIndex, 1);
+      return color;
+    }
+    return this.generateRandomColor();
+  }
+
+  private releaseColor(color: Color): void {
+    this.recycleColor(color);
   }
 } 
