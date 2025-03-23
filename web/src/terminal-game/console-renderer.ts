@@ -33,10 +33,16 @@ export const Colors = {
   ICE: 'color: #00bcd4; font-weight: bold',
 };
 
+// Define the global type for processCommand
 declare global {
   interface Window {
     processCommand: (command: string) => void;
   }
+}
+
+// Create a safer type for accessing processCommand
+interface ProcessCommandGlobal {
+  processCommand?: (command: string) => void;
 }
 
 interface Card {
@@ -348,7 +354,10 @@ export class ConsoleRenderer {
       console.log(`%c> ${command}`, "color: #9933cc; font-weight: bold; font-size: 14px;");
       
       // Execute the command using the global processCommand function
-      globalThis.processCommand(command);
+      const g = globalThis as unknown as ProcessCommandGlobal;
+      if (g.processCommand) {
+        g.processCommand(command);
+      }
       
       // Move to the next command after the specified delay
       currentIndex++;

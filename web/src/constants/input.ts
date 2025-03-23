@@ -11,7 +11,9 @@ export enum InputAction {
   VERIFY_STATE = 'VERIFY_STATE',
   ASCEND = 'ASCEND',
   DESCEND = 'DESCEND',
-  DEBUG_TOGGLE = 'DEBUG_TOGGLE'
+  DEBUG_TOGGLE = 'DEBUG_TOGGLE',
+  MOVE_UP = 'MOVE_UP',
+  MOVE_DOWN = 'MOVE_DOWN'
 }
 
 export interface InputMapping {
@@ -20,8 +22,8 @@ export interface InputMapping {
 }
 
 export const INPUT_MAPPINGS: InputMapping[] = [
-  { keyCode: 'KeyW', action: InputAction.ASCEND },
-  { keyCode: 'KeyS', action: InputAction.DESCEND },
+  { keyCode: 'KeyW', action: InputAction.MOVE_UP },
+  { keyCode: 'KeyS', action: InputAction.MOVE_DOWN },
   { keyCode: 'KeyA', action: InputAction.ROTATE_LEFT },
   { keyCode: 'KeyD', action: InputAction.ROTATE_RIGHT },
   { keyCode: 'KeyI', action: InputAction.LOOK_UP },

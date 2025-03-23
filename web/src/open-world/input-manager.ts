@@ -11,7 +11,7 @@ export class InputManager {
   private state: InputState;
   private onActionDown: (action: InputAction) => void;
   private onActionUp: (action: InputAction) => void;
-  private demoModeInterval: number | null = null;
+  private demoModeInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     onActionDown: (action: InputAction) => void,

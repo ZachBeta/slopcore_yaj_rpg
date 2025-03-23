@@ -198,6 +198,15 @@ export class Player {
     // Get the movement vectors in the drone's local space
     const { forwardVector, upVector } = this.getLocalDirectionVectors();
     
+    // W/S as MOVE_UP/MOVE_DOWN (simpler up/down movement)
+    if (activeActions.has(InputAction.MOVE_UP)) {
+      console.log('Player moving up');
+      this.velocity.y += this.moveSpeed;
+    } else if (activeActions.has(InputAction.MOVE_DOWN)) {
+      console.log('Player moving down');
+      this.velocity.y -= this.moveSpeed;
+    }
+    
     // W/S controls movement along the drone's local up/down axis
     if (activeActions.has(InputAction.ASCEND)) {
       console.log('Drone ascending along local up axis');

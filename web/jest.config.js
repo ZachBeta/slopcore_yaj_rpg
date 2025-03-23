@@ -40,9 +40,21 @@ const config = {
       displayName: 'default',
       testMatch: [
         '<rootDir>/src/terminal-game/__tests__/!(console-renderer).test.[jt]s?(x)',
-        '<rootDir>/src/open-world/__tests__/**/*.test.[jt]s?(x)'
       ],
       testEnvironment: 'node',
+      preset: 'ts-jest',
+      transform: {
+        '^.+\\.tsx?$': ['ts-jest', {
+          tsconfig: 'tsconfig.test.json'
+        }]
+      },
+    },
+    {
+      displayName: 'open-world',
+      testMatch: [
+        '<rootDir>/src/open-world/__tests__/**/*.test.[jt]s?(x)'
+      ],
+      testEnvironment: 'jsdom',
       preset: 'ts-jest',
       transform: {
         '^.+\\.tsx?$': ['ts-jest', {

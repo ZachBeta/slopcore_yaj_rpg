@@ -125,8 +125,13 @@ function initializeOpenWorldGame(): void {
   document.body.appendChild(backButton);
 }
 
+// Define interface for globalThis to support processCommand
+interface ProcessCommandGlobal {
+  processCommand: (command: string) => void;
+}
+
 // Create a function to handle console input
-globalThis.processCommand = function(command: string): void {
+(globalThis as unknown as ProcessCommandGlobal).processCommand = function(command: string): void {
   if (game && command && typeof command === 'string') {
     game.processCommand(command);
   } else {
