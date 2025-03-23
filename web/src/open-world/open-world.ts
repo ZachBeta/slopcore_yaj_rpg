@@ -134,6 +134,9 @@ export class OpenWorldGame {
       (status: ConnectionStatus, error?: Error) => this.handleConnectionStatus(status, error)
     );
     
+    // Set up network event listeners
+    this.setupNetworkEvents();
+    
     // Connect to the server
     this.networkManager.connect();
     
@@ -152,15 +155,6 @@ export class OpenWorldGame {
     this.animating = true;
     this.lastTime = performance.now();
     this.animate();
-
-    // Update event handlers with type-safe events
-    this.networkManager.on(GameEvent.CONNECTION_STATUS, (status: GameEventPayloads[typeof GameEvent.CONNECTION_STATUS]) => {
-      this.handleConnectionStatus(status);
-    });
-
-    this.networkManager.on(GameEvent.PLAYER_MOVED, () => {
-      // ... existing code ...
-    });
   }
 
   /**
@@ -416,9 +410,34 @@ export class OpenWorldGame {
       console.log('Successfully connected to multiplayer server');
     } else if (status === 'disconnected') {
       console.log('Disconnected from multiplayer server');
+      // Initialize world with random data if disconnected
+      this.worldManager.initializeWithRandomData();
     } else if (status === 'error') {
       console.error('Error connecting to multiplayer server:', error);
+      // Initialize world with random data if connection error
+      this.worldManager.initializeWithRandomData();
     }
+  }
+  
+  /**
+   * Set up network event listeners
+   */
+  private setupNetworkEvents(): void {
+    // Listen for connection status updates
+    this.networkManager.on(GameEvent.CONNECTION_STATUS, (status: GameEventPayloads[typeof GameEvent.CONNECTION_STATUS]) => {
+      console.log(`Connection status: ${status}`);
+    });
+    
+    // Listen for player moves (local tracking for animation)
+    this.networkManager.on(GameEvent.PLAYER_MOVED, () => {
+      // We handle this via direct callback instead
+    });
+    
+    // Listen for map data from server
+    this.networkManager.on(GameEvent.MAP_DATA, (mapData: GameEventPayloads[typeof GameEvent.MAP_DATA]) => {
+      console.log('Initializing world with server map data');
+      this.worldManager.initializeWithMapData(mapData);
+    });
   }
   
   /**
@@ -521,12 +540,46 @@ export class OpenWorldGame {
       this.controlsDisplay.dispose();
     }
     
-    // Disconnect from network
-    this.networkManager.disconnect();
+    // Disconnect from network and destroy manager
+    this.networkManager.destroy();
     
-    // Dispose of Three.js resources
+    // Clean up all players
+    this.players.forEach(player => {
+      this.scene.remove(player.getObject());
+      player.dispose();
+    });
+    this.players.clear();
+    
+    // Clean up local player
+    this.scene.remove(this.localPlayer.getObject());
+    this.localPlayer.dispose();
+    
+    // Clean up Three.js resources
+    this.scene.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        if (object.geometry) {
+          object.geometry.dispose();
+        }
+        if (object.material) {
+          if (Array.isArray(object.material)) {
+            object.material.forEach(material => material.dispose());
+          } else {
+            object.material.dispose();
+          }
+        }
+      }
+    });
+    
     this.renderer.dispose();
     this.chasePipRenderer.dispose();
     this.orbitPipRenderer.dispose();
+    
+    // Remove all DOM elements
+    const container = document.getElementById('open-world-container');
+    if (container) {
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+    }
   }
 } 

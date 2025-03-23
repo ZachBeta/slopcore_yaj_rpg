@@ -3,6 +3,7 @@
 ## open world game
 
 * consistent map
+* deno lint over eslint
 
 * server diagnostics is getting noisy in dev logs
 * tests are slow as hell

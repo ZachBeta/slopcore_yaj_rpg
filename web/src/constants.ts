@@ -1,4 +1,4 @@
-import { Position, Rotation, Player, ServerDiagnostics } from './types';
+import { Position, Rotation, Player, ServerDiagnostics, MapData } from './types';
 
 export enum GameEvent {
   // Player events
@@ -10,6 +10,7 @@ export enum GameEvent {
   POSITION_UPDATE = 'position_update',
   ROTATION_UPDATE = 'rotation_update',
   PLAYERS_LIST = 'players_list',
+  MAP_DATA = 'map_data',
   
   // Game state events
   GAME_STATE_UPDATE = 'game_state_update',
@@ -70,6 +71,7 @@ export interface GameEventPayloads {
   [GameEvent.POSITION_UPDATE]: { position: Position; rotation: Rotation };
   [GameEvent.ROTATION_UPDATE]: Rotation;
   [GameEvent.PLAYERS_LIST]: Player[];
+  [GameEvent.MAP_DATA]: MapData;
   [GameEvent.GAME_STATE_UPDATE]: { state: string; data: unknown };
   [GameEvent.SERVER_DIAGNOSTICS]: ServerDiagnostics;
   [GameEvent.CONNECTION_STATUS]: ConnectionStatus;

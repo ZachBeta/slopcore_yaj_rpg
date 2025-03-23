@@ -1,7 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { Server as HttpServer } from 'http';
 import { v4 as uuidv4 } from 'uuid';
-import { Color, Player, Position, Rotation, ServerDiagnostics } from '../src/types';
+import { Color, Player, Position, Rotation, ServerDiagnostics, ObstacleData, MapData } from '../src/types';
 import { GameEvent, GameEventPayloads } from '../src/constants';
 
 interface GameServerOptions {
@@ -31,6 +31,7 @@ export class GameServer {
   private tickCount: number;
   private readonly fpsUpdateInterval: number = 1000;
   private lastFpsUpdate: number;
+  private mapData: MapData;
 
   constructor(server: HttpServer, port: number, options: GameServerOptions = {}) {
     this.server = server;
@@ -92,6 +93,9 @@ export class GameServer {
     this.tickCount = 0;
     this.fps = 0;
     this.lastFpsUpdate = Date.now();
+    
+    // Generate map data
+    this.mapData = this.generateMapData();
 
     if (!this.isTestMode) {
       console.log(`Attaching Socket.IO server to HTTP server on port ${port}`);
@@ -431,6 +435,9 @@ export class GameServer {
         // First send the player their own data
         socket.emit(GameEvent.PLAYER_JOIN, { id: socket.id, position: player.position, rotation: player.rotation, color: player.color });
         
+        // Send the map data to the client
+        socket.emit(GameEvent.MAP_DATA, this.mapData);
+        
         // Then send them the list of other players
         socket.emit(GameEvent.PLAYERS_LIST, existingPlayers);
 
@@ -639,5 +646,63 @@ export class GameServer {
 
   private releaseColor(color: Color): void {
     this.recycleColor(color);
+  }
+
+  // Generate the map data that will be shared with all clients
+  private generateMapData(): MapData {
+    const worldSize = 100;
+    const obstacles: ObstacleData[] = [];
+    
+    // Create some random obstacles - cubes and cylinders
+    for (let i = 0; i < 20; i++) {
+      // Decide on shape type
+      const type = Math.random() > 0.5 ? 'cube' as const : 'cylinder' as const;
+      
+      // Generate random position
+      const x = (Math.random() - 0.5) * (worldSize - 10);
+      const z = (Math.random() - 0.5) * (worldSize - 10);
+      
+      let obstacleData: ObstacleData;
+      
+      if (type === 'cube') {
+        // Create a cube with random size
+        const size = 0.5 + Math.random() * 2;
+        obstacleData = {
+          type,
+          position: { x, y: size / 2, z },
+          scale: { x: 1, y: 1 + Math.random() * 3, z: 1 },
+          color: this.generateRandomRGBColor(),
+          size
+        };
+      } else {
+        // Create a cylinder with random height and radius
+        const radius = 0.5 + Math.random() * 1;
+        const height = 1 + Math.random() * 3;
+        obstacleData = {
+          type,
+          position: { x, y: height / 2, z },
+          scale: { x: 1, y: 1, z: 1 },
+          color: this.generateRandomRGBColor(),
+          radius,
+          height
+        };
+      }
+      
+      obstacles.push(obstacleData);
+    }
+    
+    return { worldSize, obstacles };
+  }
+  
+  // Generate a random RGB color for obstacles
+  private generateRandomRGBColor(): Color {
+    // Random color with HSL to get nice vibrant colors
+    const hue = Math.random();
+    // Use fixed saturation and lightness for vibrant colors
+    const s = 0.7;
+    const l = 0.5;
+    
+    // Convert HSL to RGB
+    return this.hslToRgb(hue, s, l);
   }
 } 

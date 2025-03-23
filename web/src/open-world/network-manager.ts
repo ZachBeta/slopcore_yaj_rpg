@@ -2,19 +2,10 @@ import * as THREE from 'three';
 import { Player } from './player';
 import { io, Socket } from 'socket.io-client';
 import { GameEvent, GameEventPayloads, ConnectionStatus } from '../constants';
+import { DebugState } from '../types';
 
-// Define the callback types
-type PlayerJoinCallback = (id: string, position: THREE.Vector3, color: THREE.Color) => void;
-type PlayerLeaveCallback = (id: string) => void;
-type PlayerPositionUpdateCallback = (id: string, position: THREE.Vector3) => void;
-type ConnectionStatusCallback = (status: ConnectionStatus, error?: Error) => void;
-
-// Define HSL type
-interface HSL {
-  h: number;
-  s: number;
-  l: number;
-}
+// Define EventHandler type
+type EventHandler<T extends GameEvent> = (payload: GameEventPayloads[T]) => void;
 
 interface Diagnostics {
   status: string;
@@ -26,8 +17,6 @@ interface Diagnostics {
   availableColors: number;
   connections: number;
 }
-
-type EventHandler<T extends GameEvent> = (payload: GameEventPayloads[T]) => void;
 
 export class NetworkManager {
   private socket: Socket | null = null;
@@ -55,11 +44,13 @@ export class NetworkManager {
   private lastPingTime: number = 0;
   private diagnosticsDiv: HTMLDivElement | null = null;
   private pingInterval: number = 1000;
-  private debugState: Record<string, unknown> | null = null;
-  private debugStateListeners: Set<(state: Record<string, unknown>) => void> = new Set();
+  private debugState: DebugState | null = null;
+  private debugStateListeners: Set<(state: DebugState) => void> = new Set();
+  private diagnosticsInterval: NodeJS.Timeout | null = null;
+  private pingIntervalId: NodeJS.Timeout | null = null;
 
   // Default server URL for development
-  private static readonly DEFAULT_SERVER_URL = 'http://localhost:3000';
+  private static readonly DEFAULT_SERVER_URL = 'http://localhost:8080';
   // Server URL for testing
   private static readonly TEST_SERVER_URL = 'http://localhost:3001';
 
@@ -90,6 +81,12 @@ export class NetworkManager {
     onPositionUpdate: (id: string, position: THREE.Vector3) => void,
     onConnectionStatus: (status: ConnectionStatus, error?: Error) => void
   ) {
+    // Clean up any existing diagnostics div from previous instances
+    const existingDiagnostics = document.getElementById('diagnostics');
+    if (existingDiagnostics) {
+      existingDiagnostics.remove();
+    }
+
     this.localPlayer = localPlayer;
     this.onPlayerJoin = onPlayerJoin;
     this.onPlayerLeave = onPlayerLeave;
@@ -100,16 +97,28 @@ export class NetworkManager {
     this.playerColor = new THREE.Color(0xCCCCCC); // Temporary gray color
     this.localPlayer.setColor(this.playerColor);
     this.setupDiagnostics();
-    this.socket = io(NetworkManager.getServerUrl());
-    this.setupSocketEvents();
-
-    // Add debug state listener
-    this.socket?.on('debug_state', (state: any) => {
+    
+    // Initialize event handlers for all game events
+    Object.values(GameEvent).forEach(event => {
+      this.eventHandlers.set(event, new Set());
+    });
+    
+    // Start connection to server
+    this.connect();
+  }
+  
+  /**
+   * Set up the debug state handler
+   */
+  private addDebugStateHandler(): void {
+    if (!this.socket) return;
+    
+    this.socket.on('debug_state', (state: DebugState) => {
       this.debugState = state;
       this.debugStateListeners.forEach(listener => listener(state));
       
       // Log color mismatches
-      const localPlayerState = state.players.find((p: any) => p.id === this.socket?.id);
+      const localPlayerState = state.players.find((p) => p.id === this.socket?.id);
       if (localPlayerState) {
         const currentColor = this.localPlayer.getColor();
         const expectedColor = localPlayerState.expectedColor;
@@ -138,7 +147,7 @@ export class NetworkManager {
       // Pretty print the debug state
       console.group('Server State');
       console.log('Players:', state.players.length);
-      console.table(state.players.map((p: any) => ({
+      console.table(state.players.map((p) => ({
         id: p.id,
         color: `rgb(${p.color.r * 255}, ${p.color.g * 255}, ${p.color.b * 255})`,
         x: p.position.x.toFixed(2),
@@ -157,6 +166,9 @@ export class NetworkManager {
 
   private setupDiagnostics() {
     // Create diagnostics overlay
+    if (this.diagnosticsDiv) {
+      document.body.removeChild(this.diagnosticsDiv);
+    }
     this.diagnosticsDiv = document.createElement('div');
     this.diagnosticsDiv.id = 'diagnostics';
     this.diagnosticsDiv.style.cssText = `
@@ -187,7 +199,10 @@ export class NetworkManager {
     });
 
     // Start ping interval
-    setInterval(() => {
+    if (this.pingIntervalId) {
+      clearInterval(this.pingIntervalId);
+    }
+    this.pingIntervalId = setInterval(() => {
       if (this.socket && this.socket.connected) {
         this.lastPing = Date.now();
         this.socket.emit('ping');
@@ -218,6 +233,7 @@ export class NetworkManager {
    * @param url Optional server URL to connect to. If not provided, uses environment-based URL
    */
   public connect(url?: string): void {
+    // Clean up any existing connection
     if (this.socket) {
       this.disconnect();
     }
@@ -231,6 +247,13 @@ export class NetworkManager {
    * Connect to the Socket.IO server with retry logic
    */
   private connectToServer(): void {
+    // Clean up existing connection if any
+    if (this.socket) {
+      this.socket.removeAllListeners();
+      this.socket.disconnect();
+      this.socket = null;
+    }
+
     if (this.connectionAttempts >= this.maxConnectionAttempts) {
       console.error(`Failed to connect after ${this.maxConnectionAttempts} attempts.`);
       this.onConnectionStatus?.(ConnectionStatus.ERROR, new Error('Max connection attempts reached'));
@@ -240,13 +263,78 @@ export class NetworkManager {
     this.connectionAttempts++;
     console.log(`Attempting to connect to Socket.io server at ${this.connectionUrl} (attempt ${this.connectionAttempts}/${this.maxConnectionAttempts})`);
     
-    this.socket = io(this.connectionUrl, {
-      reconnectionAttempts: 3,
+    // Socket.io connection options
+    const connectionOpts = {
+      reconnectionAttempts: this.maxConnectionAttempts,
       timeout: 10000,
-      transports: ['websocket', 'polling']
+      transports: ['websocket'] as string[],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      forceNew: true
+    };
+
+    // First try WebSocket
+    this.socket = io(this.connectionUrl, connectionOpts);
+
+    // Handle transport error - fallback to polling if WebSocket fails
+    this.socket.on('connect_error', (error) => {
+      console.warn('WebSocket connection failed:', error);
+      
+      const currentTransports = this.socket?.io.opts.transports;
+      if (Array.isArray(currentTransports) && currentTransports.includes('websocket')) {
+        console.log('Falling back to polling transport...');
+        // Cleanup current socket
+        this.socket.removeAllListeners();
+        this.socket.disconnect();
+        
+        // Try again with polling
+        const pollingOpts = {
+          ...connectionOpts,
+          transports: ['polling'] as string[]
+        };
+        
+        this.socket = io(this.connectionUrl, pollingOpts);
+        this.setupEventHandlers();
+      } else {
+        // If we're already using polling and still getting errors
+        this.handleConnectionError(error);
+      }
     });
 
     this.setupEventHandlers();
+  }
+
+  /**
+   * Handle connection errors with retry logic
+   */
+  private handleConnectionError(error: Error): void {
+    console.error('Connection error:', error);
+    this.onConnectionStatus?.(ConnectionStatus.ERROR, error);
+    
+    // Try to reconnect with a limit
+    if (this.connectionAttempts < this.maxConnectionAttempts) {
+      if (this.connectionRetryTimeout) {
+        clearTimeout(this.connectionRetryTimeout);
+        this.connectionRetryTimeout = null;
+      }
+      
+      // Exponential backoff for retries
+      const delay = Math.min(2000 * Math.pow(1.5, this.connectionAttempts), 30000);
+      
+      console.log(`Will retry connection in ${delay}ms (attempt ${this.connectionAttempts}/${this.maxConnectionAttempts})`);
+      
+      this.connectionRetryTimeout = setTimeout(() => {
+        if (!this.isConnected) {
+          console.log(`Retrying connection (attempt ${this.connectionAttempts + 1}/${this.maxConnectionAttempts})`);
+          this.connectToServer();
+        }
+      }, delay);
+    } else {
+      // Stop trying after max attempts
+      console.error(`Failed to connect after ${this.maxConnectionAttempts} attempts`);
+      this.disconnect(); // Clean disconnect to prevent further retries
+    }
   }
 
   /**
@@ -255,88 +343,82 @@ export class NetworkManager {
   private setupEventHandlers(): void {
     if (!this.socket) return;
 
-    // Handle connection events
-    this.socket.on('connect', () => {
-      console.log('Connected to server with ID:', this.socket?.id);
-      this.isConnected = true;
-      this.connectionAttempts = 0;
-      this.onConnectionStatus?.(ConnectionStatus.CONNECTED);
-      
-      // Send initial player data without color
-      const playerData = {
-        position: this.localPlayer.getPosition(),
-        rotation: this.localPlayer.getRotation()
-      };
-      console.log('Sending player_join with data:', playerData);
-      this.socket?.emit('player_join', playerData);
-    });
+    // Clear existing event handlers first to prevent duplicates
+    this.socket.removeAllListeners();
 
-    // Handle color assignment from server
-    this.socket.on('color_assigned', (data: { color: { r: number, g: number, b: number } }) => {
-      console.group('Color Assignment');
-      console.log('Received color assignment:', data);
+    // Set up event handlers here
+    this.socket.on('connect', () => {
+      console.log('Connected to server');
+      this.isConnected = true;
+      this.onConnectionStatus?.(ConnectionStatus.CONNECTED);
+      this.connectionAttempts = 0;
       
-      // Create a new color instance with the assigned RGB values
-      const assignedColor = new THREE.Color(
-        data.color.r,
-        data.color.g,
-        data.color.b
-      );
+      // Log transport being used
+      const transport = this.socket?.io.engine.transport;
+      if (transport && typeof transport === 'object' && 'name' in transport) {
+        console.log('Using transport:', transport.name);
+      }
       
-      console.log('Previous color:', {
-        r: this.playerColor.r.toFixed(4),
-        g: this.playerColor.g.toFixed(4),
-        b: this.playerColor.b.toFixed(4)
+      // Notify listeners
+      this.eventHandlers.get(GameEvent.CONNECTION_STATUS)?.forEach(handler => {
+        handler(ConnectionStatus.CONNECTED);
       });
       
-      // Update both the network manager's color and the player's color
-      this.playerColor = assignedColor.clone();
-      this.localPlayer.setColor(assignedColor);
-      
-      console.log('New color set:', {
-        r: this.playerColor.r.toFixed(4),
-        g: this.playerColor.g.toFixed(4),
-        b: this.playerColor.b.toFixed(4)
+      // Join the game
+      this.socket?.emit(GameEvent.PLAYER_JOIN, {
+        position: {
+          x: this.localPlayer.getPosition().x,
+          y: this.localPlayer.getPosition().y,
+          z: this.localPlayer.getPosition().z
+        },
+        rotation: this.localPlayer.getRotation()
       });
-      
-      // Verify the color was properly applied
-      const verifyColor = this.localPlayer.getColor();
-      console.log('Verification - player color:', {
-        r: verifyColor.r.toFixed(4),
-        g: verifyColor.g.toFixed(4),
-        b: verifyColor.b.toFixed(4)
-      });
-      
-      // Request immediate state verification to confirm
-      this.verifyClientState();
     });
 
     // Handle connect error
-    this.socket.on('connect_error', (error) => {
-      console.error('Connection error:', error);
-      this.onConnectionStatus?.(ConnectionStatus.ERROR, error);
-      
-      // Try to reconnect
-      if (this.connectionAttempts < this.maxConnectionAttempts) {
-        if (this.connectionRetryTimeout) {
-          clearTimeout(this.connectionRetryTimeout);
-        }
-        this.connectionRetryTimeout = setTimeout(() => {
-          this.connectToServer();
-        }, 2000);
-      }
-    });
+    this.socket.on('connect_error', this.handleConnectionError.bind(this));
 
     // Handle disconnect
-    this.socket.on('disconnect', () => {
-      console.log('Disconnected from server');
+    this.socket.on('disconnect', (reason) => {
+      console.log('Disconnected from server:', reason);
       this.isConnected = false;
       this.onConnectionStatus?.(ConnectionStatus.DISCONNECTED);
       this.otherPlayers.clear(); // Clear other players on disconnect
+      
+      // If the disconnect was due to a transport error, try reconnecting
+      if (reason === 'transport error' || reason === 'transport close') {
+        this.handleConnectionError(new Error(reason));
+      }
+    });
+    
+    // Set up forwarding for all game events
+    Object.values(GameEvent).forEach(event => {
+      this.socket?.on(event, (payload: unknown) => {
+        const handlers = this.eventHandlers.get(event as GameEvent);
+        if (handlers) {
+          handlers.forEach(handler => handler(payload as GameEventPayloads[typeof event]));
+        }
+      });
+    });
+    
+    // Set up other event handlers
+    this.addDebugStateHandler();
+    this.setupGameEvents();
+  }
+  
+  /**
+   * Set up game-specific event handlers
+   */
+  private setupGameEvents(): void {
+    if (!this.socket) return;
+    
+    // Handle map data from server
+    this.socket.on(GameEvent.MAP_DATA, (mapData: GameEventPayloads[typeof GameEvent.MAP_DATA]) => {
+      console.log('Received map data from server:', mapData);
     });
 
     // Handle receiving list of existing players
-    this.socket.on('players_list', (players: any[]) => {
+    this.socket.on(GameEvent.PLAYERS_LIST, (players: GameEventPayloads[typeof GameEvent.PLAYERS_LIST]) => {
       console.log('Received players_list event with players:', players);
       players.forEach(player => {
         if (player.id !== this.socket?.id && !this.otherPlayers.has(player.id)) {
@@ -357,221 +439,45 @@ export class NetworkManager {
       });
     });
 
-    // Handle new player joining
-    this.socket.on('player_joined', (data: any) => {
-      console.log('Player joined:', data);
-      if (data.id !== this.socket?.id && !this.otherPlayers.has(data.id)) {
-        this.otherPlayers.set(data.id, true);
+    // Handle individual player join events
+    this.socket.on(GameEvent.PLAYER_JOINED, (player: GameEventPayloads[typeof GameEvent.PLAYER_JOINED]) => {
+      console.log('Received player_joined event:', player);
+      if (player.id !== this.socket?.id && !this.otherPlayers.has(player.id)) {
+        this.otherPlayers.set(player.id, true);
+        console.log('Adding new player from player_joined:', player.id);
+        const position = new THREE.Vector3(
+          player.position.x,
+          player.position.y,
+          player.position.z
+        );
+        const color = new THREE.Color(
+          player.color.r,
+          player.color.g,
+          player.color.b
+        );
+        this.onPlayerJoin(player.id, position, color);
+      }
+    });
+
+    // Handle player leave events
+    this.socket.on(GameEvent.PLAYER_LEFT, (playerId: GameEventPayloads[typeof GameEvent.PLAYER_LEFT]) => {
+      console.log('Player left:', playerId);
+      if (this.otherPlayers.has(playerId)) {
+        this.otherPlayers.delete(playerId);
+        this.onPlayerLeave(playerId);
+      }
+    });
+
+    // Handle position updates
+    this.socket.on(GameEvent.POSITION_UPDATE, (data: { id: string; position: { x: number; y: number; z: number }; rotation: { x: number; y: number; z: number } }) => {
+      if (data.id !== this.socket?.id) {
         const position = new THREE.Vector3(
           data.position.x,
           data.position.y,
           data.position.z
         );
-        const color = new THREE.Color(
-          data.color.r,
-          data.color.g,
-          data.color.b
-        );
-        this.onPlayerJoin(data.id, position, color);
+        this.onPositionUpdate(data.id, position);
       }
-    });
-
-    // Handle player leaving
-    this.socket.on('player_left', (playerId: string) => {
-      console.log('Received player_left event for:', playerId);
-      this.otherPlayers.delete(playerId);
-      this.onPlayerLeave(playerId);
-    });
-
-    // Handle player movement updates
-    this.socket.on('player_moved', (data: any) => {
-      this.onPositionUpdate(
-        data.id,
-        new THREE.Vector3(
-          data.position.x,
-          data.position.y,
-          data.position.z
-        )
-      );
-    });
-
-    // Handle server diagnostics
-    this.socket.on('server_diagnostics', (data: any) => {
-      this.updateDiagnostics(data);
-    });
-
-    // Handle pong
-    this.socket.on('pong', (data: { timestamp: number }) => {
-      this.lastPingTime = Date.now() - data.timestamp;
-      this.updateDiagnostics({ ping: this.lastPingTime });
-    });
-
-    // Handle state verification results
-    this.socket.on('state_verification_result', (report: any) => {
-      console.group('State Verification Report');
-      console.log('Color drift:', report.colorDrift.toFixed(4));
-      console.log('Position drift:', report.positionDrift.toFixed(4));
-      console.log('Needs correction:', report.needsCorrection);
-      
-      if (report.needsCorrection) {
-        console.warn('State correction needed!');
-        
-        const currentColor = this.localPlayer.getColor();
-        const expectedColor = report.expectedState.color;
-        const currentPos = this.localPlayer.getPosition();
-        const expectedPos = report.expectedState.position;
-        
-        console.group('Color State');
-        console.log('Current color (RGB):', {
-          r: currentColor.r.toFixed(4),
-          g: currentColor.g.toFixed(4),
-          b: currentColor.b.toFixed(4)
-        });
-        console.log('Expected color (RGB):', {
-          r: expectedColor.r.toFixed(4),
-          g: expectedColor.g.toFixed(4),
-          b: expectedColor.b.toFixed(4)
-        });
-        console.log('Color differences:', {
-          r: Math.abs(currentColor.r - expectedColor.r).toFixed(4),
-          g: Math.abs(currentColor.g - expectedColor.g).toFixed(4),
-          b: Math.abs(currentColor.b - expectedColor.b).toFixed(4)
-        });
-        console.groupEnd();
-
-        console.group('Position State');
-        console.log('Current position:', {
-          x: currentPos.x.toFixed(4),
-          y: currentPos.y.toFixed(4),
-          z: currentPos.z.toFixed(4)
-        });
-        console.log('Expected position:', {
-          x: expectedPos.x.toFixed(4),
-          y: expectedPos.y.toFixed(4),
-          z: expectedPos.z.toFixed(4)
-        });
-        console.log('Position differences:', {
-          x: Math.abs(currentPos.x - expectedPos.x).toFixed(4),
-          y: Math.abs(currentPos.y - expectedPos.y).toFixed(4),
-          z: Math.abs(currentPos.z - expectedPos.z).toFixed(4)
-        });
-        console.groupEnd();
-      }
-      console.groupEnd();
-    });
-
-    // Handle forced state corrections
-    this.socket.on('force_state_correction', (correctState: any) => {
-      console.warn('Applying forced state correction');
-      
-      // Create a new color instance with the correct RGB values
-      const correctedColor = new THREE.Color(
-        correctState.color.r,
-        correctState.color.g,
-        correctState.color.b
-      );
-      
-      // Update both the network manager's color and the player's color
-      this.playerColor = correctedColor.clone();
-      this.localPlayer.setColor(correctedColor);
-
-      // Update position if needed
-      if (correctState.position) {
-        this.localPlayer.setPosition(new THREE.Vector3(
-          correctState.position.x,
-          correctState.position.y,
-          correctState.position.z
-        ));
-      }
-    });
-
-    // Handle player join response
-    this.socket.on('player_join_response', (data: any) => {
-      console.group('Player Join Response');
-      console.log('Received join response:', data);
-      
-      if (data.color) {
-        console.log('Color included in join response');
-        // Create a new color instance with the assigned RGB values
-        const assignedColor = new THREE.Color(
-          data.color.r,
-          data.color.g,
-          data.color.b
-        );
-        
-        console.log('Previous color:', {
-          r: this.playerColor.r.toFixed(4),
-          g: this.playerColor.g.toFixed(4),
-          b: this.playerColor.b.toFixed(4)
-        });
-        
-        // Update both the network manager's color and the player's color
-        this.playerColor = assignedColor.clone();
-        this.localPlayer.setColor(assignedColor);
-        
-        console.log('New color set:', {
-          r: this.playerColor.r.toFixed(4),
-          g: this.playerColor.g.toFixed(4),
-          b: this.playerColor.b.toFixed(4)
-        });
-        
-        // Verify the color was properly applied
-        const verifyColor = this.localPlayer.getColor();
-        console.log('Verification - player color:', {
-          r: verifyColor.r.toFixed(4),
-          g: verifyColor.g.toFixed(4),
-          b: verifyColor.b.toFixed(4)
-        });
-        
-        // Request immediate state verification to confirm
-        this.verifyClientState();
-      } else {
-        console.warn('No color in join response');
-      }
-      console.groupEnd();
-    });
-
-    // Handle server request for client state
-    this.socket.on('request_client_state', (data: { timestamp: number, expectedState: any }) => {
-      console.group('Server State Verification Request');
-      console.log('Server expects:', data.expectedState);
-      
-      const currentState = {
-        position: this.localPlayer.getPosition(),
-        color: this.localPlayer.getColor(),
-        timestamp: data.timestamp
-      };
-      
-      console.log('Current client state:', {
-        position: {
-          x: currentState.position.x.toFixed(4),
-          y: currentState.position.y.toFixed(4),
-          z: currentState.position.z.toFixed(4)
-        },
-        color: {
-          r: currentState.color.r.toFixed(4),
-          g: currentState.color.g.toFixed(4),
-          b: currentState.color.b.toFixed(4)
-        }
-      });
-
-      // Send our current state back to the server
-      this.socket?.emit('client_state_response', {
-        position: {
-          x: currentState.position.x,
-          y: currentState.position.y,
-          z: currentState.position.z
-        },
-        color: {
-          r: currentState.color.r,
-          g: currentState.color.g,
-          b: currentState.color.b
-        },
-        timestamp: data.timestamp
-      });
-      
-      console.log('Sent state response to server');
-      console.groupEnd();
     });
   }
 
@@ -607,19 +513,20 @@ export class NetworkManager {
    * Disconnect from the server
    */
   public disconnect(): void {
+    // Clean up the socket
     if (this.socket) {
       // Clean up our color
       this.playerColor = new THREE.Color(0xCCCCCC); // Temporary gray color
       this.localPlayer.setColor(this.playerColor);
+      
+      // Clean up socket
+      this.socket.removeAllListeners();
       this.socket.disconnect();
       this.socket = null;
     }
     
-    if (this.connectionRetryTimeout) {
-      clearTimeout(this.connectionRetryTimeout);
-    }
-    this.isConnected = false;
-    this.otherPlayers.clear();
+    // Clean up all resources
+    this.cleanup();
   }
 
   /**
@@ -630,15 +537,8 @@ export class NetworkManager {
   }
 
   private setupSocketEvents(): void {
-    // Forward all socket events to our event handlers
-    Object.values(GameEvent).forEach(event => {
-      this.socket?.on(event, (payload: any) => {
-        const handlers = this.eventHandlers.get(event);
-        if (handlers) {
-          handlers.forEach(handler => handler(payload));
-        }
-      });
-    });
+    // No need for this method as we set up all event handlers in setupEventHandlers
+    // Keeping this empty to avoid breaking existing code
   }
 
   public on<T extends GameEvent>(event: T, listener: EventHandler<T>): void {
@@ -662,7 +562,7 @@ export class NetworkManager {
   /**
    * Subscribe to debug state updates
    */
-  public onDebugState(callback: (state: Record<string, unknown>) => void): () => void {
+  public onDebugState(callback: (state: DebugState) => void): () => void {
     this.debugStateListeners.add(callback);
     if (this.debugState) {
       callback(this.debugState);
@@ -728,6 +628,75 @@ export class NetworkManager {
     console.log('Disconnected from server');
     this.isConnected = false;
     this.onConnectionStatus?.(ConnectionStatus.DISCONNECTED);
+  }
+
+  /**
+   * Clean up all resources
+   */
+  private cleanup(): void {
+    // Clear intervals
+    if (this.pingIntervalId) {
+      clearInterval(this.pingIntervalId);
+      this.pingIntervalId = null;
+    }
+    if (this.diagnosticsInterval) {
+      clearInterval(this.diagnosticsInterval);
+      this.diagnosticsInterval = null;
+    }
+    if (this.connectionRetryTimeout) {
+      clearTimeout(this.connectionRetryTimeout);
+      this.connectionRetryTimeout = null;
+    }
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
+    // Remove DOM elements
+    if (this.diagnosticsDiv) {
+      if (document.body.contains(this.diagnosticsDiv)) {
+        document.body.removeChild(this.diagnosticsDiv);
+      }
+      this.diagnosticsDiv = null;
+    }
+
+    // Clean up any orphaned diagnostics divs
+    const existingDiagnostics = document.getElementById('diagnostics');
+    if (existingDiagnostics) {
+      existingDiagnostics.remove();
+    }
+
+    // Clear event handlers
+    this.eventHandlers.forEach(handlers => {
+      handlers.forEach(handler => {
+        // Remove each handler from socket events
+        if (this.socket) {
+          Object.values(GameEvent).forEach(event => {
+            this.socket?.off(event, handler as (...args: any[]) => void);
+          });
+        }
+      });
+      handlers.clear();
+    });
+    this.eventHandlers.clear();
+    this.debugStateListeners.clear();
+
+    // Reset state
+    this.otherPlayers.clear();
+    this.debugState = null;
+    this.isConnected = false;
+    this.connectionAttempts = 0;
+    this.lastPing = 0;
+    this.lastPingTime = 0;
+  }
+
+  /**
+   * Destroy the network manager and clean up all resources
+   * Call this when the game is shutting down
+   */
+  public destroy(): void {
+    this.disconnect();
+    this.cleanup();
   }
 }
 
