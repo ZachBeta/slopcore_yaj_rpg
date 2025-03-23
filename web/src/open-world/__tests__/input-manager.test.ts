@@ -18,55 +18,55 @@ describe('InputManager', () => {
 
   describe('Key Event Handling', () => {
     it('should handle WASD movement keys correctly', () => {
-      // Test W key
+      // Test W key (move up)
       inputManager.handleKeyDown({ code: 'KeyW' } as KeyboardEvent);
-      expect(onActionDown).toHaveBeenCalledWith(InputAction.MOVE_FORWARD);
+      expect(onActionDown).toHaveBeenCalledWith(InputAction.MOVE_UP);
       inputManager.handleKeyUp({ code: 'KeyW' } as KeyboardEvent);
-      expect(onActionUp).toHaveBeenCalledWith(InputAction.MOVE_FORWARD);
-
-      // Test A key
+      expect(onActionUp).toHaveBeenCalledWith(InputAction.MOVE_UP);
+      
+      // Test A key (rotate left)
       inputManager.handleKeyDown({ code: 'KeyA' } as KeyboardEvent);
-      expect(onActionDown).toHaveBeenCalledWith(InputAction.MOVE_LEFT);
+      expect(onActionDown).toHaveBeenCalledWith(InputAction.ROTATE_LEFT);
       inputManager.handleKeyUp({ code: 'KeyA' } as KeyboardEvent);
-      expect(onActionUp).toHaveBeenCalledWith(InputAction.MOVE_LEFT);
-
-      // Test S key
+      expect(onActionUp).toHaveBeenCalledWith(InputAction.ROTATE_LEFT);
+      
+      // Test S key (move down)
       inputManager.handleKeyDown({ code: 'KeyS' } as KeyboardEvent);
-      expect(onActionDown).toHaveBeenCalledWith(InputAction.MOVE_BACKWARD);
+      expect(onActionDown).toHaveBeenCalledWith(InputAction.MOVE_DOWN);
       inputManager.handleKeyUp({ code: 'KeyS' } as KeyboardEvent);
-      expect(onActionUp).toHaveBeenCalledWith(InputAction.MOVE_BACKWARD);
-
-      // Test D key
+      expect(onActionUp).toHaveBeenCalledWith(InputAction.MOVE_DOWN);
+      
+      // Test D key (rotate right)
       inputManager.handleKeyDown({ code: 'KeyD' } as KeyboardEvent);
-      expect(onActionDown).toHaveBeenCalledWith(InputAction.MOVE_RIGHT);
+      expect(onActionDown).toHaveBeenCalledWith(InputAction.ROTATE_RIGHT);
       inputManager.handleKeyUp({ code: 'KeyD' } as KeyboardEvent);
-      expect(onActionUp).toHaveBeenCalledWith(InputAction.MOVE_RIGHT);
+      expect(onActionUp).toHaveBeenCalledWith(InputAction.ROTATE_RIGHT);
     });
 
     it('should handle IJKL look controls correctly', () => {
-      // Test I key
+      // Test I key (pitch up)
       inputManager.handleKeyDown({ code: 'KeyI' } as KeyboardEvent);
       expect(onActionDown).toHaveBeenCalledWith(InputAction.LOOK_UP);
       inputManager.handleKeyUp({ code: 'KeyI' } as KeyboardEvent);
       expect(onActionUp).toHaveBeenCalledWith(InputAction.LOOK_UP);
-
-      // Test J key
+      
+      // Test J key (roll left)
       inputManager.handleKeyDown({ code: 'KeyJ' } as KeyboardEvent);
-      expect(onActionDown).toHaveBeenCalledWith(InputAction.LOOK_LEFT);
+      expect(onActionDown).toHaveBeenCalledWith(InputAction.ROLL_LEFT);
       inputManager.handleKeyUp({ code: 'KeyJ' } as KeyboardEvent);
-      expect(onActionUp).toHaveBeenCalledWith(InputAction.LOOK_LEFT);
-
-      // Test K key
+      expect(onActionUp).toHaveBeenCalledWith(InputAction.ROLL_LEFT);
+      
+      // Test K key (pitch down)
       inputManager.handleKeyDown({ code: 'KeyK' } as KeyboardEvent);
       expect(onActionDown).toHaveBeenCalledWith(InputAction.LOOK_DOWN);
       inputManager.handleKeyUp({ code: 'KeyK' } as KeyboardEvent);
       expect(onActionUp).toHaveBeenCalledWith(InputAction.LOOK_DOWN);
-
-      // Test L key
+      
+      // Test L key (roll right)
       inputManager.handleKeyDown({ code: 'KeyL' } as KeyboardEvent);
-      expect(onActionDown).toHaveBeenCalledWith(InputAction.LOOK_RIGHT);
+      expect(onActionDown).toHaveBeenCalledWith(InputAction.ROLL_RIGHT);
       inputManager.handleKeyUp({ code: 'KeyL' } as KeyboardEvent);
-      expect(onActionUp).toHaveBeenCalledWith(InputAction.LOOK_RIGHT);
+      expect(onActionUp).toHaveBeenCalledWith(InputAction.ROLL_RIGHT);
     });
 
     it('should handle space key correctly', () => {
@@ -85,19 +85,25 @@ describe('InputManager', () => {
   });
 
   describe('Action State Management', () => {
-    it('should maintain correct active actions state', () => {
-      // Press multiple keys
+    it('should track active actions', () => {
+      // Activate multiple actions
       inputManager.handleKeyDown({ code: 'KeyW' } as KeyboardEvent);
       inputManager.handleKeyDown({ code: 'KeyA' } as KeyboardEvent);
       
+      // Get active actions
       const activeActions = inputManager.getActiveActions();
-      expect(activeActions.has(InputAction.MOVE_FORWARD)).toBe(true);
-      expect(activeActions.has(InputAction.MOVE_LEFT)).toBe(true);
+      expect(activeActions.size).toBe(2);
+      expect(activeActions.has(InputAction.MOVE_UP)).toBe(true);
+      expect(activeActions.has(InputAction.ROTATE_LEFT)).toBe(true);
       
-      // Release one key
+      // Release one action
       inputManager.handleKeyUp({ code: 'KeyW' } as KeyboardEvent);
-      expect(activeActions.has(InputAction.MOVE_FORWARD)).toBe(false);
-      expect(activeActions.has(InputAction.MOVE_LEFT)).toBe(true);
+      
+      // Check updated active actions
+      const updatedActions = inputManager.getActiveActions();
+      expect(updatedActions.size).toBe(1);
+      expect(updatedActions.has(InputAction.MOVE_UP)).toBe(false);
+      expect(updatedActions.has(InputAction.ROTATE_LEFT)).toBe(true);
     });
 
     it('should not duplicate active actions', () => {
@@ -118,53 +124,53 @@ describe('InputManager', () => {
       jest.useRealTimers();
     });
 
-    it('should execute demo sequence correctly', () => {
-      const demoActions = [
-        InputAction.MOVE_FORWARD,
-        InputAction.MOVE_LEFT,
-        InputAction.JUMP
+    it('should enable demo mode with the specified actions', () => {
+      const actions = [
+        InputAction.MOVE_UP,
+        InputAction.ROTATE_LEFT
       ];
-
-      inputManager.enableDemoMode(demoActions, 1000);
-
-      // First action
-      expect(onActionDown).toHaveBeenCalledWith(InputAction.MOVE_FORWARD);
+      
+      inputManager.enableDemoMode(actions, 1000);
+      
+      expect(inputManager.isDemoModeActive()).toBe(true);
+      
+      // Let the first action be triggered
+      jest.advanceTimersByTime(1000);
+      expect(onActionDown).toHaveBeenCalledWith(InputAction.MOVE_UP);
       jest.advanceTimersByTime(800);
-      expect(onActionUp).toHaveBeenCalledWith(InputAction.MOVE_FORWARD);
-
-      // Second action
+      expect(onActionUp).toHaveBeenCalledWith(InputAction.MOVE_UP);
+      
+      // Let the second action be triggered
       jest.advanceTimersByTime(200);
-      expect(onActionDown).toHaveBeenCalledWith(InputAction.MOVE_LEFT);
+      expect(onActionDown).toHaveBeenCalledWith(InputAction.ROTATE_LEFT);
       jest.advanceTimersByTime(800);
-      expect(onActionUp).toHaveBeenCalledWith(InputAction.MOVE_LEFT);
-
-      // Third action
+      expect(onActionUp).toHaveBeenCalledWith(InputAction.ROTATE_LEFT);
+      
+      // Loop back to the first action
       jest.advanceTimersByTime(200);
-      expect(onActionDown).toHaveBeenCalledWith(InputAction.JUMP);
-      jest.advanceTimersByTime(800);
-      expect(onActionUp).toHaveBeenCalledWith(InputAction.JUMP);
+      expect(onActionDown).toHaveBeenCalledWith(InputAction.MOVE_UP);
     });
 
-    it('should loop demo sequence', () => {
-      const demoActions = [InputAction.MOVE_FORWARD];
-      inputManager.enableDemoMode(demoActions, 1000);
-
-      // First iteration
-      expect(onActionDown).toHaveBeenCalledWith(InputAction.MOVE_FORWARD);
-      jest.advanceTimersByTime(1000);
-      expect(onActionUp).toHaveBeenCalledWith(InputAction.MOVE_FORWARD);
-
-      // Second iteration
-      jest.advanceTimersByTime(1000);
-      expect(onActionDown).toHaveBeenCalledWith(InputAction.MOVE_FORWARD);
-    });
-
-    it('should clean up properly when disabled', () => {
-      inputManager.enableDemoMode([InputAction.MOVE_FORWARD], 1000);
+    it('should disable demo mode', () => {
+      const demoActions = [InputAction.MOVE_UP];
+      inputManager.enableDemoMode(demoActions, 100);
+      
+      // Let the action be triggered
+      jest.advanceTimersByTime(100);
+      expect(onActionDown).toHaveBeenCalledWith(InputAction.MOVE_UP);
+      
+      // Disable demo mode
       inputManager.disableDemoMode();
+      
+      expect(inputManager.isDemoModeActive()).toBe(false);
+    });
 
-      const activeActions = inputManager.getActiveActions();
-      expect(activeActions.size).toBe(0);
+    it('should clean up resources when disposed', () => {
+      inputManager.enableDemoMode([InputAction.MOVE_UP], 1000);
+      expect(inputManager.isDemoModeActive()).toBe(true);
+      
+      inputManager.dispose();
+      
       expect(inputManager.isDemoModeActive()).toBe(false);
     });
   });

@@ -9,8 +9,14 @@ import { InputAction, getActionFromKeyCode } from '../constants/input';
 export class OpenWorldGame {
   // Core three.js components
   private scene: THREE.Scene;
-  private camera: THREE.PerspectiveCamera;
+  private mainCamera: THREE.PerspectiveCamera;
+  private chaseCamera: THREE.PerspectiveCamera;
+  private orbitCamera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
+  private chasePipRenderer: THREE.WebGLRenderer;
+  private orbitPipRenderer: THREE.WebGLRenderer;
+  private orbitAngle: number = 0;
+  private orbitSpeed: number = 0.2; // radians per second
   
   // Game components
   private worldManager: WorldManager;
@@ -21,6 +27,9 @@ export class OpenWorldGame {
   // Game state
   private animating: boolean = false;
   private lastTime: number = 0;
+  
+  // Control display
+  private controlElements: Map<string, HTMLElement> = new Map();
   
   /**
    * Initialize the Open World game scene
@@ -40,21 +49,65 @@ export class OpenWorldGame {
     this.scene.fog = new THREE.FogExp2(0xcccccc, 0.02);
 
     // Set up the camera
-    this.camera = new THREE.PerspectiveCamera(
+    this.mainCamera = new THREE.PerspectiveCamera(
       75,
       window.innerWidth / window.innerHeight,
       0.1,
       1000
     );
-    this.camera.position.set(0, 5, 10);
-    this.camera.lookAt(0, 0, 0);
-
+    
+    // Create chase camera
+    this.chaseCamera = new THREE.PerspectiveCamera(
+      75,
+      1, // 1:1 aspect ratio for PIP
+      0.1,
+      1000
+    );
+    this.chaseCamera.position.set(0, 5, 10);
+    
+    // Create orbit camera
+    this.orbitCamera = new THREE.PerspectiveCamera(
+      75,
+      1, // 1:1 aspect ratio for PIP
+      0.1,
+      1000
+    );
+    this.orbitCamera.position.set(10, 5, 0);
+    this.orbitCamera.lookAt(0, 0, 0);
+    
     // Set up the renderer
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.shadowMap.enabled = true;
     container.appendChild(this.renderer.domElement);
+
+    // Set up PIP renderers
+    const pipSize = 200; // Size of PIP displays
+    
+    // Chase camera PIP
+    this.chasePipRenderer = new THREE.WebGLRenderer({ antialias: true });
+    this.chasePipRenderer.setSize(pipSize, pipSize);
+    this.chasePipRenderer.setPixelRatio(window.devicePixelRatio);
+    this.chasePipRenderer.shadowMap.enabled = true;
+    this.chasePipRenderer.domElement.style.position = 'absolute';
+    this.chasePipRenderer.domElement.style.bottom = '20px';
+    this.chasePipRenderer.domElement.style.right = '20px';
+    this.chasePipRenderer.domElement.style.border = '2px solid rgba(255, 255, 255, 0.5)';
+    this.chasePipRenderer.domElement.style.borderRadius = '5px';
+    container.appendChild(this.chasePipRenderer.domElement);
+    
+    // Orbit camera PIP
+    this.orbitPipRenderer = new THREE.WebGLRenderer({ antialias: true });
+    this.orbitPipRenderer.setSize(pipSize, pipSize);
+    this.orbitPipRenderer.setPixelRatio(window.devicePixelRatio);
+    this.orbitPipRenderer.shadowMap.enabled = true;
+    this.orbitPipRenderer.domElement.style.position = 'absolute';
+    this.orbitPipRenderer.domElement.style.bottom = '20px';
+    this.orbitPipRenderer.domElement.style.left = '20px';
+    this.orbitPipRenderer.domElement.style.border = '2px solid rgba(255, 255, 255, 0.5)';
+    this.orbitPipRenderer.domElement.style.borderRadius = '5px';
+    container.appendChild(this.orbitPipRenderer.domElement);
 
     // Set up lighting
     this.setupLighting();
@@ -68,7 +121,7 @@ export class OpenWorldGame {
     this.scene.add(this.localPlayer.getObject());
     
     // Position camera to follow the player
-    this.updateCameraPosition();
+    this.updateCameraPositions(0);
     
     // Initialize the network manager with color support
     this.networkManager = new NetworkManager(
@@ -89,6 +142,9 @@ export class OpenWorldGame {
 
     // Add instructions
     this.addControlsInstructions(container);
+    
+    // Add controls display
+    this.addControlsDisplay(container);
     
     // Start the animation loop
     this.animating = true;
@@ -111,49 +167,32 @@ export class OpenWorldGame {
   private addControlsInstructions(container: HTMLElement): void {
     const instructions = document.createElement('div');
     instructions.style.position = 'absolute';
-    instructions.style.bottom = '10px';
-    instructions.style.left = '10px';
+    instructions.style.top = '10px';
+    instructions.style.width = '100%';
+    instructions.style.textAlign = 'center';
+    instructions.style.padding = '10px';
     instructions.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
     instructions.style.color = 'white';
-    instructions.style.padding = '10px';
-    instructions.style.borderRadius = '5px';
-    instructions.style.fontFamily = 'Arial, sans-serif';
-    instructions.style.fontSize = '14px';
-    instructions.style.zIndex = '1000';
+    instructions.style.fontFamily = 'monospace';
+    instructions.style.pointerEvents = 'none';
+    instructions.style.zIndex = '100';
     instructions.innerHTML = `
-      <strong>Controls:</strong><br>
-      WASD - Move<br>
-      IJKL - Look around<br>
-      SPACE - Jump<br>
-      <button id="demo-mode" style="margin-top: 10px; padding: 5px 10px;">Demo Mode</button>
+      <h2>Drone Control System</h2>
+      <strong>Main Controls:</strong><br>
+      W/S: Move Up/Down (relative to drone orientation)<br>
+      R/F: Throttle Forward/Backward<br>
+      A/D: Rotate Left/Right (Yaw)<br>
+      I/K: Tilt Forward/Backward (Pitch)<br>
+      J/L: Bank Left/Right (Roll)<br>
+      Space: Quick Boost<br>
+      Escape: Return to Menu<br><br>
+      <strong>Views:</strong><br>
+      Main: First-Person View (FPV)<br>
+      Bottom-Left: Orbit Camera<br>
+      Bottom-Right: Chase Camera<br><br>
+      <strong>Note:</strong> Active controls are shown in the grids at the bottom center
     `;
     container.appendChild(instructions);
-
-    // Add demo mode button handler
-    const demoButton = document.getElementById('demo-mode');
-    if (demoButton) {
-      demoButton.addEventListener('click', () => {
-        const inputManager = this.localPlayer.getInputManager();
-        if (inputManager.isDemoModeActive()) {
-          inputManager.disableDemoMode();
-          demoButton.textContent = 'Demo Mode';
-        } else {
-          // Demo sequence: Move forward, look around, jump, repeat
-          inputManager.enableDemoMode([
-            InputAction.MOVE_FORWARD,
-            InputAction.LOOK_LEFT,
-            InputAction.LOOK_RIGHT,
-            InputAction.LOOK_UP,
-            InputAction.LOOK_DOWN,
-            InputAction.JUMP,
-            InputAction.MOVE_BACKWARD,
-            InputAction.MOVE_LEFT,
-            InputAction.MOVE_RIGHT
-          ], 1000);
-          demoButton.textContent = 'Stop Demo';
-        }
-      });
-    }
   }
   
   /**
@@ -183,38 +222,53 @@ export class OpenWorldGame {
   }
   
   /**
-   * Update the camera to follow the player and account for rotation
+   * Update the camera positions based on player position and rotation
    */
-  private updateCameraPosition(): void {
+  private updateCameraPositions(deltaTime: number): void {
     const playerPosition = this.localPlayer.getPosition();
     const playerRotation = this.localPlayer.getRotation();
     
-    // Create the camera offset based on player rotation
+    // Update FPV (main) camera - position inside the player model
+    // and rotated exactly with player rotation
+    this.mainCamera.position.copy(playerPosition);
+    // Offset slightly upward to represent eyes/camera position
+    this.mainCamera.position.y += 0.5;
+    
+    // Apply player rotation directly to camera
+    this.mainCamera.quaternion.setFromEuler(
+      new THREE.Euler(playerRotation.x, playerRotation.y, playerRotation.z, 'YXZ')
+    );
+    
+    // Update chase camera (behind player)
     const cameraDistance = 10;
-    const cameraHeight = 5;
+    const cameraHeight = 3;
     const cameraOffset = new THREE.Vector3(
       0,
       cameraHeight,
       cameraDistance
     );
     
-    // Apply the rotation to the camera offset
+    // Apply the rotation to the chase camera offset
     cameraOffset.applyEuler(new THREE.Euler(0, playerRotation.y, 0));
     
-    // Set the camera position
-    this.camera.position.copy(playerPosition).add(cameraOffset);
+    // Set the chase camera position
+    this.chaseCamera.position.copy(playerPosition).add(cameraOffset);
+    this.chaseCamera.lookAt(playerPosition);
     
-    // Make the camera look at the player with the x-rotation applied
-    const lookAtPosition = playerPosition.clone();
-    const lookDirection = new THREE.Vector3(0, 0, -1);
-    lookDirection.applyEuler(new THREE.Euler(playerRotation.x, playerRotation.y, playerRotation.z));
-    lookDirection.multiplyScalar(10); // Look 10 units ahead
-    lookAtPosition.add(lookDirection);
+    // Update orbit camera (rotating around player)
+    this.orbitAngle += this.orbitSpeed * deltaTime;
     
-    this.camera.lookAt(lookAtPosition);
+    const orbitDistance = 15;
+    const orbitHeight = 8;
+    const orbitX = Math.cos(this.orbitAngle) * orbitDistance;
+    const orbitZ = Math.sin(this.orbitAngle) * orbitDistance;
     
-    // Apply the up/down rotation
-    this.camera.rotation.x += playerRotation.x;
+    this.orbitCamera.position.set(
+      playerPosition.x + orbitX,
+      playerPosition.y + orbitHeight,
+      playerPosition.z + orbitZ
+    );
+    this.orbitCamera.lookAt(playerPosition);
   }
   
   /**
@@ -265,9 +319,12 @@ export class OpenWorldGame {
    * Handle window resize event
    */
   private onWindowResize = (): void => {
-    this.camera.aspect = window.innerWidth / window.innerHeight;
-    this.camera.updateProjectionMatrix();
+    // Update main camera aspect ratio
+    this.mainCamera.aspect = window.innerWidth / window.innerHeight;
+    this.mainCamera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    
+    // No need to resize PIP cameras as they maintain square aspect ratio
   }
   
   /**
@@ -346,14 +403,20 @@ export class OpenWorldGame {
     // Check for collisions with other players
     this.checkPlayerCollisions();
     
-    // Update camera to follow player
-    this.updateCameraPosition();
+    // Update all camera positions
+    this.updateCameraPositions(deltaTime);
     
     // Send player position update to network
     this.networkManager.sendPositionUpdate(this.localPlayer.getPosition());
     
-    // Render the scene
-    this.renderer.render(this.scene, this.camera);
+    // Render the main view
+    this.renderer.render(this.scene, this.mainCamera);
+    
+    // Render the chase camera PIP
+    this.chasePipRenderer.render(this.scene, this.chaseCamera);
+    
+    // Render the orbit camera PIP
+    this.orbitPipRenderer.render(this.scene, this.orbitCamera);
   }
   
   /**
@@ -398,11 +461,163 @@ export class OpenWorldGame {
     window.removeEventListener('resize', this.onWindowResize);
     document.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('keyup', this.onKeyUp);
+    document.removeEventListener('keydown', this.updateControlDisplay);
+    document.removeEventListener('keyup', this.updateControlDisplay);
     
     // Disconnect from network
     this.networkManager.disconnect();
     
     // Dispose of Three.js resources
     this.renderer.dispose();
+    this.chasePipRenderer.dispose();
+    this.orbitPipRenderer.dispose();
+  }
+
+  /**
+   * Add drone controls display (two grids) at the bottom center of the screen
+   */
+  private addControlsDisplay(container: HTMLElement): void {
+    const displayContainer = document.createElement('div');
+    displayContainer.style.position = 'absolute';
+    displayContainer.style.bottom = '20px';
+    displayContainer.style.left = '50%';
+    displayContainer.style.transform = 'translateX(-50%)';
+    displayContainer.style.display = 'flex';
+    displayContainer.style.gap = '30px';
+    displayContainer.style.zIndex = '100';
+    
+    // Movement Controls Grid (W/S/R/F)
+    const movementGrid = this.createControlGrid([
+      { label: '', key: '' },
+      { label: 'W', key: 'KeyW', tooltip: 'Up' },
+      { label: '', key: '' },
+      { label: 'R', key: 'KeyR', tooltip: 'Forward' },
+      { label: 'A', key: 'KeyA', tooltip: 'Yaw Left' },
+      { label: 'S', key: 'KeyS', tooltip: 'Down' },
+      { label: 'D', key: 'KeyD', tooltip: 'Yaw Right' },
+      { label: 'F', key: 'KeyF', tooltip: 'Backward' }
+    ], 'Movement');
+    
+    // Attitude Controls Grid (I/J/K/L)
+    const attitudeGrid = this.createControlGrid([
+      { label: '', key: '' },
+      { label: 'I', key: 'KeyI', tooltip: 'Pitch Down' },
+      { label: '', key: '' },
+      { label: '', key: '' },
+      { label: 'J', key: 'KeyJ', tooltip: 'Roll Left' },
+      { label: 'K', key: 'KeyK', tooltip: 'Pitch Up' },
+      { label: 'L', key: 'KeyL', tooltip: 'Roll Right' },
+      { label: '', key: '' }
+    ], 'Attitude');
+    
+    displayContainer.appendChild(movementGrid);
+    displayContainer.appendChild(attitudeGrid);
+    container.appendChild(displayContainer);
+    
+    // Store references to the control elements to update them in the animate loop
+    this.controlElements = new Map();
+    
+    // Add event listener to update the control display
+    document.addEventListener('keydown', this.updateControlDisplay);
+    document.addEventListener('keyup', this.updateControlDisplay);
+  }
+
+  /**
+   * Create a control grid for the drone display
+   */
+  private createControlGrid(buttons: Array<{label: string, key: string, tooltip?: string}>, title: string): HTMLElement {
+    const gridContainer = document.createElement('div');
+    gridContainer.style.display = 'flex';
+    gridContainer.style.flexDirection = 'column';
+    gridContainer.style.alignItems = 'center';
+    gridContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
+    gridContainer.style.borderRadius = '10px';
+    gridContainer.style.padding = '10px';
+    
+    // Add title
+    const gridTitle = document.createElement('div');
+    gridTitle.textContent = title;
+    gridTitle.style.color = 'white';
+    gridTitle.style.fontFamily = 'monospace';
+    gridTitle.style.marginBottom = '8px';
+    gridTitle.style.fontSize = '14px';
+    gridTitle.style.fontWeight = 'bold';
+    gridContainer.appendChild(gridTitle);
+    
+    // Create the grid
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(3, 45px)';
+    grid.style.gridTemplateRows = 'repeat(3, 45px)';
+    grid.style.gap = '5px';
+    
+    buttons.forEach(({ label, key, tooltip }) => {
+      const button = document.createElement('div');
+      button.style.width = '45px';
+      button.style.height = '45px';
+      button.style.backgroundColor = 'rgba(40, 40, 40, 0.7)';
+      button.style.border = '1px solid rgba(100, 100, 100, 0.5)';
+      button.style.borderRadius = '5px';
+      button.style.display = 'flex';
+      button.style.justifyContent = 'center';
+      button.style.alignItems = 'center';
+      button.style.color = 'white';
+      button.style.fontFamily = 'monospace';
+      button.style.fontSize = '18px';
+      button.style.fontWeight = 'bold';
+      button.style.userSelect = 'none';
+      button.style.position = 'relative';
+      button.textContent = label;
+      
+      // Add tooltip if provided
+      if (tooltip && label) {
+        const tooltipElement = document.createElement('div');
+        tooltipElement.textContent = tooltip;
+        tooltipElement.style.position = 'absolute';
+        tooltipElement.style.bottom = '-18px';
+        tooltipElement.style.left = '50%';
+        tooltipElement.style.transform = 'translateX(-50%)';
+        tooltipElement.style.fontSize = '10px';
+        tooltipElement.style.color = 'rgba(255, 255, 255, 0.7)';
+        tooltipElement.style.whiteSpace = 'nowrap';
+        button.appendChild(tooltipElement);
+      }
+      
+      if (key) {
+        // Store the element reference for active key highlighting
+        this.controlElements.set(key, button);
+      }
+      
+      grid.appendChild(button);
+    });
+    
+    gridContainer.appendChild(grid);
+    return gridContainer;
+  }
+
+  /**
+   * Update the control display based on key events
+   */
+  private updateControlDisplay = (event: KeyboardEvent): void => {
+    const isKeyDown = event.type === 'keydown';
+    const keyCode = event.code;
+    
+    // Only process if we have this key in our control elements
+    if (this.controlElements.has(keyCode)) {
+      const button = this.controlElements.get(keyCode);
+      if (button) {
+        if (isKeyDown) {
+          button.style.backgroundColor = 'rgba(0, 200, 100, 0.8)';
+          button.style.boxShadow = '0 0 10px rgba(0, 255, 100, 0.7)';
+          button.style.transform = 'scale(1.1)';
+          button.style.border = '1px solid rgba(0, 255, 100, 0.9)';
+        } else {
+          button.style.backgroundColor = 'rgba(40, 40, 40, 0.7)';
+          button.style.boxShadow = 'none';
+          button.style.transform = 'scale(1)';
+          button.style.border = '1px solid rgba(100, 100, 100, 0.5)';
+        }
+      }
+    }
   }
 } 

@@ -51,14 +51,14 @@ web/src/open-world/
 ```
 
 ### Player Controls
-- W: Move forward
-- S: Move backward
-- A: Move left
-- D: Move right
-- I: Look up
-- K: Look down
-- J: Look left
-- L: Look right
+- W: Move Up (Elevation)
+- S: Move Down (Elevation)
+- A: Rotate Left (Yaw)
+- D: Rotate Right (Yaw)
+- I: Look Up (Pitch)
+- K: Look Down (Pitch)
+- J: Roll Left
+- L: Roll Right
 - Space: Jump
 
 ### Multiplayer Implementation

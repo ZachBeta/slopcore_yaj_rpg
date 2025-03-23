@@ -1,14 +1,17 @@
 export enum InputAction {
-  MOVE_FORWARD = 'MOVE_FORWARD',
-  MOVE_BACKWARD = 'MOVE_BACKWARD',
-  MOVE_LEFT = 'MOVE_LEFT',
-  MOVE_RIGHT = 'MOVE_RIGHT',
+  THROTTLE_FORWARD = 'THROTTLE_FORWARD',
+  THROTTLE_BACKWARD = 'THROTTLE_BACKWARD',
+  ROTATE_LEFT = 'ROTATE_LEFT',
+  ROTATE_RIGHT = 'ROTATE_RIGHT',
   LOOK_UP = 'LOOK_UP',
   LOOK_DOWN = 'LOOK_DOWN',
-  LOOK_LEFT = 'LOOK_LEFT',
-  LOOK_RIGHT = 'LOOK_RIGHT',
+  ROLL_LEFT = 'ROLL_LEFT',
+  ROLL_RIGHT = 'ROLL_RIGHT',
   JUMP = 'JUMP',
-  VERIFY_STATE = 'VERIFY_STATE'
+  VERIFY_STATE = 'VERIFY_STATE',
+  ASCEND = 'ASCEND',
+  DESCEND = 'DESCEND',
+  DEBUG_TOGGLE = 'DEBUG_TOGGLE'
 }
 
 export interface InputMapping {
@@ -17,16 +20,19 @@ export interface InputMapping {
 }
 
 export const INPUT_MAPPINGS: InputMapping[] = [
-  { keyCode: 'KeyW', action: InputAction.MOVE_FORWARD },
-  { keyCode: 'KeyS', action: InputAction.MOVE_BACKWARD },
-  { keyCode: 'KeyA', action: InputAction.MOVE_LEFT },
-  { keyCode: 'KeyD', action: InputAction.MOVE_RIGHT },
+  { keyCode: 'KeyW', action: InputAction.ASCEND },
+  { keyCode: 'KeyS', action: InputAction.DESCEND },
+  { keyCode: 'KeyA', action: InputAction.ROTATE_LEFT },
+  { keyCode: 'KeyD', action: InputAction.ROTATE_RIGHT },
   { keyCode: 'KeyI', action: InputAction.LOOK_UP },
   { keyCode: 'KeyK', action: InputAction.LOOK_DOWN },
-  { keyCode: 'KeyJ', action: InputAction.LOOK_LEFT },
-  { keyCode: 'KeyL', action: InputAction.LOOK_RIGHT },
+  { keyCode: 'KeyJ', action: InputAction.ROLL_LEFT },
+  { keyCode: 'KeyL', action: InputAction.ROLL_RIGHT },
   { keyCode: 'Space', action: InputAction.JUMP },
-  { keyCode: 'KeyV', action: InputAction.VERIFY_STATE }
+  { keyCode: 'KeyV', action: InputAction.VERIFY_STATE },
+  { keyCode: 'KeyR', action: InputAction.THROTTLE_FORWARD },
+  { keyCode: 'KeyF', action: InputAction.THROTTLE_BACKWARD },
+  { keyCode: 'KeyX', action: InputAction.DEBUG_TOGGLE }
 ];
 
 export const getActionFromKeyCode = (keyCode: string): InputAction | undefined => {
