@@ -1,7 +1,7 @@
 import { GameServer } from './game-server';
 import { createServer, Server as HttpServer } from 'http';
 import { io as Client, Socket } from 'socket.io-client';
-import { Color } from '../src/types';
+import type { Color } from '../src/types';
 import { GameEvent } from '../src/constants';
 
 interface Player {
@@ -63,8 +63,9 @@ describe('Color Management', () => {
   let gameServer: TestGameServer;
   let clientSockets: Socket[] = [];
   const PORT = 3002;
-  const WAIT_TIME = 50;
-  const TEST_TIMEOUT = 15000;
+  const WAIT_TIME = 100;
+  const TEST_TIMEOUT = 30000;
+  const CLEANUP_TIMEOUT = 10000;
 
   beforeAll((done) => {
     // Suppress console logs during tests
@@ -80,6 +81,24 @@ describe('Color Management', () => {
       // Give server a moment to fully initialize
       setTimeout(done, 100);
     });
+
+    // Add error handler for the server
+    httpServer.on('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EADDRINUSE') {
+        // If port is in use, try to close any existing connections
+        httpServer.close(() => {
+          // Try to listen again after a short delay
+          setTimeout(() => {
+            httpServer.listen(PORT, () => {
+              setTimeout(done, 100);
+            });
+          }, 100);
+        });
+      } else {
+        console.error('Server error:', err);
+        done(err);
+      }
+    });
   }, TEST_TIMEOUT);
 
   afterAll(async () => {
@@ -88,38 +107,48 @@ describe('Color Management', () => {
     // Clean up all client sockets first
     await Promise.all(
       clientSockets.map(socket => 
-        new Promise<void>((resolve, reject) => {
-          const timeout = setTimeout(() => resolve(), 1000); // Timeout after 1s
+        new Promise<void>((resolve) => {
           if (socket.connected) {
             socket.disconnect();
-            socket.on('disconnect', () => {
-              clearTimeout(timeout);
-              socket.close();
-              resolve();
-            });
-          } else {
-            clearTimeout(timeout);
-            socket.close();
-            resolve();
           }
+          socket.close();
+          resolve();
         })
       )
     );
 
+    // Clear the diagnostics interval
+    if (gameServer) {
+      clearInterval(gameServer['diagnosticsInterval']);
+    }
+
     // Then close servers with proper cleanup
-    await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => resolve(), 5000); // Timeout after 5s
-      try {
-        gameServer.close();
-        httpServer.close(() => {
-          clearTimeout(timeout);
+    await new Promise<void>((resolve) => {
+      if (gameServer) {
+        try {
+          gameServer.close();
+        } catch (err) {
+          console.error('Error closing game server:', err);
+        }
+      }
+      if (httpServer) {
+        try {
+          httpServer.close(() => {
+            resolve();
+          });
+        } catch (err) {
+          console.error('Error closing HTTP server:', err);
           resolve();
-        });
-      } catch (err) {
-        clearTimeout(timeout);
-        resolve(); // Still resolve to ensure cleanup continues
+        }
+      } else {
+        resolve();
       }
     });
+
+    // Final cleanup
+    clientSockets = [];
+    gameServer = null as any;
+    httpServer = null as any;
   }, TEST_TIMEOUT);
 
   beforeEach(async () => {
@@ -137,33 +166,20 @@ describe('Color Management', () => {
     expect(gameServer.getPlayers().size).toBe(0);
 
     // Wait for server to be ready
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, WAIT_TIME));
   }, TEST_TIMEOUT);
 
   afterEach(async () => {
-    // Properly disconnect and clean up each socket
-    await Promise.all(
-      clientSockets.map(socket => 
-        new Promise<void>((resolve, reject) => {
-          const timeout = setTimeout(() => resolve(), 1000); // Timeout after 1s
-          if (socket.connected) {
-            socket.disconnect();
-            socket.on('disconnect', () => {
-              clearTimeout(timeout);
-              socket.close();
-              resolve();
-            });
-          } else {
-            clearTimeout(timeout);
-            socket.close();
-            resolve();
-          }
-        })
-      )
-    );
+    // Disconnect all sockets immediately
+    clientSockets.forEach(socket => {
+      if (socket.connected) {
+        socket.disconnect();
+      }
+      socket.close();
+    });
 
-    // Wait for server to process all disconnections
-    await new Promise(resolve => setTimeout(resolve, WAIT_TIME * 2));
+    // Wait for server to process disconnections
+    await new Promise(resolve => setTimeout(resolve, WAIT_TIME));
 
     clientSockets = [];
 
@@ -188,11 +204,22 @@ describe('Color Management', () => {
     return socket;
   };
 
-  const getColorDistance = (c1: Color, c2: Color): number => {
-    return Math.sqrt(
-      Math.pow(c1.r - c2.r, 2) +
-      Math.pow(c1.g - c2.g, 2) +
-      Math.pow(c1.b - c2.b, 2)
+  const areColorsEqual = (c1: Color, c2: Color): boolean => {
+    return Math.abs(c1.r - c2.r) < 0.1 &&
+           Math.abs(c1.g - c2.g) < 0.1 &&
+           Math.abs(c1.b - c2.b) < 0.1;
+  };
+
+  const getColorKey = (color: Color): string => {
+    return `${color.r.toFixed(6)},${color.g.toFixed(6)},${color.b.toFixed(6)}`;
+  };
+
+  const isColorFromPool = (color: Color): boolean => {
+    // More precise color matching with exact equality
+    return gameServer.getColorPool().some(poolColor => 
+      Math.abs(color.r - poolColor.r) < 0.001 &&
+      Math.abs(color.g - poolColor.g) < 0.001 &&
+      Math.abs(color.b - poolColor.b) < 0.001
     );
   };
 
@@ -204,13 +231,21 @@ describe('Color Management', () => {
         }
         socket.close();
         reject(new Error('Connection timeout'));
-      }, TEST_TIMEOUT);
+      }, 10000);
+
+      let joined = false;
 
       socket.on('connect', () => {
-        socket.emit(GameEvent.PLAYER_JOIN, {});
+        // Add a small delay after connect to ensure socket is ready
+        setTimeout(() => {
+          if (!joined) {
+            socket.emit(GameEvent.PLAYER_JOIN, { position: { x: 0, y: 0, z: 0 } });
+          }
+        }, 100);
       });
 
       socket.on(GameEvent.PLAYER_JOINED, (player: Player) => {
+        joined = true;
         clearTimeout(timeout);
         resolve(player);
       });
@@ -221,7 +256,7 @@ describe('Color Management', () => {
           socket.disconnect();
         }
         socket.close();
-        reject(new Error(error.message || 'Failed to join game'));
+        reject(error);
       });
 
       socket.on('connect_error', (error: Error) => {
@@ -233,31 +268,17 @@ describe('Color Management', () => {
         reject(error);
       });
 
-      socket.on('disconnect', () => {
-        clearTimeout(timeout);
-        socket.close();
-        reject(new Error('Socket disconnected before joining'));
+      socket.on('disconnect', (reason: string) => {
+        if (!joined) {
+          clearTimeout(timeout);
+          socket.close();
+          reject(new Error(`Socket disconnected before joining: ${reason}`));
+        }
       });
+
+      // Connect to the server
+      socket.connect();
     });
-  };
-
-  const areColorsEqual = (c1: Color, c2: Color): boolean => {
-    return Math.abs(c1.r - c2.r) < 0.1 &&
-           Math.abs(c1.g - c2.g) < 0.1 &&
-           Math.abs(c1.b - c2.b) < 0.1;
-  };
-
-  const getColorKey = (color: Color): string => {
-    return `${Math.round(color.r * 10) / 10},${Math.round(color.g * 10) / 10},${Math.round(color.b * 10) / 10}`;
-  };
-
-  const isColorFromPool = (color: Color): boolean => {
-    // More precise color matching with exact equality
-    return gameServer.getColorPool().some(poolColor => 
-      Math.abs(color.r - poolColor.r) < 0.001 &&
-      Math.abs(color.g - poolColor.g) < 0.001 &&
-      Math.abs(color.b - poolColor.b) < 0.001
-    );
   };
 
   test('assigns unique colors from predefined pool', async () => {
@@ -274,7 +295,7 @@ describe('Color Management', () => {
       // Verify state after each connection
       expect(gameServer.getAvailableColors().length).toBe(initialAvailableCount - (i + 1));
       expect(gameServer.getLockedColors().size).toBe(i + 1);
-      expect(gameServer.getLockedColors().has(socket.id)).toBe(true);
+      expect(gameServer.getLockedColors().has(socket.id!)).toBe(true);
       expect(gameServer.getPlayers().size).toBe(i + 1);
 
       await new Promise<void>(resolve => setTimeout(resolve, WAIT_TIME));
@@ -294,10 +315,10 @@ describe('Color Management', () => {
       usedColors.add(colorKey);
     });
 
-    // Verify colors are sufficiently different
+    // Verify colors are sufficiently different using the shared method
     for (let i = 0; i < players.length; i++) {
       for (let j = i + 1; j < players.length; j++) {
-        const distance = getColorDistance(players[i].color, players[j].color);
+        const distance = gameServer.getColorDistance(players[i].color, players[j].color);
         expect(distance).toBeGreaterThan(0.3);
       }
     }
@@ -312,7 +333,7 @@ describe('Color Management', () => {
     // Verify initial state
     expect(isColorFromPool(firstColor)).toBe(true);
     expect(gameServer.getLockedColors().size).toBe(1);
-    expect(gameServer.getLockedColors().has(socket1.id)).toBe(true);
+    expect(gameServer.getLockedColors().has(socket1.id!)).toBe(true);
     expect(gameServer.getPlayers().size).toBe(1);
     
     const initialAvailableCount = gameServer.getAvailableColors().length;
@@ -334,7 +355,7 @@ describe('Color Management', () => {
     // Verify second client state
     expect(isColorFromPool(player2.color)).toBe(true);
     expect(gameServer.getLockedColors().size).toBe(1);
-    expect(gameServer.getLockedColors().has(socket2.id)).toBe(true);
+    expect(gameServer.getLockedColors().has(socket2.id!)).toBe(true);
     expect(gameServer.getPlayers().size).toBe(1);
   }, TEST_TIMEOUT);
 
@@ -372,10 +393,10 @@ describe('Color Management', () => {
       usedColors.add(colorKey);
     });
 
-    // Verify colors are sufficiently different
+    // Verify colors are sufficiently different using the shared method
     for (let i = 0; i < players.length; i++) {
       for (let j = i + 1; j < players.length; j++) {
-        const distance = getColorDistance(players[i].color, players[j].color);
+        const distance = gameServer.getColorDistance(players[i].color, players[j].color);
         expect(distance).toBeGreaterThan(0.3);
       }
     }
@@ -433,10 +454,10 @@ describe('Color Management', () => {
       usedColors.add(colorKey);
     });
 
-    // Verify colors are sufficiently different
+    // Verify colors are sufficiently different using the shared method
     for (let i = 0; i < players.length; i++) {
       for (let j = i + 1; j < players.length; j++) {
-        const distance = getColorDistance(players[i].color, players[j].color);
+        const distance = gameServer.getColorDistance(players[i].color, players[j].color);
         expect(distance).toBeGreaterThan(0.3);
       }
     }

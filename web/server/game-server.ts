@@ -14,10 +14,10 @@ export class GameServer {
   protected usedRandomColors: Set<Color>;
   protected players: Map<string, Player>;
   private io: Server;
-  private port: number;
+  private port: number = 0;
   private server: HttpServer;
-  private lastDiagnosticsUpdate: number;
-  private diagnosticsInterval: NodeJS.Timeout;
+  private lastDiagnosticsUpdate: number = Date.now();
+  private diagnosticsInterval: NodeJS.Timeout | undefined;
   private fps: number;
   private startTime: number;
   private isTestMode: boolean;
@@ -32,6 +32,7 @@ export class GameServer {
   private lastFpsUpdate: number;
 
   constructor(server: HttpServer, port: number, options: GameServerOptions = {}) {
+    this.server = server;
     this.io = new Server(server, {
       cors: {
         origin: "*",
@@ -130,12 +131,13 @@ export class GameServer {
     return this.getColorKey(c1) === this.getColorKey(c2);
   }
 
-  private getColorDistance(c1: Color, c2: Color): number {
-    return Math.sqrt(
-      Math.pow(c1.r - c2.r, 2) +
-      Math.pow(c1.g - c2.g, 2) +
-      Math.pow(c1.b - c2.b, 2)
-    );
+  public getColorDistance(c1: Color, c2: Color): number {
+    // Calculate Euclidean distance in RGB space
+    const rDiff = c1.r - c2.r;
+    const gDiff = c1.g - c2.g;
+    const bDiff = c1.b - c2.b;
+    
+    return Math.sqrt(rDiff * rDiff + gDiff * gDiff + bDiff * bDiff);
   }
 
   private isColorUnique(color: Color, minDistance: number): boolean {
@@ -185,6 +187,31 @@ export class GameServer {
     }
   }
 
+  private hslToRgb(h: number, s: number, l: number): Color {
+    let r, g, b;
+
+    if (s === 0) {
+      r = g = b = l; // achromatic
+    } else {
+      const hue2rgb = (p: number, q: number, t: number) => {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1/6) return p + (q - p) * 6 * t;
+        if (t < 1/2) return q;
+        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+        return p;
+      };
+
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      r = hue2rgb(p, q, h + 1/3);
+      g = hue2rgb(p, q, h);
+      b = hue2rgb(p, q, h - 1/3);
+    }
+
+    return { r, g, b };
+  }
+
   async generatePlayerColor(socketId: string): Promise<Color> {
     return new Promise((resolve, reject) => {
       this.colorAssignmentMutex = this.colorAssignmentMutex.then(async () => {
@@ -199,29 +226,41 @@ export class GameServer {
             return;
           }
 
-          const MIN_COLOR_DISTANCE = 0.4;
+          const MIN_COLOR_DISTANCE = 0.5;
           let attempts = 0;
-          const MAX_ATTEMPTS = 1000;
+          const MAX_ATTEMPTS = 2000;
+
+          // Get all used colors (including locked, pool, and random)
+          const allUsedColors = new Set<Color>();
+          for (const [_, color] of this.lockedColors) {
+            allUsedColors.add(color);
+          }
+          for (const color of this.colorPool) {
+            allUsedColors.add(color);
+          }
+          for (const color of this.usedRandomColors) {
+            allUsedColors.add(color);
+          }
 
           // Try to generate a unique random color
           while (attempts < MAX_ATTEMPTS) {
-            const newColor: Color = {
-              r: Math.random(),
-              g: Math.random(),
-              b: Math.random()
-            };
+            // Generate a color with high saturation and medium brightness
+            const hue = Math.random();
+            const saturation = 0.7 + Math.random() * 0.3; // High saturation
+            const lightness = 0.4 + Math.random() * 0.2; // Medium lightness
 
-            // Ensure at least one component is high (0.8-1.0)
-            const maxComponent = Math.random() < 0.33 ? 'r' : Math.random() < 0.5 ? 'g' : 'b';
-            newColor[maxComponent as keyof Color] = 0.8 + (Math.random() * 0.2);
+            const newColor = this.hslToRgb(hue, saturation, lightness);
 
-            // Ensure other components are lower to increase contrast
-            const otherComponents = ['r', 'g', 'b'].filter(c => c !== maxComponent);
-            otherComponents.forEach(c => {
-              newColor[c as keyof Color] = Math.random() * 0.6;
-            });
+            // Check if the color is unique enough from all used colors
+            let isUnique = true;
+            for (const usedColor of allUsedColors) {
+              if (this.getColorDistance(newColor, usedColor) < MIN_COLOR_DISTANCE) {
+                isUnique = false;
+                break;
+              }
+            }
 
-            if (this.isColorUnique(newColor, MIN_COLOR_DISTANCE)) {
+            if (isUnique) {
               const newColorCopy = { ...newColor };
               this.usedRandomColors.add(newColorCopy);
               this.lockedColors.set(socketId, newColorCopy);
@@ -232,38 +271,16 @@ export class GameServer {
             attempts++;
           }
 
-          // Last resort: generate a color with maximum contrast
-          const usedMaxComponents = new Set<string>();
-          
-          // Track all used max components with high precision
-          for (const [_, color] of this.lockedColors) {
-            const max = Math.max(color.r, color.g, color.b);
-            usedMaxComponents.add(max.toFixed(6));
-          }
-          for (const color of this.colorPool) {
-            const max = Math.max(color.r, color.g, color.b);
-            usedMaxComponents.add(max.toFixed(6));
-          }
-          for (const color of this.usedRandomColors) {
-            const max = Math.max(color.r, color.g, color.b);
-            usedMaxComponents.add(max.toFixed(6));
-          }
-
-          // Find an unused maximum component value
-          let maxValue = 1.0;
-          while (usedMaxComponents.has(maxValue.toFixed(6)) && maxValue > 0.6) {
-            maxValue -= 0.01;
-          }
-
+          // Last resort: generate maximally distinct color
           const newColor: Color = {
-            r: Math.random() * 0.2,
-            g: Math.random() * 0.2,
-            b: Math.random() * 0.2
+            r: 0.1 + (Math.random() * 0.2),
+            g: 0.1 + (Math.random() * 0.2),
+            b: 0.1 + (Math.random() * 0.2)
           };
 
           // Randomly choose which component gets the max value
           const component = Math.random() < 0.33 ? 'r' : Math.random() < 0.5 ? 'g' : 'b';
-          newColor[component as keyof Color] = maxValue;
+          newColor[component as keyof Color] = 1.0;
 
           const newColorCopy = { ...newColor };
           this.usedRandomColors.add(newColorCopy);
@@ -277,7 +294,16 @@ export class GameServer {
   }
 
   private startDiagnostics(): void {
-    setInterval(() => {
+    if (this.isTestMode) {
+      return; // Don't start diagnostics in test mode
+    }
+
+    // Clear any existing interval
+    if (this.diagnosticsInterval) {
+      clearInterval(this.diagnosticsInterval);
+    }
+
+    this.diagnosticsInterval = setInterval(() => {
       const now = Date.now();
       const delta = now - this.lastTick;
       this.lastTick = now;
@@ -307,6 +333,9 @@ export class GameServer {
         }
       }
     }, 1000 / 60); // 60Hz tick rate
+
+    // Prevent the interval from keeping the process alive
+    this.diagnosticsInterval.unref();
   }
 
   /**
@@ -499,6 +528,18 @@ export class GameServer {
   }
 
   public close(): void {
+    // Clear diagnostics interval
+    if (this.diagnosticsInterval) {
+      clearInterval(this.diagnosticsInterval);
+      this.diagnosticsInterval = undefined;
+    }
+
+    // Close all socket connections
+    this.io.sockets.sockets.forEach(socket => {
+      socket.disconnect(true);
+    });
+
+    // Close the Socket.IO server
     this.io.close();
   }
 } 

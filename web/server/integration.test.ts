@@ -4,6 +4,8 @@ import { io as Client, Socket } from 'socket.io-client';
 import { GameServer } from './game-server';
 import { execSync } from 'child_process';
 import { GameEvent, ConnectionStatus, GameEventPayloads } from '../src/constants';
+import { DefaultEventsMap } from 'socket.io/dist/typed-events';
+import type { Color, Position, Rotation } from '../src/types';
 
 // Set environment to test mode
 process.env.NODE_ENV = 'test';
@@ -29,117 +31,157 @@ interface Player {
   };
 }
 
+// Test-specific subclass to access protected properties
+class TestGameServer extends GameServer {
+  getColorPool(): Color[] {
+    return this.colorPool;
+  }
+
+  getAvailableColors(): Color[] {
+    return this.availableColors;
+  }
+
+  getLockedColors(): Map<string, Color> {
+    return this.lockedColors;
+  }
+
+  getUsedRandomColors(): Set<Color> {
+    return this.usedRandomColors;
+  }
+
+  getPlayers(): Map<string, any> {
+    return this.players;
+  }
+
+  setAvailableColors(colors: Color[]): void {
+    this.availableColors = colors;
+  }
+
+  clearLockedColors(): void {
+    this.lockedColors.clear();
+  }
+
+  clearUsedRandomColors(): void {
+    this.usedRandomColors.clear();
+  }
+
+  clearPlayers(): void {
+    this.players.clear();
+  }
+}
+
 describe('Socket.IO Server Integration Tests', () => {
   let app: Express;
   let server: HttpServer;
-  let gameServer: GameServer;
-  let clientSocket: Socket;
+  let gameServer: TestGameServer;
+  let clientSocket: Socket | null = null;
+  let serverSocket: Socket | null = null;
 
   beforeAll((done) => {
-    // Kill any existing process on port 3001
-    try {
-      execSync('lsof -ti:3001 | xargs kill -9 2>/dev/null || true');
-    } catch (error) {
-      console.log('No process was running on port 3001');
-    }
-
-    // Set up server
-    app = express();
-    server = createServer(app);
+    // Suppress console logs during tests
+    jest.spyOn(console, 'log').mockImplementation(() => {});
     
-    // Start server first
+    server = createServer();
+    gameServer = new TestGameServer(server, testPort, { isTestMode: true });
+    
+    // Start server and wait for it to be ready
     server.listen(testPort, () => {
-      console.log(`Test server listening on port ${testPort}`);
-      // Then initialize game server
-      gameServer = new GameServer(server, testPort);
-      done();
-    });
-  }, 5000);
-
-  beforeEach((done) => {
-    console.log('Attempting to connect client socket...');
-    clientSocket = Client(`http://localhost:${testPort}`, {
-      reconnectionDelay: 0,
-      forceNew: true,
-      transports: ['websocket']
-    });
-    
-    clientSocket.on('connect_error', (error: Error) => {
-      console.error('Socket connection error:', error);
-    });
-    
-    clientSocket.on('connect', () => {
-      console.log('Client socket connected successfully');
-      done();
+      // Give server a moment to fully initialize
+      setTimeout(done, 100);
     });
 
-    // Add timeout for connection attempt
-    setTimeout(() => {
-      if (!clientSocket.connected) {
-        console.error('Socket connection timeout');
-        done(new Error('Socket connection timeout'));
+    // Add error handler for the server
+    server.on('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EADDRINUSE') {
+        // If port is in use, try to close any existing connections
+        server.close(() => {
+          // Try to listen again after a short delay
+          setTimeout(() => {
+            server.listen(testPort, () => {
+              setTimeout(done, 100);
+            });
+          }, 100);
+        });
+      } else {
+        console.error('Server error:', err);
+        done(err);
       }
-    }, 2000);
+    });
   }, 5000);
 
-  afterEach((done) => {
+  afterAll(async () => {
+    jest.restoreAllMocks();
+    
+    // Clean up sockets
     if (clientSocket) {
       if (clientSocket.connected) {
         clientSocket.disconnect();
       }
-      clientSocket.removeAllListeners();
+      clientSocket.close();
+    }
+    if (serverSocket) {
+      if (serverSocket.connected) {
+        serverSocket.disconnect();
+      }
+      serverSocket.close();
+    }
+
+    // Clear the diagnostics interval
+    if (gameServer) {
+      clearInterval(gameServer['diagnosticsInterval']);
+    }
+
+    // Then close servers with proper cleanup
+    await new Promise<void>((resolve) => {
+      if (gameServer) {
+        try {
+          gameServer.close();
+        } catch (err) {
+          console.error('Error closing game server:', err);
+        }
+      }
+      if (server) {
+        try {
+          await new Promise<void>((resolve) => server.close(() => resolve()));
+        } catch (err) {
+          console.error('Error closing HTTP server:', err);
+          resolve();
+        }
+      } else {
+        resolve();
+      }
+    });
+
+    // Final cleanup
+    clientSocket = null;
+    serverSocket = null;
+    gameServer = null as any;
+    server = null as any;
+  }, 5000);
+
+  beforeEach((done) => {
+    // Create new client socket for each test
+    clientSocket = Client(`http://localhost:${testPort}`, {
+      forceNew: true,
+      transports: ['websocket']
+    });
+
+    // Wait for server to be ready
+    setTimeout(done, 100);
+  }, 5000);
+
+  afterEach((done) => {
+    // Disconnect client socket
+    if (clientSocket) {
+      if (clientSocket.connected) {
+        clientSocket.disconnect();
+      }
+      clientSocket.close();
       clientSocket = null;
     }
-    
-    // Clean up any remaining sockets
-    if (gameServer && gameServer.getIO()) {
-      const io = gameServer.getIO();
-      io.sockets.sockets.forEach(socket => {
-        if (socket.connected) {
-          socket.disconnect(true);
-        }
-      });
-    }
-    done();
-  });
 
-  afterAll((done) => {
-    const cleanup = async () => {
-      // First disconnect all sockets
-      if (gameServer && gameServer.getIO()) {
-        const io = gameServer.getIO();
-        const sockets = Array.from(io.sockets.sockets.values());
-        for (const socket of sockets) {
-          if (socket.connected) {
-            socket.disconnect(true);
-          }
-        }
-      }
-
-      // Close the game server
-      if (gameServer) {
-        gameServer.close();
-      }
-
-      // Close the HTTP server
-      if (server) {
-        await new Promise<void>((resolve) => server.close(() => resolve()));
-      }
-
-      // Kill any remaining process on the test port
-      try {
-        execSync(`lsof -ti:${testPort} | xargs kill -9 2>/dev/null || true`);
-      } catch (error) {
-        console.log(`No process was running on port ${testPort}`);
-      }
-
-      done();
-    };
-
-    cleanup().catch((error) => {
-      console.error('Error during cleanup:', error);
-      done(error);
-    });
+    // Wait for server to process disconnection
+    setTimeout(done, 100);
   }, 5000);
 
   test('should handle player join with unique colors and positions', (done) => {
@@ -303,49 +345,272 @@ describe('Socket.IO Server Integration Tests', () => {
   }, 10000);
 
   test('should handle player position updates', (done) => {
-    let positionUpdateReceived = false;
+    if (!clientSocket) {
+      done(new Error('Client socket not initialized'));
+      return;
+    }
+
+    const position = { x: 1, y: 2, z: 3 };
+    const rotation = { x: 0.1, y: 0.2, z: 0.3 };
 
     clientSocket.on(GameEvent.PLAYER_MOVED, (data: GameEventPayloads[typeof GameEvent.PLAYER_MOVED]) => {
-      expect(data.id).toBe(clientSocket.id);  // Use actual socket ID
-      expect(data.position).toEqual({ x: 1, y: 2, z: 3 });
-      expect(data.rotation).toEqual({ x: 0, y: 0, z: 0 });
-      positionUpdateReceived = true;
-      done();
-    });
-
-    // Emit a position update
-    clientSocket.emit(GameEvent.POSITION_UPDATE, {
-      position: { x: 1, y: 2, z: 3 },
-      rotation: { x: 0, y: 0, z: 0 }
-    });
-
-    // Add timeout for the test
-    setTimeout(() => {
-      if (!positionUpdateReceived) {
-        done(new Error('Position update not received'));
+      try {
+        expect(data).toBeDefined();
+        expect(data.id).toBe(clientSocket!.id);
+        expect(data.position).toEqual(position);
+        expect(data.rotation).toEqual(rotation);
+        done();
+      } catch (error) {
+        done(error);
       }
-    }, 2000);
-  }, 5000);
+    });
+
+    clientSocket.emit(GameEvent.POSITION_UPDATE, { position, rotation });
+  });
 
   test('should handle chat messages', (done) => {
-    let chatMessageReceived = false;
+    if (!clientSocket) {
+      done(new Error('Client socket not initialized'));
+      return;
+    }
 
     clientSocket.on(GameEvent.CHAT_MESSAGE, (data: GameEventPayloads[typeof GameEvent.CHAT_MESSAGE]) => {
-      expect(data.id).toBeDefined();
-      expect(data.message).toBeDefined();
-      expect(data.message).toBe('Hello, World!');
-      chatMessageReceived = true;
+      try {
+        expect(data).toBeDefined();
+        expect(data.id).toBe(clientSocket!.id);
+        expect(data.message).toBe('Hello, World!');
+        done();
+      } catch (error) {
+        done(error);
+      }
+    });
+
+    clientSocket.emit(GameEvent.CHAT_MESSAGE, { id: clientSocket.id, message: 'Hello, World!' });
+  });
+
+  test('should handle player joining', (done) => {
+    if (!clientSocket) {
+      done(new Error('Client socket not initialized'));
+      return;
+    }
+
+    clientSocket.on(GameEvent.PLAYER_JOINED, (player: GameEventPayloads[typeof GameEvent.PLAYER_JOINED]) => {
+      try {
+        expect(player).toBeDefined();
+        expect(player.id).toBeDefined();
+        expect(player.position).toBeDefined();
+        expect(player.color).toBeDefined();
+        done();
+      } catch (error) {
+        done(error);
+      }
+    });
+
+    clientSocket.emit(GameEvent.PLAYER_JOIN, { position: { x: 0, y: 0, z: 0 } });
+  });
+
+  test('should handle player movement', (done) => {
+    if (!clientSocket) {
+      done(new Error('Client socket not initialized'));
+      return;
+    }
+
+    const newPosition = { x: 1, y: 2, z: 3 };
+    const newRotation = { x: 0.1, y: 0.2, z: 0.3 };
+
+    clientSocket.on(GameEvent.PLAYER_MOVED, (data: GameEventPayloads[typeof GameEvent.PLAYER_MOVED]) => {
+      try {
+        expect(data.id).toBe(clientSocket!.id);
+        expect(data.position).toEqual(newPosition);
+        expect(data.rotation).toEqual(newRotation);
+        done();
+      } catch (error) {
+        done(error);
+      }
+    });
+
+    clientSocket.emit(GameEvent.POSITION_UPDATE, { position: newPosition, rotation: newRotation });
+  });
+
+  test('should handle player disconnection', (done) => {
+    if (!clientSocket) {
+      done(new Error('Client socket not initialized'));
+      return;
+    }
+
+    const onError = (error: Error) => {
+      done(error);
+    };
+
+    const onPlayerLeft = (playerId: string) => {
+      try {
+        expect(playerId).toBe(clientSocket!.id);
+        done();
+      } catch (error) {
+        done(error);
+      }
+    };
+
+    clientSocket.on('error', onError);
+    clientSocket.on(GameEvent.PLAYER_LEFT, onPlayerLeft);
+    clientSocket.disconnect();
+  });
+
+  test('should handle multiple players', (done) => {
+    if (!clientSocket) {
+      done(new Error('Client socket not initialized'));
+      return;
+    }
+
+    clientSocket.on(GameEvent.PLAYERS_LIST, (players: GameEventPayloads[typeof GameEvent.PLAYERS_LIST]) => {
+      try {
+        expect(players).toBeDefined();
+        expect(players.length).toBe(1);
+        expect(players[0].id).toBe(clientSocket!.id);
+        done();
+      } catch (error) {
+        done(error);
+      }
+    });
+
+    clientSocket.emit(GameEvent.PLAYER_JOIN, { position: { x: 0, y: 0, z: 0 } });
+  });
+
+  test('should connect to the server', (done) => {
+    if (!clientSocket) {
+      done(new Error('Client socket not initialized'));
+      return;
+    }
+
+    expect(clientSocket.connected).toBe(true);
+    done();
+  });
+
+  test('should handle player list updates', (done) => {
+    if (!clientSocket) {
+      done(new Error('Client socket not initialized'));
+      return;
+    }
+
+    clientSocket.on(GameEvent.PLAYERS_LIST, (players: GameEventPayloads[typeof GameEvent.PLAYERS_LIST]) => {
+      try {
+        expect(players).toBeDefined();
+        expect(Array.isArray(players)).toBe(true);
+        done();
+      } catch (error) {
+        done(error);
+      }
+    });
+
+    clientSocket.emit(GameEvent.PLAYER_JOIN, { position: { x: 0, y: 0, z: 0 } });
+  });
+
+  test('should handle players list', (done) => {
+    if (!clientSocket) {
+      done(new Error('Client socket not initialized'));
+      return;
+    }
+
+    const positions = [
+      { x: 0, y: 0, z: 0 },
+      { x: 1, y: 1, z: 1 }
+    ];
+
+    clientSocket.on(GameEvent.PLAYERS_LIST, (players: GameEventPayloads[typeof GameEvent.PLAYERS_LIST]) => {
+      try {
+        expect(players).toBeDefined();
+        expect(players.length).toBe(1);
+        done();
+      } catch (error) {
+        done(error);
+      }
+    });
+
+    clientSocket.emit(GameEvent.PLAYER_JOIN, { position: positions[0] });
+  });
+
+  test('handles player joining', (done) => {
+    expect(clientSocket).toBeDefined();
+    if (!clientSocket) {
+      done(new Error('Client socket not initialized'));
+      return;
+    }
+
+    clientSocket.on(GameEvent.PLAYER_JOINED, (player: Player) => {
+      expect(player.id).toBeDefined();
+      expect(player.position).toBeDefined();
+      expect(player.color).toBeDefined();
       done();
     });
 
-    // Emit a chat message
-    clientSocket.emit(GameEvent.CHAT_MESSAGE, { id: clientSocket.id, message: 'Hello, World!' });
+    // Connect to server
+    clientSocket.on('connect', () => {
+      // Join the game
+      clientSocket!.emit(GameEvent.PLAYER_JOIN, { position: { x: 0, y: 0, z: 0 } });
+    });
+  }, TEST_TIMEOUT);
 
-    // Add timeout for the test
-    setTimeout(() => {
-      if (!chatMessageReceived) {
-        done(new Error('Chat message not received'));
+  test('handles player movement', (done) => {
+    expect(clientSocket).toBeDefined();
+    if (!clientSocket) {
+      done(new Error('Client socket not initialized'));
+      return;
+    }
+
+    clientSocket.on(GameEvent.PLAYER_MOVED, (data: { id: string; position: Position; rotation: Rotation }) => {
+      expect(data.id).toBeDefined();
+      expect(data.position).toBeDefined();
+      expect(data.rotation).toBeDefined();
+      done();
+    });
+
+    // Connect and join
+    clientSocket.on('connect', () => {
+      clientSocket!.emit(GameEvent.PLAYER_JOIN, { position: { x: 0, y: 0, z: 0 } });
+      
+      // Update position after a short delay
+      setTimeout(() => {
+        clientSocket!.emit(GameEvent.POSITION_UPDATE, {
+          position: { x: 1, y: 0, z: 1 },
+          rotation: { x: 0, y: 0, z: 0 }
+        });
+      }, 100);
+    });
+  }, TEST_TIMEOUT);
+
+  test('handles multiple players', (done) => {
+    expect(clientSocket).toBeDefined();
+    if (!clientSocket) {
+      done(new Error('Client socket not initialized'));
+      return;
+    }
+
+    let playersListReceived = false;
+    let playerJoinedReceived = false;
+
+    const checkCompletion = () => {
+      if (playersListReceived && playerJoinedReceived) {
+        done();
       }
-    }, 2000);
-  }, 5000);
+    };
+
+    clientSocket.on(GameEvent.PLAYERS_LIST, (players: Player[]) => {
+      expect(Array.isArray(players)).toBe(true);
+      playersListReceived = true;
+      checkCompletion();
+    });
+
+    clientSocket.on(GameEvent.PLAYER_JOINED, (player: Player) => {
+      expect(player.id).toBeDefined();
+      expect(player.position).toBeDefined();
+      expect(player.color).toBeDefined();
+      playerJoinedReceived = true;
+      checkCompletion();
+    });
+
+    // Connect and join
+    clientSocket.on('connect', () => {
+      clientSocket!.emit(GameEvent.PLAYER_JOIN, { position: { x: 0, y: 0, z: 0 } });
+    });
+  }, TEST_TIMEOUT);
 }); 
