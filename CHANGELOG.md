@@ -22,13 +22,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhanced ICE representations
   - Run progress visualization
 
-## [0.7.1] - 2025-03-23
+## [0.7.2] - 2025-03-23
 
 ### Added
 - Improved drone control system that respects orientation
   - W/S keys now move along the drone's local Y axis instead of global Y
   - Enhanced movement with comprehensive tests for various orientations
   - Fixed test suite for player movement with proper expectations
+
+## [0.7.1] - 2025-03-23
+
+*Note: Version skipped due to inconsistencies in version numbering*
 
 ## [0.7.0] - 2025-03-23
 

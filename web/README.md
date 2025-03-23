@@ -3,7 +3,7 @@
 This is the web implementation of Neon Dominance (formerly Slopcore YAJ RPG) using TypeScript and Three.js for rendering.
 
 ## Current Version
-**v0.7.1** - Improved drone movement controls that respect orientation
+**v0.7.2** - Improved drone movement controls that respect orientation
 
 ## Features
 

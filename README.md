@@ -4,7 +4,7 @@ A cyberpunk card game where you play as a hacker (Runner) breaking into corporat
 
 ## Current Version
 
-**v0.7.1** - Open World Prototype with improved drone movement controls
+**v0.7.2** - Open World Prototype with improved drone movement controls
 
 ## Game Overview
 

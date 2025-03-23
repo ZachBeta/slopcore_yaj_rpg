@@ -1,6 +1,6 @@
 {
   "name": "slopcore-yaj-rpg-web",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "Web version of Slopcore YAJ RPG using TypeScript and Three.js",
   "main": "index.js",
   "scripts": {
