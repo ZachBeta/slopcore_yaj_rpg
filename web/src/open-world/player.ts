@@ -198,16 +198,20 @@ export class Player {
     // Get the movement vectors in the drone's local space
     const { forwardVector, upVector } = this.getLocalDirectionVectors();
     
-    // W/S as MOVE_UP/MOVE_DOWN (simpler up/down movement)
+    // W/S keys should move along the drone's local up/down axis (MOVE_UP/MOVE_DOWN)
     if (activeActions.has(InputAction.MOVE_UP)) {
       console.log('Player moving up');
-      this.velocity.y += this.moveSpeed;
+      // Use the local up vector instead of global Y
+      const moveVector = upVector.clone().multiplyScalar(this.moveSpeed);
+      this.velocity.add(moveVector);
     } else if (activeActions.has(InputAction.MOVE_DOWN)) {
       console.log('Player moving down');
-      this.velocity.y -= this.moveSpeed;
+      // Use the local down vector instead of global -Y
+      const moveVector = upVector.clone().multiplyScalar(-this.moveSpeed);
+      this.velocity.add(moveVector);
     }
     
-    // W/S controls movement along the drone's local up/down axis
+    // Legacy controls for ASCEND/DESCEND (if used)
     if (activeActions.has(InputAction.ASCEND)) {
       console.log('Drone ascending along local up axis');
       const moveVector = upVector.clone().multiplyScalar(this.moveSpeed);
@@ -391,8 +395,29 @@ export class Player {
   /**
    * Set the player's rotation
    */
-  public setRotation(rotation: THREE.Euler): void {
-    this.lookEuler.copy(rotation);
+  public setRotation(rotation: THREE.Quaternion): void {
+    this.rotation.copy(rotation);
+    this.object.quaternion.copy(this.rotation);
+  }
+  
+  /**
+   * Reset rotation to default orientation
+   */
+  public resetRotation(): void {
+    this.lookEuler.set(0, Math.PI, 0, 'YXZ');
+    this.rotation.setFromEuler(this.lookEuler);
+    this.object.quaternion.copy(this.rotation);
+    
+    // Update forward and right vectors
+    this.forward.copy(WORLD_DIRECTIONS.FORWARD).applyQuaternion(this.rotation);
+    this.right.copy(WORLD_DIRECTIONS.RIGHT).applyQuaternion(this.rotation);
+  }
+  
+  /**
+   * Set rotation from Euler angles
+   */
+  public setRotationFromEuler(euler: THREE.Euler): void {
+    this.lookEuler.copy(euler);
     this.rotation.setFromEuler(this.lookEuler);
     this.object.quaternion.copy(this.rotation);
     

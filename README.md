@@ -102,8 +102,8 @@ During gameplay, the following commands are available:
 
 In the open world prototype, the following controls are available:
 
-- `W` - Ascend (Move Up in elevation)
-- `S` - Descend (Move Down in elevation)
+- `W` - Move Up along the drone's local Y axis
+- `S` - Move Down along the drone's local Y axis
 - `A` - Rotate Left (Yaw)
 - `D` - Rotate Right (Yaw)
 - `I` - Look Up (Pitch)
