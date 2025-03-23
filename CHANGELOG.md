@@ -7,12 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Improved drone control system that respects orientation
-  - W/S keys now move along the drone's local Y axis instead of global Y
-  - Enhanced movement with comprehensive tests for various orientations
-  - Fixed test suite for player movement with proper expectations
-
 ### Planned
 - Economic Rebalancing
   - Increased starting credits from 5 to 8
@@ -27,6 +21,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Server structure visualization
   - Enhanced ICE representations
   - Run progress visualization
+
+## [0.7.1] - 2025-03-23
+
+### Added
+- Improved drone control system that respects orientation
+  - W/S keys now move along the drone's local Y axis instead of global Y
+  - Enhanced movement with comprehensive tests for various orientations
+  - Fixed test suite for player movement with proper expectations
 
 ## [0.7.0] - 2025-03-23
 
