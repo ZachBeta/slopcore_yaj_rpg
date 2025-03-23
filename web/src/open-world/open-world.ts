@@ -100,7 +100,7 @@ export class OpenWorldGame {
       this.handleConnectionStatus(status);
     });
 
-    this.networkManager.on(GameEvent.PLAYER_MOVED, (data: GameEventPayloads[typeof GameEvent.PLAYER_MOVED]) => {
+    this.networkManager.on(GameEvent.PLAYER_MOVED, () => {
       // ... existing code ...
     });
   }
@@ -124,9 +124,36 @@ export class OpenWorldGame {
       <strong>Controls:</strong><br>
       WASD - Move<br>
       IJKL - Look around<br>
-      SPACE - Jump
+      SPACE - Jump<br>
+      <button id="demo-mode" style="margin-top: 10px; padding: 5px 10px;">Demo Mode</button>
     `;
     container.appendChild(instructions);
+
+    // Add demo mode button handler
+    const demoButton = document.getElementById('demo-mode');
+    if (demoButton) {
+      demoButton.addEventListener('click', () => {
+        const inputManager = this.localPlayer.getInputManager();
+        if (inputManager.isDemoModeActive()) {
+          inputManager.disableDemoMode();
+          demoButton.textContent = 'Demo Mode';
+        } else {
+          // Demo sequence: Move forward, look around, jump, repeat
+          inputManager.enableDemoMode([
+            InputAction.MOVE_FORWARD,
+            InputAction.LOOK_LEFT,
+            InputAction.LOOK_RIGHT,
+            InputAction.LOOK_UP,
+            InputAction.LOOK_DOWN,
+            InputAction.JUMP,
+            InputAction.MOVE_BACKWARD,
+            InputAction.MOVE_LEFT,
+            InputAction.MOVE_RIGHT
+          ], 1000);
+          demoButton.textContent = 'Stop Demo';
+        }
+      });
+    }
   }
   
   /**
@@ -248,19 +275,14 @@ export class OpenWorldGame {
    */
   private onKeyDown = (event: KeyboardEvent): void => {
     console.log('Key down:', event.code);
-    const action = getActionFromKeyCode(event.code);
-    if (action) {
-      console.log('Mapped to action:', action);
-      this.localPlayer.handleActionDown(action);
+    this.localPlayer.getInputManager().handleKeyDown(event);
 
-      // Handle special actions
-      if (action === InputAction.VERIFY_STATE) {
-        event.preventDefault();
-        this.networkManager.verifyClientState();
-        console.log('State verification requested...');
-      }
-    } else {
-      console.log('No action mapped for key:', event.code);
+    // Handle special actions
+    const action = getActionFromKeyCode(event.code);
+    if (action === InputAction.VERIFY_STATE) {
+      event.preventDefault();
+      this.networkManager.verifyClientState();
+      console.log('State verification requested...');
     }
   }
   
@@ -269,13 +291,7 @@ export class OpenWorldGame {
    */
   private onKeyUp = (event: KeyboardEvent): void => {
     console.log('Key up:', event.code);
-    const action = getActionFromKeyCode(event.code);
-    if (action) {
-      console.log('Mapped to action:', action);
-      this.localPlayer.handleActionUp(action);
-    } else {
-      console.log('No action mapped for key:', event.code);
-    }
+    this.localPlayer.getInputManager().handleKeyUp(event);
   }
   
   /**

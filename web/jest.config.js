@@ -38,7 +38,10 @@ const config = {
     },
     {
       displayName: 'default',
-      testMatch: ['<rootDir>/src/terminal-game/__tests__/!(console-renderer).test.[jt]s?(x)'],
+      testMatch: [
+        '<rootDir>/src/terminal-game/__tests__/!(console-renderer).test.[jt]s?(x)',
+        '<rootDir>/src/open-world/__tests__/**/*.test.[jt]s?(x)'
+      ],
       testEnvironment: 'node',
       preset: 'ts-jest',
       transform: {

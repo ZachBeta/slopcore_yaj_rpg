@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { InputAction } from '../constants/input';
+import { InputManager } from './input-manager';
+import { WORLD_DIRECTIONS, MOVEMENT, ROTATION, GROUND_LEVEL } from '../constants/directions';
 
 export class Player {
   private id: string;
@@ -7,17 +9,26 @@ export class Player {
   private object: THREE.Group;
   private body: THREE.Mesh;
   private velocity: THREE.Vector3 = new THREE.Vector3();
-  private activeActions: Set<InputAction> = new Set();
   private moveSpeed: number = 5;
-  private gravity: number = 9.8;
-  private jumpForce: number = 5;
+  private gravity: number = 20;
+  private jumpForce: number = 10;
   private isGrounded: boolean = false;
   private collisionEffect: THREE.Mesh | null = null;
   private collisionEffectDuration: number = 0.5;
   private collisionEffectTimer: number = 0;
-  private rotation: THREE.Euler = new THREE.Euler(0, Math.PI, 0, 'YXZ');
+  private rotation: THREE.Quaternion = new THREE.Quaternion();
+  private lookEuler: THREE.Euler = new THREE.Euler(0, Math.PI, 0, 'YXZ');
   private lookSpeed: number = 2.0;
   private color: THREE.Color;
+  private inputManager: InputManager = new InputManager(
+    (action: InputAction) => this.handleActionDown(action),
+    (action: InputAction) => this.handleActionUp(action)
+  );
+
+  // Forward direction (in world space)
+  private forward: THREE.Vector3 = new THREE.Vector3(0, 0, -1);
+  // Right direction (in world space)
+  private right: THREE.Vector3 = new THREE.Vector3(1, 0, 0);
 
   /**
    * Create a new player
@@ -29,6 +40,10 @@ export class Player {
     this.isLocal = isLocal;
     this.object = new THREE.Group();
     this.object.position.set(0, 1, 0);
+    
+    // Set initial rotation
+    this.rotation.setFromEuler(this.lookEuler);
+    this.object.quaternion.copy(this.rotation);
     
     // Set initial color to gray (will be updated by server)
     this.color = new THREE.Color(0xCCCCCC);
@@ -49,11 +64,6 @@ export class Player {
     head.castShadow = true;
     head.receiveShadow = true;
     this.object.add(head);
-    
-    // For non-local players, add a name tag
-    if (!isLocal) {
-      this.addNameTag(id);
-    }
   }
   
   /**
@@ -94,106 +104,77 @@ export class Player {
   }
   
   /**
-   * Update the player's position and state
+   * Update the player's state
    * @param deltaTime Time since last update in seconds
    */
   public update(deltaTime: number): void {
-    // Apply gravity if not grounded
-    if (!this.isGrounded) {
-      this.velocity.y -= this.gravity * deltaTime;
-    }
-    
-    // Handle movement based on input
     if (this.isLocal) {
       this.handleMovement(deltaTime);
       this.handleRotation(deltaTime);
     }
-    
-    // Get movement direction based on player rotation
-    const direction = new THREE.Vector3(
-      this.velocity.x,
-      0,
-      this.velocity.z
-    );
-    
-    // Apply rotation to movement direction
-    direction.applyEuler(new THREE.Euler(0, this.rotation.y, 0));
-    
-    // Update position
-    this.object.position.x += direction.x * deltaTime;
-    this.object.position.y += this.velocity.y * deltaTime;
-    this.object.position.z += direction.z * deltaTime;
-    
-    // Update rotation
-    this.object.rotation.y = this.rotation.y;
-    
-    // Detect ground collision
-    if (this.object.position.y < 1) {
-      this.object.position.y = 1;
-      this.velocity.y = 0;
-      this.isGrounded = true;
-    }
-    
-    // Update collision effect if active
-    if (this.collisionEffect) {
-      this.collisionEffectTimer -= deltaTime;
-      
-      if (this.collisionEffectTimer <= 0) {
-        // Remove the collision effect when the timer expires
-        this.object.remove(this.collisionEffect);
-        this.collisionEffect = null;
-      } else {
-        // Scale the effect based on remaining time
-        const scale = this.collisionEffectTimer / this.collisionEffectDuration;
-        this.collisionEffect.scale.set(scale * 3, scale * 3, scale * 3);
-      }
-    }
+    this.updateCollisionEffect(deltaTime);
   }
   
   /**
    * Handle player movement based on active input actions
    */
   private handleMovement(deltaTime: number): void {
-    // Reset velocity for horizontal movement
+    const activeActions = this.inputManager.getActiveActions();
+    const moveDirection = new THREE.Vector3();
+    
+    // Reset velocity
     this.velocity.x = 0;
     this.velocity.z = 0;
     
-    const frameSpeed = this.moveSpeed * deltaTime;
-    
     // Forward/Backward movement
-    if (this.activeActions.has(InputAction.MOVE_FORWARD)) {
+    if (activeActions.has(InputAction.MOVE_FORWARD)) {
       console.log('Moving forward');
-      this.velocity.z = -frameSpeed;
-    } else if (this.activeActions.has(InputAction.MOVE_BACKWARD)) {
+      moveDirection.add(this.forward);
+    } else if (activeActions.has(InputAction.MOVE_BACKWARD)) {
       console.log('Moving backward');
-      this.velocity.z = frameSpeed;
+      moveDirection.sub(this.forward);
     }
     
     // Left/Right movement
-    if (this.activeActions.has(InputAction.MOVE_LEFT)) {
+    if (activeActions.has(InputAction.MOVE_LEFT)) {
       console.log('Moving left');
-      this.velocity.x = -frameSpeed;
-    } else if (this.activeActions.has(InputAction.MOVE_RIGHT)) {
+      moveDirection.sub(this.right);
+    } else if (activeActions.has(InputAction.MOVE_RIGHT)) {
       console.log('Moving right');
-      this.velocity.x = frameSpeed;
+      moveDirection.add(this.right);
     }
     
     // Normalize diagonal movement
-    if ((this.activeActions.has(InputAction.MOVE_FORWARD) || this.activeActions.has(InputAction.MOVE_BACKWARD)) && 
-        (this.activeActions.has(InputAction.MOVE_LEFT) || this.activeActions.has(InputAction.MOVE_RIGHT))) {
-      console.log('Normalizing diagonal movement');
-      const length = Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.z * this.velocity.z);
-      this.velocity.x /= length;
-      this.velocity.z /= length;
-      this.velocity.x *= frameSpeed;
-      this.velocity.z *= frameSpeed;
+    if (moveDirection.length() > 0) {
+      moveDirection.normalize();
+      
+      // Apply movement speed
+      this.velocity.x = moveDirection.x * this.moveSpeed;
+      this.velocity.z = moveDirection.z * this.moveSpeed;
     }
     
     // Jump
-    if (this.activeActions.has(InputAction.JUMP) && this.isGrounded) {
+    if (activeActions.has(InputAction.JUMP) && this.isGrounded) {
       console.log('Jumping');
       this.velocity.y = this.jumpForce;
       this.isGrounded = false;
+    }
+    
+    // Apply gravity
+    if (!this.isGrounded) {
+      this.velocity.y -= this.gravity * deltaTime;
+    }
+    
+    // Update position
+    this.object.position.x += this.velocity.x * deltaTime;
+    this.object.position.y += this.velocity.y * deltaTime;
+    this.object.position.z += this.velocity.z * deltaTime;
+    
+    // Check ground collision
+    if (this.object.position.y <= GROUND_LEVEL) {
+      this.object.position.y = GROUND_LEVEL;
+      this.velocity.y = 0;
+      this.isGrounded = true;
     }
   }
   
@@ -201,44 +182,57 @@ export class Player {
    * Handle player rotation based on active input actions
    */
   private handleRotation(deltaTime: number): void {
-    // Look up/down
-    if (this.activeActions.has(InputAction.LOOK_UP)) {
+    const activeActions = this.inputManager.getActiveActions();
+    
+    // Look up/down (pitch)
+    if (activeActions.has(InputAction.LOOK_UP)) {
       console.log('Looking up');
-      this.rotation.x -= this.lookSpeed * deltaTime;
-    } else if (this.activeActions.has(InputAction.LOOK_DOWN)) {
+      this.lookEuler.x -= this.lookSpeed * deltaTime;
+    } else if (activeActions.has(InputAction.LOOK_DOWN)) {
       console.log('Looking down');
-      this.rotation.x += this.lookSpeed * deltaTime;
+      this.lookEuler.x += this.lookSpeed * deltaTime;
     }
     
     // Limit up/down look to prevent flipping over
-    this.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.rotation.x));
+    this.lookEuler.x = Math.max(ROTATION.MIN_PITCH, Math.min(ROTATION.MAX_PITCH, this.lookEuler.x));
     
-    // Look left/right
-    if (this.activeActions.has(InputAction.LOOK_LEFT)) {
+    // Look left/right (yaw)
+    if (activeActions.has(InputAction.LOOK_LEFT)) {
       console.log('Looking left');
-      this.rotation.y += this.lookSpeed * deltaTime;
-    } else if (this.activeActions.has(InputAction.LOOK_RIGHT)) {
+      this.lookEuler.y += this.lookSpeed * deltaTime;
+    } else if (activeActions.has(InputAction.LOOK_RIGHT)) {
       console.log('Looking right');
-      this.rotation.y -= this.lookSpeed * deltaTime;
+      this.lookEuler.y -= this.lookSpeed * deltaTime;
     }
+    
+    // Update rotation quaternion from Euler angles
+    this.rotation.setFromEuler(this.lookEuler);
+    this.object.quaternion.copy(this.rotation);
+    
+    // Update forward and right vectors
+    this.forward.copy(WORLD_DIRECTIONS.FORWARD).applyQuaternion(this.rotation);
+    this.right.copy(WORLD_DIRECTIONS.RIGHT).applyQuaternion(this.rotation);
   }
   
   /**
    * Handle input action activation
    */
-  public handleActionDown(action: InputAction): void {
+  private handleActionDown(action: InputAction): void {
     console.log('Player action down:', action);
-    this.activeActions.add(action);
-    console.log('Active actions:', Array.from(this.activeActions));
   }
   
   /**
    * Handle input action deactivation
    */
-  public handleActionUp(action: InputAction): void {
+  private handleActionUp(action: InputAction): void {
     console.log('Player action up:', action);
-    this.activeActions.delete(action);
-    console.log('Active actions:', Array.from(this.activeActions));
+  }
+  
+  /**
+   * Get the input manager instance
+   */
+  public getInputManager(): InputManager {
+    return this.inputManager;
   }
   
   /**
@@ -303,7 +297,20 @@ export class Player {
    * Get the player's rotation
    */
   public getRotation(): THREE.Euler {
-    return this.rotation.clone();
+    return this.lookEuler.clone();
+  }
+
+  /**
+   * Set the player's rotation
+   */
+  public setRotation(rotation: THREE.Euler): void {
+    this.lookEuler.copy(rotation);
+    this.rotation.setFromEuler(this.lookEuler);
+    this.object.quaternion.copy(this.rotation);
+    
+    // Update forward and right vectors
+    this.forward.copy(WORLD_DIRECTIONS.FORWARD).applyQuaternion(this.rotation);
+    this.right.copy(WORLD_DIRECTIONS.RIGHT).applyQuaternion(this.rotation);
   }
 
   /**
@@ -325,5 +332,29 @@ export class Player {
    */
   public getColor(): THREE.Color {
     return this.color.clone();
+  }
+
+  /**
+   * Clean up resources
+   */
+  public dispose(): void {
+    this.inputManager.dispose();
+  }
+
+  private updateCollisionEffect(deltaTime: number): void {
+    // Update collision effect if active
+    if (this.collisionEffect) {
+      this.collisionEffectTimer -= deltaTime;
+      
+      if (this.collisionEffectTimer <= 0) {
+        // Remove the collision effect when the timer expires
+        this.object.remove(this.collisionEffect);
+        this.collisionEffect = null;
+      } else {
+        // Scale the effect based on remaining time
+        const scale = this.collisionEffectTimer / this.collisionEffectDuration;
+        this.collisionEffect.scale.set(scale * 3, scale * 3, scale * 3);
+      }
+    }
   }
 } 

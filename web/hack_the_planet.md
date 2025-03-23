@@ -3,6 +3,7 @@
 ## open world game
 
 * server diagnostics is getting noisy in dev logs
+* tests are slow as hell
 
 * convert js to ts
   * extract types out wherever possible
