@@ -75,6 +75,14 @@ export class InputManager {
   }
 
   /**
+   * Check if a specific key code is active
+   */
+  public isKeyActive(keyCode: string): boolean {
+    const action = getActionFromKeyCode(keyCode);
+    return action ? this.state.activeActions.has(action) : false;
+  }
+
+  /**
    * Enable demo mode with a sequence of actions
    */
   public enableDemoMode(actions: InputAction[], interval: number = 1000): void {

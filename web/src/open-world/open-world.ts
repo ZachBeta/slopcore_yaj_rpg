@@ -5,6 +5,8 @@ import { NetworkManager } from './network-manager';
 import { ConnectionStatus } from '../types';
 import { GameEvent, GameEventPayloads } from '../constants';
 import { InputAction, getActionFromKeyCode } from '../constants/input';
+import { ControlsDisplay } from '../ui/controls/controls-display';
+import { JoystickConfig } from '../ui/controls/joystick-display';
 
 export class OpenWorldGame {
   // Core three.js components
@@ -28,8 +30,8 @@ export class OpenWorldGame {
   private animating: boolean = false;
   private lastTime: number = 0;
   
-  // Control display
-  private controlElements: Map<string, HTMLElement> = new Map();
+  // Controls display
+  private controlsDisplay!: ControlsDisplay; // Using definite assignment assertion
   
   /**
    * Initialize the Open World game scene
@@ -143,8 +145,8 @@ export class OpenWorldGame {
     // Add instructions
     this.addControlsInstructions(container);
     
-    // Add controls display
-    this.addControlsDisplay(container);
+    // Set up and add the controls display
+    this.setupControlsDisplay(container);
     
     // Start the animation loop
     this.animating = true;
@@ -159,6 +161,58 @@ export class OpenWorldGame {
     this.networkManager.on(GameEvent.PLAYER_MOVED, () => {
       // ... existing code ...
     });
+  }
+
+  /**
+   * Set up the controls display with joysticks
+   */
+  private setupControlsDisplay(container: HTMLElement): void {
+    // Create the controls display
+    this.controlsDisplay = new ControlsDisplay(container, this.localPlayer.getInputManager());
+    
+    // Movement Controls Stick configuration
+    const movementConfig: JoystickConfig = {
+      title: 'Movement',
+      axes: {
+        vertical: { up: 'KeyW', down: 'KeyS' },
+        horizontal: { left: 'KeyA', right: 'KeyD' }
+      },
+      labels: [
+        { key: 'KeyW', label: 'W', position: 'top' },
+        { key: 'KeyS', label: 'S', position: 'bottom' },
+        { key: 'KeyA', label: 'A', position: 'left' },
+        { key: 'KeyD', label: 'D', position: 'right' }
+      ],
+      throttle: {
+        key: 'throttle',
+        upKey: 'KeyR',
+        downKey: 'KeyF',
+        upLabel: 'R',
+        downLabel: 'F'
+      }
+    };
+    
+    // Attitude Controls Stick configuration
+    const attitudeConfig: JoystickConfig = {
+      title: 'Attitude',
+      axes: {
+        vertical: { up: 'KeyI', down: 'KeyK' },
+        horizontal: { left: 'KeyJ', right: 'KeyL' }
+      },
+      labels: [
+        { key: 'KeyI', label: 'I', position: 'top' },
+        { key: 'KeyK', label: 'K', position: 'bottom' },
+        { key: 'KeyJ', label: 'J', position: 'left' },
+        { key: 'KeyL', label: 'L', position: 'right' }
+      ]
+    };
+    
+    // Add joysticks to the controls display
+    this.controlsDisplay.addJoystick('movement', movementConfig);
+    this.controlsDisplay.addJoystick('attitude', attitudeConfig);
+    
+    // Start the controls display update loop
+    this.controlsDisplay.start();
   }
 
   /**
@@ -461,8 +515,11 @@ export class OpenWorldGame {
     window.removeEventListener('resize', this.onWindowResize);
     document.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('keyup', this.onKeyUp);
-    document.removeEventListener('keydown', this.updateControlDisplay);
-    document.removeEventListener('keyup', this.updateControlDisplay);
+    
+    // Dispose of controls display
+    if (this.controlsDisplay) {
+      this.controlsDisplay.dispose();
+    }
     
     // Disconnect from network
     this.networkManager.disconnect();
@@ -471,153 +528,5 @@ export class OpenWorldGame {
     this.renderer.dispose();
     this.chasePipRenderer.dispose();
     this.orbitPipRenderer.dispose();
-  }
-
-  /**
-   * Add drone controls display (two grids) at the bottom center of the screen
-   */
-  private addControlsDisplay(container: HTMLElement): void {
-    const displayContainer = document.createElement('div');
-    displayContainer.style.position = 'absolute';
-    displayContainer.style.bottom = '20px';
-    displayContainer.style.left = '50%';
-    displayContainer.style.transform = 'translateX(-50%)';
-    displayContainer.style.display = 'flex';
-    displayContainer.style.gap = '30px';
-    displayContainer.style.zIndex = '100';
-    
-    // Movement Controls Grid (W/S/R/F)
-    const movementGrid = this.createControlGrid([
-      { label: '', key: '' },
-      { label: 'W', key: 'KeyW', tooltip: 'Up' },
-      { label: '', key: '' },
-      { label: 'R', key: 'KeyR', tooltip: 'Forward' },
-      { label: 'A', key: 'KeyA', tooltip: 'Yaw Left' },
-      { label: 'S', key: 'KeyS', tooltip: 'Down' },
-      { label: 'D', key: 'KeyD', tooltip: 'Yaw Right' },
-      { label: 'F', key: 'KeyF', tooltip: 'Backward' }
-    ], 'Movement');
-    
-    // Attitude Controls Grid (I/J/K/L)
-    const attitudeGrid = this.createControlGrid([
-      { label: '', key: '' },
-      { label: 'I', key: 'KeyI', tooltip: 'Pitch Down' },
-      { label: '', key: '' },
-      { label: '', key: '' },
-      { label: 'J', key: 'KeyJ', tooltip: 'Roll Left' },
-      { label: 'K', key: 'KeyK', tooltip: 'Pitch Up' },
-      { label: 'L', key: 'KeyL', tooltip: 'Roll Right' },
-      { label: '', key: '' }
-    ], 'Attitude');
-    
-    displayContainer.appendChild(movementGrid);
-    displayContainer.appendChild(attitudeGrid);
-    container.appendChild(displayContainer);
-    
-    // Store references to the control elements to update them in the animate loop
-    this.controlElements = new Map();
-    
-    // Add event listener to update the control display
-    document.addEventListener('keydown', this.updateControlDisplay);
-    document.addEventListener('keyup', this.updateControlDisplay);
-  }
-
-  /**
-   * Create a control grid for the drone display
-   */
-  private createControlGrid(buttons: Array<{label: string, key: string, tooltip?: string}>, title: string): HTMLElement {
-    const gridContainer = document.createElement('div');
-    gridContainer.style.display = 'flex';
-    gridContainer.style.flexDirection = 'column';
-    gridContainer.style.alignItems = 'center';
-    gridContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
-    gridContainer.style.borderRadius = '10px';
-    gridContainer.style.padding = '10px';
-    
-    // Add title
-    const gridTitle = document.createElement('div');
-    gridTitle.textContent = title;
-    gridTitle.style.color = 'white';
-    gridTitle.style.fontFamily = 'monospace';
-    gridTitle.style.marginBottom = '8px';
-    gridTitle.style.fontSize = '14px';
-    gridTitle.style.fontWeight = 'bold';
-    gridContainer.appendChild(gridTitle);
-    
-    // Create the grid
-    const grid = document.createElement('div');
-    grid.style.display = 'grid';
-    grid.style.gridTemplateColumns = 'repeat(3, 45px)';
-    grid.style.gridTemplateRows = 'repeat(3, 45px)';
-    grid.style.gap = '5px';
-    
-    buttons.forEach(({ label, key, tooltip }) => {
-      const button = document.createElement('div');
-      button.style.width = '45px';
-      button.style.height = '45px';
-      button.style.backgroundColor = 'rgba(40, 40, 40, 0.7)';
-      button.style.border = '1px solid rgba(100, 100, 100, 0.5)';
-      button.style.borderRadius = '5px';
-      button.style.display = 'flex';
-      button.style.justifyContent = 'center';
-      button.style.alignItems = 'center';
-      button.style.color = 'white';
-      button.style.fontFamily = 'monospace';
-      button.style.fontSize = '18px';
-      button.style.fontWeight = 'bold';
-      button.style.userSelect = 'none';
-      button.style.position = 'relative';
-      button.textContent = label;
-      
-      // Add tooltip if provided
-      if (tooltip && label) {
-        const tooltipElement = document.createElement('div');
-        tooltipElement.textContent = tooltip;
-        tooltipElement.style.position = 'absolute';
-        tooltipElement.style.bottom = '-18px';
-        tooltipElement.style.left = '50%';
-        tooltipElement.style.transform = 'translateX(-50%)';
-        tooltipElement.style.fontSize = '10px';
-        tooltipElement.style.color = 'rgba(255, 255, 255, 0.7)';
-        tooltipElement.style.whiteSpace = 'nowrap';
-        button.appendChild(tooltipElement);
-      }
-      
-      if (key) {
-        // Store the element reference for active key highlighting
-        this.controlElements.set(key, button);
-      }
-      
-      grid.appendChild(button);
-    });
-    
-    gridContainer.appendChild(grid);
-    return gridContainer;
-  }
-
-  /**
-   * Update the control display based on key events
-   */
-  private updateControlDisplay = (event: KeyboardEvent): void => {
-    const isKeyDown = event.type === 'keydown';
-    const keyCode = event.code;
-    
-    // Only process if we have this key in our control elements
-    if (this.controlElements.has(keyCode)) {
-      const button = this.controlElements.get(keyCode);
-      if (button) {
-        if (isKeyDown) {
-          button.style.backgroundColor = 'rgba(0, 200, 100, 0.8)';
-          button.style.boxShadow = '0 0 10px rgba(0, 255, 100, 0.7)';
-          button.style.transform = 'scale(1.1)';
-          button.style.border = '1px solid rgba(0, 255, 100, 0.9)';
-        } else {
-          button.style.backgroundColor = 'rgba(40, 40, 40, 0.7)';
-          button.style.boxShadow = 'none';
-          button.style.transform = 'scale(1)';
-          button.style.border = '1px solid rgba(100, 100, 100, 0.5)';
-        }
-      }
-    }
   }
 } 
