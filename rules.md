@@ -3,6 +3,7 @@
 ## bash commands
 
 * prefix the result of `cd $(pwd)` so we are guaranteed to be in the correct directory when we run
+* prefer ts over js in web
 
 ## Testing
 * Prefer realistic system tests: Avoid using mocks, use real objects wherever possible in tests

@@ -2,6 +2,8 @@
 
 ## open world game
 
+* multiplayer kind of works, players can join, colors still seem wrong
+* convert js to ts
 * connection limit is forcing dev code to contain a test check, bad design
 * rules.md : prefer assertions over console.log in tests
 * shorten timeout in integration test
