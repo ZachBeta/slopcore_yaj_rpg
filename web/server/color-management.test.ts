@@ -2,21 +2,11 @@ import { TestGameServer } from './server-core.test';
 import { Color } from '../src/types';
 import { createSocketTestEnvironment } from './test-helpers';
 import { io as Client } from 'socket.io-client';
-import { createServer } from 'http';
 
-const TEST_TIMEOUT = 5000;
-
-async function createTestClients(count: number) {
-  const gameServer = new TestGameServer();
-  const clients: any[] = [];
-
-  for (let i = 0; i < count; i++) {
-    const client = Client(`http://localhost:${gameServer.getPort()}`);
-    clients.push(client);
-  }
-
-  return { gameServer, clients };
-}
+// Timeouts for test execution
+const TEST_TIMEOUT = 3000;
+const CONNECTION_DELAY = 100;
+const DISCONNECT_DELAY = 100;
 
 describe('Color Management', () => {
   let testEnv: Awaited<ReturnType<typeof createSocketTestEnvironment<TestGameServer>>>;
@@ -55,6 +45,25 @@ describe('Color Management', () => {
     
     // Reset available colors to full pool
     gameServer.setAvailableColors([...gameServer.getColorPool()]);
+
+    // Clear clients array
+    clients = [];
+  });
+
+  afterEach(async () => {
+    // Clean up clients with shorter timeout
+    const cleanupPromises = clients.map(client => {
+      if (client?.connected) {
+        return new Promise<void>((resolve) => {
+          client.disconnect();
+          setTimeout(resolve, DISCONNECT_DELAY);
+        });
+      }
+      return Promise.resolve();
+    });
+    
+    await Promise.all(cleanupPromises);
+    clients = [];
   });
   
   const getColorKey = (color: Color): string => {
@@ -88,6 +97,9 @@ describe('Color Management', () => {
         
         const { player } = await testEnv.connectAndJoin(client);
         players.push(player);
+
+        // Add a small delay between connections to prevent race conditions
+        await new Promise(resolve => setTimeout(resolve, CONNECTION_DELAY));
       }
       
       // Verify each player has a unique color from the pool
@@ -106,12 +118,7 @@ describe('Color Management', () => {
       expect(gameServer.getLockedColors().size).toBe(numClients);
       expect(gameServer.getAvailableColors().length).toBe(gameServer.getColorPool().length - numClients);
     } finally {
-      // Clean up
-      for (const client of clients) {
-        if (client && client.connected) {
-          client.disconnect();
-        }
-      }
+      // Clean up handled by afterEach
     }
   }, TEST_TIMEOUT);
   
@@ -133,6 +140,9 @@ describe('Color Management', () => {
         
         const { player } = await testEnv.connectAndJoin(client);
         players.push(player);
+
+        // Add a small delay between connections to prevent race conditions
+        await new Promise(resolve => setTimeout(resolve, CONNECTION_DELAY));
       }
       
       // Verify server state
@@ -148,24 +158,17 @@ describe('Color Management', () => {
       expect(clients.length).toBeGreaterThan(0);
       const firstClient = clients[0];
       
-      // Disconnect first client if it exists and is connected
-      if (firstClient && firstClient.connected) {
+      // Disconnect first client and wait for disconnect to be processed
+      await new Promise<void>((resolve) => {
         firstClient.disconnect();
-      }
-      
-      // Wait for disconnect to be processed with a shorter timeout
-      await new Promise(resolve => setTimeout(resolve, 100));
+        setTimeout(resolve, DISCONNECT_DELAY);
+      });
       
       // Verify a color was recycled
       expect(gameServer.getLockedColors().size).toBe(numClients - 1);
       expect(gameServer.getAvailableColors().length).toBe(initialColorCount + 1);
     } finally {
-      // Clean up remaining clients
-      for (const client of clients) {
-        if (client && client.connected) {
-          client.disconnect();
-        }
-      }
+      // Clean up handled by afterEach
     }
   }, TEST_TIMEOUT);
 
@@ -199,23 +202,4 @@ describe('Color Management', () => {
     // Clean up
     gameServer.clearLockedColors();
   }, TEST_TIMEOUT);
-
-  it('should handle client disconnection', async () => {
-    const { gameServer, clients } = await createTestClients(1);
-    if (clients.length > 0) {
-      const client = clients[0];
-      if (client.connected) {
-        client.disconnect();
-      }
-    }
-    gameServer.close();
-  });
-
-  afterEach(() => {
-    for (const client of clients) {
-      if (client?.connected) {
-        client.disconnect();
-      }
-    }
-  });
 }); 
