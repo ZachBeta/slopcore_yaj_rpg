@@ -10,7 +10,19 @@
     "baseUrl": ".",
     "paths": {
       "*": ["*", "src/*"]
-    }
+    },
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "noUncheckedIndexedAccess": true,
+    "useUnknownInCatchVariables": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false
   },
   "include": ["src/**/*", "server/**/*"],
   "exclude": ["node_modules"]

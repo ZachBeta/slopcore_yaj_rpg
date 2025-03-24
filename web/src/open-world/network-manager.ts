@@ -3,7 +3,7 @@ import { Player } from './player';
 import { io, Socket } from 'socket.io-client';
 import { GameEvent, GameEventPayloads, ConnectionStatus } from '../constants';
 import { DebugState } from '../types';
-import process from "node:process";
+import { process } from "../../deps";
 
 // Define EventHandler type
 type EventHandler<T extends GameEvent> = (payload: GameEventPayloads[T]) => void;
@@ -165,7 +165,7 @@ export class NetworkManager {
     });
   }
 
-  private setupDiagnostics() {
+  private setupDiagnostics(): void {
     // Create diagnostics overlay
     if (this.diagnosticsDiv) {
       document.body.removeChild(this.diagnosticsDiv);
@@ -211,7 +211,7 @@ export class NetworkManager {
     }, this.pingInterval);
   }
 
-  private updateDiagnostics(data: Partial<Diagnostics>) {
+  private updateDiagnostics(data: Partial<Diagnostics>): void {
     if (!this.diagnosticsDiv) return;
 
     const diagnostics = {

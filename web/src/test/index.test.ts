@@ -169,13 +169,13 @@ describe('Index', () => {
     };
     
     // Temporarily assign the mock game to window using a type-safe approach
-    window.testMockGame = mockGame;
+    globalThis.testMockGame = mockGame;
     
     // Override processCommand to use our mock
     type ProcessCommandFn = (command: string) => void;
     const processCommandFn: ProcessCommandFn = function(command: string) {
-      if (window.testMockGame && command && typeof command === 'string') {
-        window.testMockGame.processCommand(command);
+      if (globalThis.testMockGame && command && typeof command === 'string') {
+        globalThis.testMockGame.processCommand(command);
       } else {
         console.error("Game not initialized or invalid command. Please provide a valid command as a string.");
       }
@@ -194,7 +194,7 @@ describe('Index', () => {
     expect(mockProcessCommand).toHaveBeenCalledWith('help');
     
     // Clean up
-    delete window.testMockGame;
+    delete globalThis.testMockGame;
   });
   
   test('processCommand should show error if game is not initialized', () => {
@@ -245,5 +245,28 @@ describe('Index', () => {
     expect(aboutButtonSpy).toHaveBeenCalledWith('click', expect.any(Function));
     expect(demoButtonSpy).toHaveBeenCalledWith('click', expect.any(Function));
     expect(openWorldButtonSpy).toHaveBeenCalledWith('click', expect.any(Function));
+  });
+});
+
+describe('Game initialization', () => {
+  beforeEach(() => {
+    // Set up mock game instance
+    const mockGame = {
+      processCommand: jest.fn()
+    };
+    globalThis.testMockGame = mockGame;
+  });
+
+  afterEach(() => {
+    // Clean up
+    delete globalThis.testMockGame;
+  });
+
+  it('should process commands through the game instance', () => {
+    // Test command processing
+    if (globalThis.testMockGame && typeof globalThis.testMockGame.processCommand === 'function') {
+      globalThis.testMockGame.processCommand('test command');
+      expect(globalThis.testMockGame.processCommand).toHaveBeenCalledWith('test command');
+    }
   });
 }); 

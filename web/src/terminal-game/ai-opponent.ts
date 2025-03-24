@@ -3,13 +3,16 @@
  * Handles automated opponent actions during gameplay
  */
 
+import { Card, PlayedCard } from './game-types';
+import { AIAction } from './ai-types';
+
 interface GameState {
   playerCredits: number;
   playerMemory: number;
   opponentCredits: number;
   opponentCards: number;
-  installedPrograms: any[];
-  runHistory: any[];
+  installedPrograms: PlayedCard[];
+  runHistory: RunHistoryEntry[];
   serverStrengths: Record<string, number>;
   turnNumber: number;
 }
@@ -17,8 +20,8 @@ interface GameState {
 export class AIOpponent {
   private difficulty: 'easy' | 'medium' | 'hard';
   private credits: number;
-  private iceInstalled: any[];
-  private agenda: any[];
+  private iceInstalled: PlayedCard[];
+  private agenda: Card[];
   private turn: number;
   private random: () => number;
 
@@ -194,11 +197,11 @@ export class AIOpponent {
   private determineNextAction(): 'installIce' | 'drawCard' | 'advanceAgenda' | 'gainCredit' {
     const roll = this.random();
     
-    // Weights for different actions based on game state
+    // Weights for different actions based on difficulty
     const weights = {
-      installIce: 0.25 + (this.credits > 5 ? 0.2 : 0) - (this.iceInstalled.length * 0.05),
-      drawCard: 0.2,
-      advanceAgenda: 0.3 + (this.turn > 3 ? 0.1 : 0),
+      installIce: 0.3 - (this.iceInstalled.length > 5 ? 0.2 : 0),
+      drawCard: 0.25 - (this.agenda.length > 3 ? 0.15 : 0),
+      advanceAgenda: 0.2 + (this.agenda.length > 2 ? 0.15 : 0),
       gainCredit: 0.25 - (this.credits > 8 ? 0.15 : 0)
     };
     
@@ -206,11 +209,11 @@ export class AIOpponent {
     for (const [action, weight] of Object.entries(weights)) {
       cumulativeWeight += weight;
       if (roll < cumulativeWeight) {
-        return action as any;
+        return action as 'installIce' | 'drawCard' | 'advanceAgenda' | 'gainCredit';
       }
     }
     
-    return 'gainCredit';
+    return 'drawCard'; // Default action
   }
   
   /**
@@ -259,14 +262,27 @@ export class AIOpponent {
   /**
    * Get the installed ICE
    */
-  public getInstalledIce(): any[] {
+  public getInstalledIce(): PlayedCard[] {
     return [...this.iceInstalled];
   }
   
   /**
    * Get the current agendas
    */
-  public getAgendas(): any[] {
+  public getAgendas(): Card[] {
     return [...this.agenda];
+  }
+
+  private selectAction(): AIAction {
+    const actions: AIAction[] = [
+      { type: 'draw' },
+      { type: 'install', card: 'ice' },
+      { type: 'advance' },
+      { type: 'score' },
+      { type: 'end' }
+    ];
+    
+    const index = Math.floor(this.random() * actions.length);
+    return actions[index];
   }
 } 

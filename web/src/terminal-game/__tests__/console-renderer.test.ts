@@ -1,6 +1,12 @@
 import { ConsoleRenderer } from '../console-renderer';
 import { GamePhase } from '../game-phases';
-import { Card } from '../card-data';
+import { Card } from '../game-types';
+
+interface MockTerminal {
+  write: jest.Mock;
+  clear: jest.Mock;
+  appendChild: jest.Mock;
+}
 
 // Mock DOM methods to avoid errors
 document.createElement = jest.fn().mockImplementation(() => {
@@ -28,6 +34,7 @@ document.querySelector = jest.fn().mockImplementation(() => {
 describe('ConsoleRenderer', () => {
   let renderer: ConsoleRenderer;
   let mockAppendChildSpy: jest.SpyInstance;
+  let mockTerminal: MockTerminal;
   
   beforeEach(() => {
     // Clear all mocks
@@ -36,8 +43,13 @@ describe('ConsoleRenderer', () => {
     // Set up spies
     mockAppendChildSpy = jest.spyOn(document.body, 'appendChild');
     
-    // Create a new renderer
+    mockTerminal = {
+      write: jest.fn(),
+      clear: jest.fn(),
+      appendChild: jest.fn()
+    };
     renderer = new ConsoleRenderer();
+    (renderer as unknown as { terminal: MockTerminal }).terminal = mockTerminal;
   });
   
   describe('initialization', () => {
@@ -51,126 +63,88 @@ describe('ConsoleRenderer', () => {
   });
   
   describe('rendering methods', () => {
-    // Skip these tests since ConsoleRenderer is heavily dependent on DOM manipulations
-    it.skip('should render messages with the right styling', () => {
-      // Mock the terminal element
-      const mockTerminal = { appendChild: jest.fn() };
-      (renderer as any).terminal = mockTerminal;
-      
-      // Call the method with the right parameters
+    it('should render messages with the right styling', () => {
+      (renderer as unknown as { terminal: MockTerminal }).terminal = mockTerminal;
       renderer.renderMessage('Test message', 'info');
-      
-      // Check if the message was added
       expect(mockTerminal.appendChild).toHaveBeenCalled();
     });
     
-    it.skip('should render errors with the right styling', () => {
-      // Mock the terminal element
-      const mockTerminal = { appendChild: jest.fn() };
-      (renderer as any).terminal = mockTerminal;
-      
-      // Call the method
+    it('should render errors with the right styling', () => {
+      (renderer as unknown as { terminal: MockTerminal }).terminal = mockTerminal;
       renderer.renderError('Test error');
-      
-      // Check if the error was added
-      expect(mockTerminal.appendChild).toHaveBeenCalled();
-    });
-  });
-  
-  describe('card rendering', () => {
-    it.skip('should render a hand of cards', () => {
-      // Mock the terminal element
-      const mockTerminal = { appendChild: jest.fn() };
-      (renderer as any).terminal = mockTerminal;
-      
-      // Create sample cards
-      const sampleCards: Card[] = [
-        {
-          id: 'test_card_1',
-          name: 'Test Card 1',
-          type: 'program',
-          cost: 3,
-          description: 'Test card 1 description'
-        },
-        {
-          id: 'test_card_2',
-          name: 'Test Card 2',
-          type: 'hardware',
-          cost: 2,
-          description: 'Test card 2 description'
-        }
-      ];
-      
-      // Call the method
-      renderer.renderHand(sampleCards);
-      
-      // Check if the hand was rendered
-      expect(mockTerminal.appendChild).toHaveBeenCalled();
-    });
-  });
-  
-  describe('game state rendering', () => {
-    it.skip('should render the current phase', () => {
-      // Mock the terminal element
-      const mockTerminal = { appendChild: jest.fn() };
-      (renderer as any).terminal = mockTerminal;
-      
-      // Call the method with turn number
-      renderer.renderPhase(GamePhase.ACTION, 1);
-      
-      // Check if the phase was rendered
       expect(mockTerminal.appendChild).toHaveBeenCalled();
     });
     
-    it.skip('should render game stats', () => {
-      // Mock the terminal element
-      const mockTerminal = { appendChild: jest.fn() };
-      (renderer as any).terminal = mockTerminal;
-      
-      // Call the method with game stats
+    it('should render game phases', () => {
+      (renderer as unknown as { terminal: MockTerminal }).terminal = mockTerminal;
+      renderer.renderPhase('Action', 1);
+      expect(mockTerminal.appendChild).toHaveBeenCalled();
+    });
+    
+    it('should render game stats', () => {
+      (renderer as unknown as { terminal: MockTerminal }).terminal = mockTerminal;
       renderer.renderGameStats({
         credits: 5,
         memory: { total: 4, used: 2 },
         agendaPoints: 0,
         clicksRemaining: 3
       });
+      expect(mockTerminal.appendChild).toHaveBeenCalled();
+    });
+    
+    it('should render system status', () => {
+      (renderer as unknown as { terminal: MockTerminal }).terminal = mockTerminal;
+      renderer.renderSystemStatus({
+        neuralInterface: 'Active',
+        traceDetection: 0,
+        securityLevel: 'Low'
+      });
+      expect(mockTerminal.appendChild).toHaveBeenCalled();
+    });
+    
+    it('should render the game banner', () => {
+      (renderer as unknown as { terminal: MockTerminal }).terminal = mockTerminal;
+      renderer.renderBanner();
+      expect(mockTerminal.appendChild).toHaveBeenCalled();
+    });
+  });
+  
+  describe('card rendering', () => {
+    it('should render a hand of cards', () => {
+      (renderer as unknown as { terminal: MockTerminal }).terminal = mockTerminal;
       
-      // Check if the stats were rendered
+      // Create sample cards
+      const sampleCards: Card[] = [
+        {
+          id: '1',
+          name: 'Test Card',
+          type: 'Program',
+          cost: 2,
+          description: 'A test card'
+        }
+      ];
+      
+      renderer.renderHand(sampleCards);
       expect(mockTerminal.appendChild).toHaveBeenCalled();
     });
   });
   
   describe('help and system', () => {
-    it.skip('should render help info', () => {
-      // Mock the terminal element
-      const mockTerminal = { appendChild: jest.fn() };
-      (renderer as any).terminal = mockTerminal;
-      
-      // Call the method with commands
-      const commands = {
-        'help': 'Display this help message',
-        'draw': 'Draw a card from your deck',
-        'install <card>': 'Install a card from your hand'
-      };
-      renderer.renderHelp(commands);
-      
-      // Check if the help was rendered
+    it('should render command help', () => {
+      (renderer as unknown as { terminal: MockTerminal }).terminal = mockTerminal;
+      renderer.renderCommandHelp('test', 'Test command description');
       expect(mockTerminal.appendChild).toHaveBeenCalled();
     });
-    
-    it.skip('should render system status', () => {
-      // Mock the terminal element
-      const mockTerminal = { appendChild: jest.fn() };
-      (renderer as any).terminal = mockTerminal;
-      
-      // Call the method with valid status object
-      renderer.renderSystemStatus({
-        neuralInterface: 'Connected',
-        traceDetection: 25,
-        securityLevel: 'Moderate'
-      });
-      
-      // Check if the system status was rendered
+
+    it('should render command list', () => {
+      (renderer as unknown as { terminal: MockTerminal }).terminal = mockTerminal;
+      renderer.renderCommandList([{ command: 'test', description: 'Test command' }]);
+      expect(mockTerminal.appendChild).toHaveBeenCalled();
+    });
+
+    it('should render command examples', () => {
+      (renderer as unknown as { terminal: MockTerminal }).terminal = mockTerminal;
+      renderer.renderCommandExamples([{ command: 'test', example: 'test example' }]);
       expect(mockTerminal.appendChild).toHaveBeenCalled();
     });
   });

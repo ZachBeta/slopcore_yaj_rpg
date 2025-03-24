@@ -417,16 +417,16 @@ export class ConsoleRenderer {
 
   /**
    * Render the player's hand of cards
-   * @param hand The array of cards in the player's hand
+   * @param cards The array of cards in the player's hand
    */
-  public renderHand(hand: Card[]): void {
-    if (hand.length === 0) {
+  public renderHand(cards: Card[]): void {
+    if (cards.length === 0) {
       this.renderMessage('Your hand is empty.', 'info');
       return;
     }
 
     console.log('%cYOUR HAND:', this.colors.info);
-    hand.forEach((card, index) => {
+    cards.forEach((card, index) => {
       console.log(
         `%c[${index}] ${card.name} - ${card.type} - Cost: ${card.cost}`,
         this.colors.card
@@ -486,12 +486,7 @@ export class ConsoleRenderer {
    * Render game stats (credits, memory, etc.)
    * @param stats The game stats object
    */
-  public renderGameStats(stats: { 
-    credits: number; 
-    memory: { total: number; used: number };
-    agendaPoints: number;
-    clicksRemaining: number;
-  }): void {
+  public renderGameStats(stats: GameStats): void {
     console.log('%cGAME STATUS:', this.colors.info);
     console.log(`%cCredits: ${stats.credits}`, this.colors.credit);
     console.log(`%cMemory: ${stats.memory.used}/${stats.memory.total} MU`, this.colors.memory);
@@ -515,11 +510,7 @@ export class ConsoleRenderer {
    * Render system status
    * @param status The system status information
    */
-  public renderSystemStatus(status: {
-    neuralInterface: string;
-    traceDetection: number;
-    securityLevel: string;
-  }): void {
+  public renderSystemStatus(status: SystemStatus): void {
     console.log('%cSYSTEM STATUS:', this.colors.system);
     console.log(`  Neural Interface: ${status.neuralInterface}`);
     console.log(`%c  Trace Detection: ${status.traceDetection}%`, this.colors.trace);
@@ -537,20 +528,55 @@ export class ConsoleRenderer {
    * Render ASCII art banner for the game
    */
   public renderBanner(): void {
-    console.log("%c███╗   ██╗███████╗ ██████╗ ███╗   ██╗    ██████╗  ██████╗ ███╗   ███╗██╗███╗   ██╗ █████╗ ███╗   ██╗ ██████╗███████╗", 
+    console.log("%c███╗   ██╗███████╗ ██████╗ ███╗   ██╗    ██████╗  ██████╗ ███╗   ███╗██╗███╗   ██╗ █████╗ ███╗   ██╗ ██████╗███████╗",
       "color: #00ffff; font-weight: bold;");
-    console.log("%c████╗  ██║██╔════╝██╔═══██╗████╗  ██║    ██╔══██╗██╔═══██╗████╗ ████║██║████╗  ██║██╔══██╗████╗  ██║██╔════╝██╔════╝", 
+    console.log("%c████╗  ██║██╔════╝██╔═══██╗████╗  ██║    ██╔══██╗██╔═══██╗████╗ ████║██║████╗  ██║██╔══██╗████╗  ██║██╔════╝██╔════╝",
       "color: #00ffff; font-weight: bold;");
-    console.log("%c██╔██╗ ██║█████╗  ██║   ██║██╔██╗ ██║    ██║  ██║██║   ██║██╔████╔██║██║██╔██╗ ██║███████║██╔██╗ ██║██║     █████╗  ", 
+    console.log("%c██╔██╗ ██║█████╗  ██║   ██║██╔██╗ ██║    ██║  ██║██║   ██║██╔████╔██║██║██╔██╗ ██║███████║██╔██╗ ██║██║     █████╗  ",
       "color: #00ffff; font-weight: bold;");
-    console.log("%c██║╚██╗██║██╔══╝  ██║   ██║██║╚██╗██║    ██║  ██║██║   ██║██║╚██╔╝██║██║██║╚██╗██║██╔══██║██║╚██╗██║██║     ██╔══╝  ", 
+    console.log("%c██║╚██╗██║██╔══╝  ██║   ██║██║╚██╗██║    ██║  ██║██║   ██║██║╚██╔╝██║██║██║╚██╗██║██╔══██║██║╚██╗██║██║     ██╔══╝  ",
       "color: #00ffff; font-weight: bold;");
-    console.log("%c██║ ╚████║███████╗╚██████╔╝██║ ╚████║    ██████╔╝╚██████╔╝██║ ╚═╝ ██║██║██║ ╚████║██║  ██║██║ ╚████║╚██████╗███████╗", 
+    console.log("%c██║ ╚████║███████╗╚██████╔╝██║ ╚████║    ██████╔╝╚██████╔╝██║ ╚═╝ ██║██║██║ ╚████║██║  ██║██║ ╚████║╚██████╗███████╗",
       "color: #00ffff; font-weight: bold;");
-    console.log("%c╚═╝  ╚═══╝╚══════╝ ╚═════╝ ╚═╝  ╚═══╝    ╚═════╝  ╚═════╝ ╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝╚══════╝", 
+    console.log("%c╚═╝  ╚═══╝╚══════╝ ╚═════╝ ╚═╝  ╚═══╝    ╚═════╝  ╚═════╝ ╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝╚══════╝",
       "color: #00ffff; font-weight: bold;");
-    console.log("%c                                       A CYBERPUNK HACKING CARD GAME                                                  ", 
+    console.log("%c                                       A CYBERPUNK HACKING CARD GAME\n                                   ",
       "color: #ffffff; background-color: #222; font-size: 14px;");
     console.log("");
   }
+
+  displayError(message: string): void {
+    console.error(`Error: ${message}`);
+  }
+
+  displayMessage(message: string): void {
+    console.log(message);
+  }
+
+  displayHelp(commands: Record<string, string>): void {
+    console.log("\nAvailable commands:");
+    Object.entries(commands).forEach(([cmd, desc]) => {
+      console.log(`  ${cmd.padEnd(10)} - ${desc}`);
+    });
+  }
+
+  displayCommandHelp(command: string, description: string): void {
+    console.log(`\n${command} - ${description}`);
+  }
+}
+
+interface GameStats {
+  credits: number;
+  memory: {
+    total: number;
+    used: number;
+  };
+  agendaPoints: number;
+  clicksRemaining: number;
+}
+
+interface SystemStatus {
+  neuralInterface: string;
+  traceDetection: number;
+  securityLevel: string;
 } 
