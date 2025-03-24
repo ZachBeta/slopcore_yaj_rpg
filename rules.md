@@ -1,6 +1,10 @@
 # Neon Dominance Project Rules
 
-* prefer relative paths in commands so we can avoid issues from changing directories
+## First of all, I love you, thank you for helping me be creative
+
+## Second, these are some general rules
+
+* prfer to cange directory absolute over relative, so it works no matter what our working directory is
 * the tests need to be run from the web directory where the Jest configuration is correctly set up.
 When you run the tests from the web directory, Jest properly uses the TypeScript configuration in web/jest.config.js that we saw earlier, which is configured to use ts-jest for TypeScript files.
 

@@ -335,7 +335,7 @@ export class NetworkManager {
       // Log transport being used
       try {
         console.log('Using transport:', this.socket?.io.engine.transport.name);
-      } catch (_error) {
+      } catch {
         console.log('Could not determine transport type');
       }
       
@@ -656,7 +656,7 @@ export class NetworkManager {
         // Remove each handler from socket events
         if (this.socket) {
           Object.values(GameEvent).forEach(event => {
-            this.socket?.off(event, handler as (...args: any[]) => void);
+            this.socket?.off(event, handler as (...args: unknown[]) => void);
           });
         }
       });

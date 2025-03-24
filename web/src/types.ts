@@ -1,23 +1,38 @@
+// Unit types to replace primitive numbers
+export type Seconds = number; 
+export type Milliseconds = number;
+export type UnitInterval = number; // A number between 0 and 1
+export type Coordinate = number; // A spatial coordinate
+export type Degree = number; // Angle in degrees
+export type FramesPerSecond = number; // FPS metric
+export type Count = number; // Generic count of items
+export type Dimension = number; // Size dimension in game units
+export type Percentage = number; // A number between 0 and 100
+
+// Identifier types
+export type PlayerId = string;
+export type ColorCode = string; // Hex color code
+
 export interface Color {
-  r: number;
-  g: number;
-  b: number;
+  r: UnitInterval;
+  g: UnitInterval;
+  b: UnitInterval;
 }
 
 export interface Position {
-  x: number;
-  y: number;
-  z: number;
+  x: Coordinate;
+  y: Coordinate;
+  z: Coordinate;
 }
 
 export interface Rotation {
-  x: number;
-  y: number;
-  z: number;
+  x: Degree;
+  y: Degree;
+  z: Degree;
 }
 
 export interface Player {
-  id: string;
+  id: PlayerId;
   position: Position;
   rotation: Rotation;
   color: Color;
@@ -26,58 +41,60 @@ export interface Player {
 export type ConnectionStatus = 'connected' | 'disconnected' | 'error';
 
 export interface ServerDiagnostics {
-  uptime: number;
-  fps: number;
-  playerCount: number;
-  colorPoolSize: number;
-  availableColors: number;
-  lockedColors: number;
-  randomColors: number;
-  connections: number;
+  uptime: Seconds;
+  fps: FramesPerSecond;
+  playerCount: Count;
+  colorPoolSize: Count;
+  availableColors: Count;
+  lockedColors: Count;
+  randomColors: Count;
+  connections: Count;
 }
 
+export type ObstacleType = 'cube' | 'cylinder';
+
 export interface ObstacleData {
-  type: 'cube' | 'cylinder';
+  type: ObstacleType;
   position: Position;
   scale: Position;
   color: Color;
-  size?: number;
-  radius?: number;
-  height?: number;
+  size?: Dimension;
+  radius?: Dimension;
+  height?: Dimension;
 }
 
 export interface MapData {
-  worldSize: number;
+  worldSize: Dimension;
   obstacles: ObstacleData[];
 }
 
 export interface StateVerificationResult {
-  colorDrift: number;
-  positionDrift: number;
+  colorDrift: UnitInterval;
+  positionDrift: Dimension;
   expectedState: {
     color: Color;
     position: Position;
   };
   needsCorrection: boolean;
-  timestamp: number;
+  timestamp: Milliseconds;
 }
 
 export interface ClientStateResponse {
   position: Position;
   color: Color;
-  timestamp: number;
+  timestamp: Milliseconds;
 }
 
 export interface DebugState {
   players: {
-    id: string;
+    id: PlayerId;
     position: Position;
     color: Color;
     expectedColor?: Color;
   }[];
   colorPool: {
     available: Color[];
-    locked: [string, Color][];
+    locked: [PlayerId, Color][];
     random: Color[];
     total: Color[];
   };

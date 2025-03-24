@@ -1,4 +1,9 @@
-import { InputAction, getActionFromKeyCode } from '../constants/input';
+import { InputAction, getActionFromKeyCode, KeyCode } from '../constants/input';
+import { Milliseconds } from '../types';
+
+// Define more specific types for input manager
+export type ActionHandler = (action: InputAction) => void;
+export type DemoInterval = ReturnType<typeof setInterval>;
 
 export interface InputState {
   activeActions: Set<InputAction>;
@@ -9,13 +14,13 @@ export interface InputState {
 
 export class InputManager {
   private state: InputState;
-  private onActionDown: (action: InputAction) => void;
-  private onActionUp: (action: InputAction) => void;
-  private demoModeInterval: ReturnType<typeof setInterval> | null = null;
+  private onActionDown: ActionHandler;
+  private onActionUp: ActionHandler;
+  private demoModeInterval: DemoInterval | null = null;
 
   constructor(
-    onActionDown: (action: InputAction) => void,
-    onActionUp: (action: InputAction) => void
+    onActionDown: ActionHandler,
+    onActionUp: ActionHandler
   ) {
     this.state = {
       activeActions: new Set(),
@@ -77,7 +82,7 @@ export class InputManager {
   /**
    * Check if a specific key code is active
    */
-  public isKeyActive(keyCode: string): boolean {
+  public isKeyActive(keyCode: KeyCode): boolean {
     const action = getActionFromKeyCode(keyCode);
     return action ? this.state.activeActions.has(action) : false;
   }
@@ -85,7 +90,7 @@ export class InputManager {
   /**
    * Enable demo mode with a sequence of actions
    */
-  public enableDemoMode(actions: InputAction[], interval: number = 1000): void {
+  public enableDemoMode(actions: InputAction[], interval: Milliseconds = 1000): void {
     if (this.state.isDemoMode) {
       this.disableDemoMode();
     }
