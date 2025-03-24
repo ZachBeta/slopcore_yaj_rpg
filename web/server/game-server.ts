@@ -433,7 +433,7 @@ export class GameServer {
           }));
 
         // First send the player their own data
-        socket.emit(GameEvent.PLAYER_JOIN, { id: socket.id, position: player.position, rotation: player.rotation, color: player.color });
+        socket.emit(GameEvent.PLAYER_JOINED, player);
         
         // Send the map data to the client
         socket.emit(GameEvent.MAP_DATA, this.mapData);

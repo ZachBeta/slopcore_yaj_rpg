@@ -1,7 +1,9 @@
 import { GameServer } from './game-server';
 import { Color, Player } from '../src/types';
 import { GameEvent } from '../src/constants';
-import { TestSocket, TestServer, getColorKey, isColorUnique, simulatePlayerJoining } from './simple-test-helper';
+import { TestSocket, getColorKey, isColorUnique, simulatePlayerJoining } from './simple-test-helper';
+import { Server, Socket } from 'socket.io';
+import { DefaultEventsMap } from 'socket.io/dist/typed-events';
 
 // Make a test version of GameServer that allows access to protected members
 class TestGameServer extends GameServer {
@@ -18,17 +20,20 @@ class TestGameServer extends GameServer {
     super(mockHttpServer, 0, { isTestMode: true });
     
     // Replace the socket.io server with our mock
-    this['io'] = {
+    const mockServer = {
       on: jest.fn((event, callback) => {
         if (event === 'connection') {
           this.connectionCallback = callback;
         }
+        return mockServer;
       }),
       emit: jest.fn(),
       sockets: {
         sockets: new Map()
       }
-    };
+    } as unknown as Server;
+    
+    this['io'] = mockServer;
   }
   
   // Override to avoid actual server
@@ -60,12 +65,12 @@ class TestGameServer extends GameServer {
   // Helper to connect a socket
   connectSocket(socket: TestSocket): void {
     if (this.connectionCallback) {
-      this.connectionCallback(socket);
+      this.connectionCallback(socket as unknown as Socket);
     }
   }
   
   // Connection callback storage
-  private connectionCallback: (socket: TestSocket) => void;
+  private connectionCallback!: (socket: Socket<DefaultEventsMap>) => void;
 }
 
 describe('Game Server Core Logic', () => {

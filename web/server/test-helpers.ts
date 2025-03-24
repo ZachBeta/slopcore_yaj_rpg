@@ -58,8 +58,8 @@ export async function createSocketTestEnvironment<T extends GameServer = GameSer
       const timeout = setTimeout(() => {
         console.error('Connection timeout - client connected:', client.connected);
         client.disconnect();
-        reject(new Error('Connection timeout'));
-      }, 10000);
+        reject(new Error('Connection timeout - client connected but no PLAYER_JOINED event received'));
+      }, 2000);
       
       client.on('connect', () => {
         console.log('Socket connected, sending player_join event');
@@ -72,6 +72,11 @@ export async function createSocketTestEnvironment<T extends GameServer = GameSer
         console.log('Received player_joined event with id:', player.id);
         clearTimeout(timeout);
         resolve({ player, socket: client });
+      });
+      
+      // Debug events
+      client.onAny((event, ...args) => {
+        console.log(`Received event: ${event}`, args);
       });
       
       client.on('connect_error', (err) => {

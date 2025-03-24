@@ -2,6 +2,7 @@
 
 ## bash commands
 
+* we need to be in the `web` directory to run `npm` commands
 * long timeouts are a symptom of something else going wrong, we need more assertions
 * mock dom is ok, use real objects for everything else
 * run npm from web directory

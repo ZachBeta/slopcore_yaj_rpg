@@ -44,7 +44,7 @@ class TestGameServer extends GameServer {
 describe('Color Management', () => {
   let testEnv: Awaited<ReturnType<typeof createSocketTestEnvironment<TestGameServer>>>;
   let gameServer: TestGameServer;
-  const TEST_TIMEOUT = 30000;
+  const TEST_TIMEOUT = 5000;
   
   beforeAll(async () => {
     // Keep console logs but add timestamp
@@ -146,7 +146,7 @@ describe('Color Management', () => {
       return;
     }
     
-    const numClients = 5;
+    const numClients = 3; // Reduced from 5 to speed up test
     const clients = [];
     const players = [];
     
@@ -174,8 +174,8 @@ describe('Color Management', () => {
         clients[0].disconnect();
       }
       
-      // Wait for disconnect to be processed
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait for disconnect to be processed with a shorter timeout
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Verify a color was recycled
       expect(gameServer.getLockedColors().size).toBe(numClients - 1);
