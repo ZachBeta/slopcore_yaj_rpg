@@ -1,5 +1,9 @@
 # Neon Dominance Project Rules
 
+* prefer relative paths in commands so we can avoid issues from changing directories
+* the tests need to be run from the web directory where the Jest configuration is correctly set up.
+When you run the tests from the web directory, Jest properly uses the TypeScript configuration in web/jest.config.js that we saw earlier, which is configured to use ts-jest for TypeScript files.
+
 ## bash commands
 
 * we need to be in the `web` directory to run `npm` commands

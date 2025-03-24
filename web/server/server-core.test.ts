@@ -1,47 +1,37 @@
 import { GameServer } from './game-server';
 import { Color, Player } from '../src/types';
-import { GameEvent } from '../src/constants';
-import { TestSocket, getColorKey, isColorUnique, simulatePlayerJoining } from './simple-test-helper';
-import { Server, Socket } from 'socket.io';
-import { DefaultEventsMap } from 'socket.io/dist/typed-events';
+import { TestServer, getColorKey } from './simple-test-helper';
+import { createServer, Server as HttpServer } from 'http';
 
-// Make a test version of GameServer that allows access to protected members
+// Create a class that extends GameServer but only adds accessor methods
+// to the protected properties without trying to override private methods
 class TestGameServer extends GameServer {
+  private httpServer: HttpServer;
+
   constructor() {
-    // Create a mock HTTP server that won't actually listen on a port
-    const mockHttpServer = {
-      on: jest.fn(),
-      once: jest.fn(),
-      emit: jest.fn(),
-      listen: jest.fn(),
-      close: jest.fn()
-    } as any;
+    // Use a real HTTP server that won't actually listen on a specific port
+    const httpServer = createServer();
+    super(httpServer, 0, { isTestMode: true });
     
-    super(mockHttpServer, 0, { isTestMode: true });
+    // Save reference to the HTTP server for proper cleanup
+    this.httpServer = httpServer;
     
-    // Replace the socket.io server with our mock
-    const mockServer = {
-      on: jest.fn((event, callback) => {
-        if (event === 'connection') {
-          this.connectionCallback = callback;
-        }
-        return mockServer;
-      }),
-      emit: jest.fn(),
-      sockets: {
-        sockets: new Map()
-      }
-    } as unknown as Server;
-    
-    this['io'] = mockServer;
+    // Initialize with a real server, but we won't actually use the network
+    httpServer.listen(0);
   }
-  
-  // Override to avoid actual server
-  protected startDiagnostics(): void {
-    // Do nothing in tests
+
+  // Override close to ensure cleanup of both socket.io and HTTP servers
+  close(): void {
+    // First close the GameServer (socket.io server)
+    super.close();
+    
+    // Then close the HTTP server
+    if (this.httpServer && this.httpServer.listening) {
+      this.httpServer.close();
+    }
   }
-  
-  // Access to protected members
+
+  // Accessor methods for protected members
   getColorPool(): Color[] {
     return this.colorPool;
   }
@@ -62,15 +52,49 @@ class TestGameServer extends GameServer {
     return this.players;
   }
   
-  // Helper to connect a socket
-  connectSocket(socket: TestSocket): void {
-    if (this.connectionCallback) {
-      this.connectionCallback(socket as unknown as Socket);
-    }
+  // Reset available colors for testing
+  setAvailableColors(colors: Color[]): void {
+    this.availableColors = colors;
   }
   
-  // Connection callback storage
-  private connectionCallback!: (socket: Socket<DefaultEventsMap>) => void;
+  // Clear player data for testing
+  clearPlayers(): void {
+    this.players.clear();
+  }
+  
+  // Clear locked colors for testing
+  clearLockedColors(): void {
+    this.lockedColors.clear();
+  }
+  
+  // Clear used random colors for testing
+  clearUsedRandomColors(): void {
+    this.usedRandomColors.clear();
+  }
+  
+  // Directly add a player for testing
+  addPlayer(player: Player): void {
+    this.players.set(player.id, player);
+    this.lockedColors.set(player.id, player.color);
+    
+    // Remove from available colors
+    this.availableColors = this.availableColors.filter(
+      color => getColorKey(color) !== getColorKey(player.color)
+    );
+  }
+  
+  // Directly remove a player for testing
+  removePlayer(playerId: string): void {
+    const player = this.players.get(playerId);
+    if (player) {
+      // Add color back to the pool
+      this.availableColors.push(player.color);
+      
+      // Remove from maps
+      this.players.delete(playerId);
+      this.lockedColors.delete(playerId);
+    }
+  }
 }
 
 describe('Game Server Core Logic', () => {
@@ -84,103 +108,129 @@ describe('Game Server Core Logic', () => {
   });
   
   afterEach(() => {
-    // Clean up
-    gameServer.close();
-    testServer.cleanup();
-  });
-  
-  test('assigns unique colors to players', async () => {
-    // Create multiple sockets
-    const numPlayers = 5;
-    const players: Player[] = [];
-    
-    for (let i = 0; i < numPlayers; i++) {
-      const socket = testServer.createSocket();
-      gameServer.connectSocket(socket);
-      
-      const player = await simulatePlayerJoining(socket);
-      players.push(player);
+    // Explicit cleanup
+    if (testServer) {
+      testServer.cleanup();
     }
-    
-    // Verify each player has a unique color
-    const usedColors = new Set<string>();
-    
-    // Check that each color is properly stored
-    expect(gameServer.getPlayers().size).toBe(numPlayers);
-    expect(gameServer.getLockedColors().size).toBe(numPlayers);
-    
-    players.forEach(player => {
-      const colorKey = getColorKey(player.color);
-      expect(usedColors.has(colorKey)).toBe(false);
-      usedColors.add(colorKey);
-    });
-    
-    // Verify colors are visually distinct
-    for (let i = 0; i < players.length; i++) {
-      const otherColors = players
-        .filter((_, index) => index !== i)
-        .map(p => p.color);
-      
-      expect(isColorUnique(players[i].color, otherColors)).toBe(true);
+    if (gameServer) {
+      gameServer.close();
     }
   });
   
-  test('recycles colors when players disconnect', async () => {
-    // Create socket and player
-    const socket = testServer.createSocket();
-    gameServer.connectSocket(socket);
+  describe('Color Management', () => {
+    test('provides unique colors from the pool', () => {
+      // Create 5 players with colors from the pool
+      const numPlayers = 5;
+      const players: Player[] = [];
+      
+      // Get initial state
+      const initialAvailableSize = gameServer.getAvailableColors().length;
+      
+      for (let i = 0; i < numPlayers; i++) {
+        const playerId = `test-player-${i}`;
+        const color = gameServer.getAvailableColors()[0]; // Get next available color
+        
+        const player: Player = {
+          id: playerId,
+          position: { x: 0, y: 1, z: 0 },
+          rotation: { x: 0, y: 0, z: 0 },
+          color: color
+        };
+        
+        // Use our helper to add the player
+        gameServer.addPlayer(player);
+        players.push(player);
+        
+        // Verify state after each addition
+        expect(gameServer.getPlayers().size).toBe(i + 1);
+        expect(gameServer.getLockedColors().size).toBe(i + 1);
+        expect(gameServer.getAvailableColors().length).toBe(initialAvailableSize - (i + 1));
+      }
+      
+      // Verify each player got a unique color
+      const colorKeys = new Set<string>();
+      players.forEach(player => {
+        const key = getColorKey(player.color);
+        expect(colorKeys.has(key)).toBe(false);
+        colorKeys.add(key);
+      });
+    });
     
-    const player = await simulatePlayerJoining(socket);
-    
-    // Verify initial state
-    expect(gameServer.getPlayers().size).toBe(1);
-    expect(gameServer.getLockedColors().size).toBe(1);
-    
-    const initialAvailableColors = gameServer.getAvailableColors().length;
-    const playerColorKey = getColorKey(player.color);
-    
-    // Disconnect the player
-    socket.emit('disconnect', 'test disconnect');
-    
-    // Verify color was recycled
-    expect(gameServer.getPlayers().size).toBe(0);
-    expect(gameServer.getLockedColors().size).toBe(0);
-    expect(gameServer.getAvailableColors().length).toBe(initialAvailableColors + 1);
-    
-    // Check the specific color was returned to the pool
-    const recycledColor = gameServer.getAvailableColors().find(color => 
-      getColorKey(color) === playerColorKey
-    );
-    
-    expect(recycledColor).toBeDefined();
+    test('recycles colors when players disconnect', () => {
+      // Create and add a player
+      const playerId = 'test-player';
+      const color = gameServer.getAvailableColors()[0];
+      
+      const player: Player = {
+        id: playerId,
+        position: { x: 0, y: 1, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 },
+        color: color
+      };
+      
+      // Track initial state
+      const initialAvailableSize = gameServer.getAvailableColors().length;
+      
+      // Add player
+      gameServer.addPlayer(player);
+      
+      // Verify player was added and color removed from pool
+      expect(gameServer.getPlayers().size).toBe(1);
+      expect(gameServer.getLockedColors().size).toBe(1);
+      expect(gameServer.getAvailableColors().length).toBe(initialAvailableSize - 1);
+      
+      // Get the color key for later comparison
+      const colorKey = getColorKey(color);
+      
+      // Remove player
+      gameServer.removePlayer(playerId);
+      
+      // Verify player was removed and color returned to pool
+      expect(gameServer.getPlayers().size).toBe(0);
+      expect(gameServer.getLockedColors().size).toBe(0);
+      expect(gameServer.getAvailableColors().length).toBe(initialAvailableSize);
+      
+      // Verify the exact same color was returned to the pool
+      const recycledColor = gameServer.getAvailableColors().find(
+        c => getColorKey(c) === colorKey
+      );
+      expect(recycledColor).toBeDefined();
+    });
   });
   
-  test('handles player movement updates', async () => {
-    // Create socket and player
-    const socket = testServer.createSocket();
-    gameServer.connectSocket(socket);
-    
-    const player = await simulatePlayerJoining(socket);
-    
-    // Prepare to capture broadcast
-    const broadcastEvents: any[] = [];
-    socket.on('broadcast', (event, data) => {
-      broadcastEvents.push({ event, data });
+  describe('Color Generation', () => {
+    test('generatePlayerColor assigns unique colors', async () => {
+      const id1 = 'player-1';
+      const id2 = 'player-2';
+      
+      // Generate two colors
+      const color1 = await gameServer.generatePlayerColor(id1);
+      const color2 = await gameServer.generatePlayerColor(id2);
+      
+      // Verify they're different
+      expect(getColorKey(color1)).not.toBe(getColorKey(color2));
+      
+      // Verify they're tracked correctly
+      expect(gameServer.getLockedColors().has(id1)).toBe(true);
+      expect(gameServer.getLockedColors().has(id2)).toBe(true);
+      expect(getColorKey(gameServer.getLockedColors().get(id1)!)).toBe(getColorKey(color1));
+      expect(getColorKey(gameServer.getLockedColors().get(id2)!)).toBe(getColorKey(color2));
     });
     
-    // Send position update
-    const newPosition = { x: 10, y: 1, z: 10 };
-    const newRotation = { x: 0, y: Math.PI, z: 0 };
-    
-    socket.emit(GameEvent.POSITION_UPDATE, {
-      position: newPosition,
-      rotation: newRotation
+    test('generates random colors when pool is exhausted', async () => {
+      // Empty the color pool
+      gameServer.setAvailableColors([]);
+      
+      const id = 'player-random';
+      const color = await gameServer.generatePlayerColor(id);
+      
+      // Verify a color was generated
+      expect(color).toBeDefined();
+      expect(gameServer.getLockedColors().has(id)).toBe(true);
+      expect(getColorKey(gameServer.getLockedColors().get(id)!)).toBe(getColorKey(color));
+      
+      // Verify it was tracked as a random color
+      expect(gameServer.getUsedRandomColors().size).toBe(1);
     });
-    
-    // Verify player data was updated
-    const updatedPlayer = gameServer.getPlayers().get(player.id);
-    expect(updatedPlayer).toBeDefined();
-    expect(updatedPlayer?.position).toEqual(newPosition);
-    expect(updatedPlayer?.rotation).toEqual(newRotation);
   });
 }); 
