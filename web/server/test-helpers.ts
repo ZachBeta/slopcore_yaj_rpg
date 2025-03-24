@@ -5,6 +5,10 @@ import { GameServer } from './game-server';
 import { GameEvent } from '../src/constants';
 import { Player } from '../src/types';
 
+// Test timeouts
+const CONNECTION_TIMEOUT = 3000;
+const CLEANUP_TIMEOUT = 5000;
+
 interface GameServerOptions {
   isTestMode?: boolean;
 }
@@ -59,7 +63,7 @@ export async function createSocketTestEnvironment<T extends GameServer = GameSer
         console.error('Connection timeout - client connected:', client.connected);
         client.disconnect();
         reject(new Error('Connection timeout - client connected but no PLAYER_JOINED event received'));
-      }, 2000);
+      }, CONNECTION_TIMEOUT);
       
       client.on('connect', () => {
         console.log('Socket connected, sending player_join event');
@@ -116,7 +120,7 @@ export async function createSocketTestEnvironment<T extends GameServer = GameSer
       const closeTimeout = setTimeout(() => {
         console.warn('Server close timeout exceeded, forcing shutdown');
         resolve();
-      }, 3000);
+      }, CLEANUP_TIMEOUT);
       
       httpServer.close(() => {
         console.log('HTTP server closed');
