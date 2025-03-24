@@ -29,7 +29,9 @@ import {
   PlayedCard,
   Server,
   CommandHandler,
-  CommandArguments
+  CommandArguments,
+  RunState,
+  CardTrigger
 } from './game-types';
 
 // Command documentation
@@ -137,28 +139,26 @@ export class TerminalGame {
   private servers: Record<ServerName, Server> = {};
 
   // Command handlers map
-  private commandHandlers: Record<CommandName, CommandHandler> = {};
+  private commandHandlers: Record<CommandName, CommandHandler> = {
+    help: (args: string[]) => this.cmdHelp({ command: 'help', args, options: {} }),
+    man: (args: string[]) => this.cmdMan({ command: 'man', args, options: {} }),
+    draw: (args: string[]) => this.cmdDraw({ command: 'draw', args, options: {} }),
+    hand: (args: string[]) => this.cmdHand({ command: 'hand', args, options: {} }),
+    install: (args: string[]) => this.cmdInstall({ command: 'install', args, options: {} }),
+    run: (args: string[]) => this.cmdRun({ command: 'run', args, options: {} }),
+    end: (args: string[]) => this.cmdEnd({ command: 'end', args, options: {} }),
+    info: (args: string[]) => this.cmdInfo({ command: 'info', args, options: {} }),
+    discard: (args: string[]) => this.cmdDiscard({ command: 'discard', args, options: {} }),
+    system: (args: string[]) => this.cmdSystem({ command: 'system', args, options: {} }),
+    installed: (args: string[]) => this.cmdInstalled({ command: 'installed', args, options: {} }),
+    credits: (args: string[]) => this.cmdCredits({ command: 'credits', args, options: {} }),
+    memory: (args: string[]) => this.cmdMemory({ command: 'memory', args, options: {} }),
+    jack_out: (args: string[]) => this.cmdJackOut({ command: 'jack_out', args, options: {} })
+  };
 
   constructor(randomSeed: RandomSeed = Math.floor(Math.random() * 100000)) {
     this.randomSeed = randomSeed;
     this.renderer = new ConsoleRenderer();
-    
-    this.commandHandlers = {
-      help: (args: string[]) => this.cmdHelp({ command: 'help', args, options: {} }),
-      man: (args: string[]) => this.cmdMan({ command: 'man', args, options: {} }),
-      draw: (args: string[]) => this.cmdDraw({ command: 'draw', args, options: {} }),
-      hand: (args: string[]) => this.cmdHand({ command: 'hand', args, options: {} }),
-      install: (args: string[]) => this.cmdInstall({ command: 'install', args, options: {} }),
-      run: (args: string[]) => this.cmdRun({ command: 'run', args, options: {} }),
-      end: (args: string[]) => this.cmdEnd({ command: 'end', args, options: {} }),
-      info: (args: string[]) => this.cmdInfo({ command: 'info', args, options: {} }),
-      discard: (args: string[]) => this.cmdDiscard({ command: 'discard', args, options: {} }),
-      system: (args: string[]) => this.cmdSystem({ command: 'system', args, options: {} }),
-      installed: (args: string[]) => this.cmdInstalled({ command: 'installed', args, options: {} }),
-      credits: (args: string[]) => this.cmdCredits({ command: 'credits', args, options: {} }),
-      memory: (args: string[]) => this.cmdMemory({ command: 'memory', args, options: {} }),
-      jack_out: (args: string[]) => this.cmdJackOut({ command: 'jack_out', args, options: {} })
-    };
   }
 
   /**
@@ -776,23 +776,42 @@ export class TerminalGame {
    */
   getGameState(): GameState {
     return {
-      playerCredits: this.playerCredits,
-      memoryUnitsAvailable: this.memoryUnitsAvailable,
-      memoryUnitsUsed: this.memoryUnitsUsed,
-      playerSide: this.playerSide,
-      opponentSide: this.opponentSide,
-      currentPhase: this.currentPhase,
-      clicksRemaining: this.clicksRemaining,
-      maxClicks: this.maxClicks,
-      turnNumber: this.turnNumber,
-      activePlayer: this.activePlayer,
-      runnerAgendaPoints: this.runnerAgendaPoints,
-      corpAgendaPoints: this.corpAgendaPoints,
-      gameOver: this.gameOver,
-      winMessage: this.winMessage,
-      handCards: this.handCards,
-      playedCards: this.playedCards,
-      currentRun: this.currentRun,
+      resources: {
+        credits: this.playerCredits,
+        memoryAvailable: this.memoryUnitsAvailable,
+        memoryUsed: this.memoryUnitsUsed
+      },
+      turn: {
+        phase: this.currentPhase,
+        clicksRemaining: this.clicksRemaining,
+        maxClicks: this.maxClicks,
+        turnNumber: this.turnNumber,
+        activePlayer: this.activePlayer
+      },
+      win: {
+        runnerAgendaPoints: this.runnerAgendaPoints,
+        corpAgendaPoints: this.corpAgendaPoints,
+        agendaPointsToWin: this.agendaPointsToWin,
+        runnerCardsRemaining: this.runnerCardsRemaining,
+        corpCardsRemaining: this.corpCardsRemaining,
+        gameOver: this.gameOver,
+        winMessage: this.winMessage
+      },
+      cards: {
+        playerDeck: this.playerDeck,
+        handCards: this.handCards,
+        playedCards: this.playedCards,
+        selectedCardIndex: this.selectedCardIndex
+      },
+      run: this.currentRun,
+      command: {
+        history: this.commandHistory,
+        historyIndex: this.commandHistoryIndex
+      },
+      components: {
+        renderer: this.renderer,
+        aiOpponent: this.aiOpponent
+      },
       servers: this.servers
     };
   }
@@ -922,10 +941,6 @@ export class TerminalGame {
     return this.currentRun;
   }
 
-  public isGameOver(): boolean {
-    return this.gameOver;
-  }
-
   public getWinMessage(): string {
     return this.winMessage;
   }
@@ -957,5 +972,9 @@ export class TerminalGame {
 
   public setPlayerCredits(credits: number): void {
     this.playerCredits = credits;
+  }
+
+  public getClicksRemaining(): ClickCount {
+    return this.clicksRemaining;
   }
 } 

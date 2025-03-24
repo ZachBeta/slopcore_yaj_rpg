@@ -332,15 +332,21 @@ describe('Player Movement with Orientation', () => {
       
       // Verify the drone moved in a reasonable pattern
       // The start and end points should be different
-      expect(trajectory[0].position.distanceTo(trajectory[5].position)).toBeGreaterThan(1);
+      const start = trajectory[0];
+      const end = trajectory[5];
+      if (start && end) {
+        expect(start.position.distanceTo(end.position)).toBeGreaterThan(1);
+      }
       
       // Because of the fixed movement direction, we can't check for the exact Y difference
       // We just need to make sure movement occurred between each step
-      expect(trajectory[0].position.distanceTo(trajectory[1].position)).toBeGreaterThan(0.5);
-      expect(trajectory[1].position.distanceTo(trajectory[2].position)).toBeGreaterThan(0.5);
-      expect(trajectory[2].position.distanceTo(trajectory[3].position)).toBeGreaterThan(0.5);
-      expect(trajectory[3].position.distanceTo(trajectory[4].position)).toBeGreaterThan(0.5);
-      expect(trajectory[4].position.distanceTo(trajectory[5].position)).toBeGreaterThan(0.5);
+      for (let i = 0; i < trajectory.length - 1; i++) {
+        const current = trajectory[i];
+        const next = trajectory[i + 1];
+        if (current && next) {
+          expect(current.position.distanceTo(next.position)).toBeGreaterThan(0.5);
+        }
+      }
     });
   });
 }); 

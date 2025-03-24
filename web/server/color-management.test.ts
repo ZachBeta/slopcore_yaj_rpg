@@ -201,16 +201,14 @@ describe('Color Management', () => {
   }, TEST_TIMEOUT);
 
   it('should handle client disconnection', async () => {
-    const server = createServer();
-    const gameServer = new TestGameServer(server, 0);
-    const clients = await createTestClients(1);
-    
+    const { gameServer, clients } = await createTestClients(1);
     if (clients.length > 0) {
       const client = clients[0];
       if (client.connected) {
         client.disconnect();
       }
     }
+    gameServer.close();
   });
 
   afterEach(() => {

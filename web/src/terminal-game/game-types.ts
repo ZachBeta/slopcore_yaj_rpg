@@ -120,22 +120,12 @@ export const validCommands = {
 } as const;
 
 export interface GameState {
-  playerCredits: Credits;
-  memoryUnitsAvailable: MemoryUnits;
-  memoryUnitsUsed: MemoryUnits;
-  playerSide: PlayerSide;
-  opponentSide: PlayerSide;
-  currentPhase: GamePhase;
-  clicksRemaining: ClickCount;
-  maxClicks: ClickCount;
-  turnNumber: TurnNumber;
-  activePlayer: PlayerSide | null;
-  runnerAgendaPoints: AgendaPoints;
-  corpAgendaPoints: AgendaPoints;
-  gameOver: boolean;
-  winMessage: string;
-  handCards: Card[];
-  playedCards: PlayedCard[];
-  currentRun: RunState | null;
+  resources: GameResources;
+  turn: TurnState;
+  win: WinState;
+  cards: CardState;
+  run: RunState | null;
+  command: CommandState;
+  components: GameComponents;
   servers: Record<ServerName, Server>;
 } 

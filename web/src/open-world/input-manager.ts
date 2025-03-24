@@ -106,12 +106,16 @@ export class InputManager {
       }
 
       const action = this.state.demoModeActions[this.state.demoModeIndex];
-      this.handleActionDown(action);
-      
-      // Release the action after a short delay
-      setTimeout(() => {
-        this.handleActionUp(action);
-      }, interval * 0.8);
+      if (action) {
+        this.handleActionDown(action);
+        
+        // Release the action after a short delay
+        setTimeout(() => {
+          if (action) {
+            this.handleActionUp(action);
+          }
+        }, interval * 0.8);
+      }
 
       this.state.demoModeIndex++;
     }, interval);
