@@ -164,11 +164,17 @@ export interface Card {
   type: 'program' | 'hardware' | 'resource' | 'event' | 'ice' | 'agenda' | 'upgrade';
   subtype?: string;
   cost: number;
+  installCost?: number;
   memoryUsage?: number;
   strength?: number;
   description: string;
   effect?: (gameState: GameState) => void;
   ascii_art?: string[];
+  // Game-specific properties
+  rezzed?: boolean;
+  faceUp?: boolean;
+  installed?: boolean;
+  recurringCredits?: number;
 }
 
 /**

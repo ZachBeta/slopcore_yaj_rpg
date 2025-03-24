@@ -3,6 +3,14 @@ import { GamePhase } from './game-phases';
 import { ConsoleRenderer } from './console-renderer';
 import { AIOpponent } from './ai-opponent';
 
+export { Card };
+
+export interface Agenda extends Card {
+  advancement: number;
+  pointValue: number;
+  advancementRequired: number;
+}
+
 // Numeric types
 export type Credits = number;
 export type MemoryUnits = number;
@@ -54,6 +62,7 @@ export interface CardState {
 export interface RunState {
   active: boolean;
   server: ServerName;
+  target: ServerName;
   phase: 'approach' | 'encounter' | 'access';
   encounterIndex: number;
   bypassNextIce: boolean;
@@ -80,14 +89,15 @@ export interface CommandDoc {
 }
 
 export interface CommandArguments {
-  command: string;
+  command: CommandName;
   args: string[];
   options: Record<string, string>;
 }
 
 export interface PlayedCard extends Card {
-  installed?: boolean;
-  faceUp?: boolean;
+  installed: boolean;
+  faceUp: boolean;
+  rezzed?: boolean;
   recurringCredits?: number;
   memoryUsage?: number;
   installCost?: number;
@@ -98,6 +108,7 @@ export interface Server {
   ice: PlayedCard[];
   cards: Card[];
   strength?: number;
+  root?: Card | null;
 }
 
 export type CommandHandler = (args: string[]) => void;
@@ -128,4 +139,12 @@ export interface GameState {
   command: CommandState;
   components: GameComponents;
   servers: Record<ServerName, Server>;
-} 
+}
+
+export interface RunHistoryEntry {
+  server: ServerName;
+  success: boolean;
+  cardsAccessed: number;
+  iceEncountered: number;
+  creditsSpent: number;
+}

@@ -3,7 +3,12 @@
  * Handles automated opponent actions during gameplay
  */
 
-import { Card, PlayedCard } from './game-types';
+import {
+  Card,
+  PlayedCard,
+  RunHistoryEntry,
+  Agenda
+} from './game-types';
 import { AIAction } from './ai-types';
 
 interface GameState {
@@ -109,9 +114,14 @@ export class AIOpponent {
             
             if (this.credits >= iceCost) {
               this.iceInstalled.push({
+                id: `ice-${iceName.toLowerCase()}`,
                 name: iceName,
-                strength: iceStrength,
-                cost: iceCost,
+                type: 'ice',
+                cost: 2,
+                strength: 3,
+                description: 'A piece of ice',
+                installed: true,
+                faceUp: false,
                 rezzed: false
               });
               
@@ -130,11 +140,15 @@ export class AIOpponent {
           
         case 'advanceAgenda':
           if (this.random() < 0.3 && this.agenda.length < 3) {
-            const newAgenda = {
-              name: this.generateAgendaName(),
+            const newAgenda: Agenda = {
+              id: `agenda-${Date.now()}`,
+              name: 'Corporate Agenda',
+              type: 'agenda',
+              cost: 0,
+              description: 'A corporate agenda',
               advancement: 0,
-              pointValue: Math.ceil(this.random() * 2) + 1,
-              advancementRequired: (Math.ceil(this.random() * 3) + 2)
+              pointValue: 2,
+              advancementRequired: 4
             };
             
             this.agenda.push(newAgenda);

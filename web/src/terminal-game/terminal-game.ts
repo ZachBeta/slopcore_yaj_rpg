@@ -490,11 +490,28 @@ export class TerminalGame {
 
     // Remove card from hand and add to played cards
     this.handCards.splice(cardIndex, 1);
-    this.playedCards.push({
-      ...card,
+    if (!card) {
+      throw new Error('Invalid card index');
+    }
+
+    const playedCard: PlayedCard = {
+      id: card.id,
+      name: card.name,
+      type: card.type,
+      cost: card.cost,
+      description: card.description,
+      subtype: card.subtype,
+      memoryUsage: card.memoryUsage,
+      strength: card.strength,
+      effect: card.effect,
+      ascii_art: card.ascii_art,
+      installCost: card.installCost,
       installed: true,
-      faceUp: true
-    });
+      faceUp: true,
+      rezzed: false,
+      recurringCredits: card.recurringCredits
+    };
+    this.playedCards.push(playedCard);
 
     // Update resources
     this.playerCredits -= card.installCost;
@@ -536,6 +553,7 @@ export class TerminalGame {
     this.currentRun = {
       active: true,
       server: serverName,
+      target: serverName,
       phase: 'approach',
       encounterIndex: 0,
       bypassNextIce: this.bypassNextIce > 0,
@@ -905,7 +923,7 @@ export class TerminalGame {
     return this.playerCredits;
   }
 
-  public getMemoryUnitsAvailable(): number {
+  public getMemoryUnits(): MemoryUnits {
     return this.memoryUnitsAvailable;
   }
 
@@ -976,5 +994,9 @@ export class TerminalGame {
 
   public getClicksRemaining(): ClickCount {
     return this.clicksRemaining;
+  }
+
+  public isGameOver(): boolean {
+    return this.gameOver;
   }
 } 
