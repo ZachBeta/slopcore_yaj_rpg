@@ -167,11 +167,15 @@ function generatePlayerColor(): { r: number; g: number; b: number } {
 
   // If all colors are used, return a random one
   const randomColor = colors[Math.floor(Math.random() * colors.length)];
-  return { ...randomColor };
+  return {
+    r: randomColor?.r ?? Math.random(),
+    g: randomColor?.g ?? Math.random(),
+    b: randomColor?.b ?? Math.random()
+  };
 }
 
 function generateRandomColor(): Color {
-  const randomColor = {
+  const randomColor: Color = {
     r: Math.random(),
     g: Math.random(),
     b: Math.random()

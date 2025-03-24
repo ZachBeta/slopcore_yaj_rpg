@@ -1,67 +1,27 @@
-import { GameServer } from './game-server';
-import { Player, Color } from '../src/types';
-import { createSocketTestEnvironment } from './test-helpers';
 import { TestGameServer } from './server-core.test';
-import { createServer } from 'http';
+import { Color } from '../src/types';
+import { createSocketTestEnvironment } from './test-helpers';
 import { io as Client } from 'socket.io-client';
-
-// Test-specific subclass to access protected properties
-class TestGameServer extends GameServer {
-  getColorPool(): Color[] {
-    return this.colorPool;
-  }
-
-  getAvailableColors(): Color[] {
-    return this.availableColors;
-  }
-
-  getLockedColors(): Map<string, Color> {
-    return this.lockedColors;
-  }
-
-  getUsedRandomColors(): Set<Color> {
-    return this.usedRandomColors;
-  }
-
-  getPlayers(): Map<string, Player> {
-    return this.players;
-  }
-
-  setAvailableColors(colors: Color[]): void {
-    this.availableColors = colors;
-  }
-
-  clearLockedColors(): void {
-    this.lockedColors.clear();
-  }
-
-  clearUsedRandomColors(): void {
-    this.usedRandomColors.clear();
-  }
-
-  clearPlayers(): void {
-    this.players.clear();
-  }
-}
+import { createServer } from 'http';
 
 const TEST_TIMEOUT = 5000;
 
 async function createTestClients(count: number) {
-  const server = createServer();
   const gameServer = new TestGameServer();
-  const clients = [];
+  const clients: any[] = [];
 
   for (let i = 0; i < count; i++) {
     const client = Client(`http://localhost:${gameServer.getPort()}`);
     clients.push(client);
   }
 
-  return clients;
+  return { gameServer, clients };
 }
 
 describe('Color Management', () => {
   let testEnv: Awaited<ReturnType<typeof createSocketTestEnvironment<TestGameServer>>>;
   let gameServer: TestGameServer;
+  let clients: any[] = [];
   
   beforeAll(async () => {
     // Keep console logs but add timestamp
@@ -118,7 +78,6 @@ describe('Color Management', () => {
     }
 
     const numClients = 5; // Test with 5 clients
-    const clients = [];
     const players = [];
     
     try {
@@ -164,7 +123,6 @@ describe('Color Management', () => {
     }
     
     const numClients = 3; // Reduced from 5 to speed up test
-    const clients = [];
     const players = [];
     
     try {
@@ -250,6 +208,14 @@ describe('Color Management', () => {
     if (clients.length > 0) {
       const client = clients[0];
       if (client.connected) {
+        client.disconnect();
+      }
+    }
+  });
+
+  afterEach(() => {
+    for (const client of clients) {
+      if (client?.connected) {
         client.disconnect();
       }
     }

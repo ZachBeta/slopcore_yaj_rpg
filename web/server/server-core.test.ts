@@ -107,11 +107,12 @@ export class TestGameServer extends GameServer {
 }
 
 describe('Game Server Core Logic', () => {
+  let server: HttpServer;
   let gameServer: TestGameServer;
   let testServer: TestServer;
   
   beforeEach(() => {
-    // Create a fresh server for each test
+    server = createServer();
     gameServer = new TestGameServer();
     testServer = new TestServer();
   });
@@ -260,8 +261,6 @@ describe('Game Server Core Logic', () => {
   });
 
   it('should assign colors to players', async () => {
-    const server = createServer();
-    const gameServer = new TestGameServer(server, 0);
     const socketId = 'test-socket';
     const color = await gameServer.generatePlayerColor(socketId);
     
