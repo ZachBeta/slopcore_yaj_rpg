@@ -3,6 +3,7 @@ import { Player } from './player';
 import { io, Socket } from 'socket.io-client';
 import { GameEvent, GameEventPayloads, ConnectionStatus } from '../constants';
 import { DebugState } from '../types';
+import process from "node:process";
 
 // Define EventHandler type
 type EventHandler<T extends GameEvent> = (payload: GameEventPayloads[T]) => void;

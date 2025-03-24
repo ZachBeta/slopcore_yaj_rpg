@@ -2,6 +2,7 @@
 
 ## open world game
 
+* colors are good, position and rotation are not, I think we tried to extract types to help that
 * consistent map
 * deno lint over eslint
 * we need to keep our test timeouts short
