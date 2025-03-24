@@ -185,8 +185,14 @@ export class GameServer {
     // If not a random color, it must be from the pool
     // Find matching pool color and make it available again
     for (let i = 0; i < this.colorPool.length; i++) {
-      if (this.areColorsEqual(this.colorPool[i], color)) {
-        this.availableColors.push({ ...this.colorPool[i] });
+      const poolColor = this.colorPool[i];
+      if (!poolColor) continue;
+      if (this.areColorsEqual(poolColor, color)) {
+        this.availableColors.push({
+          r: poolColor.r,
+          g: poolColor.g,
+          b: poolColor.b
+        });
         return;
       }
     }
@@ -224,7 +230,15 @@ export class GameServer {
           // Try to get a color from the available pool first
           if (this.availableColors.length > 0) {
             const colorIndex = Math.floor(Math.random() * this.availableColors.length);
-            const color = { ...this.availableColors[colorIndex] };
+            const poolColor = this.availableColors[colorIndex];
+            if (!poolColor) {
+              throw new Error('Color at index is undefined');
+            }
+            const color: Color = {
+              r: poolColor.r,
+              g: poolColor.g,
+              b: poolColor.b
+            };
             this.availableColors.splice(colorIndex, 1);
             this.lockedColors.set(socketId, color);
             resolve(color);
@@ -645,11 +659,19 @@ export class GameServer {
 
   private getNextColor(): Color {
     if (this.availableColors.length > 0) {
-      const colorIndex = Math.floor(Math.random() * this.availableColors.length);
-      const color = { ...this.availableColors[colorIndex] };
-      this.availableColors.splice(colorIndex, 1);
-      return color;
+      const color = this.availableColors.pop();
+      if (!color) {
+        // This should never happen since we checked length > 0
+        throw new Error('No available colors despite length check');
+      }
+      return {
+        r: color.r,
+        g: color.g,
+        b: color.b
+      };
     }
+
+    // Generate a random color if no predefined colors are available
     return this.generateRandomColor();
   }
 

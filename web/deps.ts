@@ -1,2 +1,2 @@
 // External dependencies
-export { default as process } from "node:process"; 
+export { default as process } from "process/browser"; 

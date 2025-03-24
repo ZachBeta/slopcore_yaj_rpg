@@ -33,6 +33,10 @@ const config: WebpackConfigWithDevServer = {
     extensions: ['.tsx', '.ts', '.js'],
     fallback: {
       process: require.resolve('process/browser'),
+      buffer: require.resolve('buffer/'),
+      util: require.resolve('util/'),
+      stream: require.resolve('stream-browserify'),
+      path: require.resolve('path-browserify')
     }
   },
   output: {
