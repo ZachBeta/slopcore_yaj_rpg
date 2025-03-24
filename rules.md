@@ -4,7 +4,8 @@
 
 ## Second, these are some general rules
 
-* prfer to cange directory absolute over relative, so it works no matter what our working directory is
+* if we detect a cycle where we're iterating on something, take a step back assess options before we proceed
+* prfer to change directory absolute over relative, so it works no matter what our working directory is
 * the tests need to be run from the web directory where the Jest configuration is correctly set up.
 When you run the tests from the web directory, Jest properly uses the TypeScript configuration in web/jest.config.js that we saw earlier, which is configured to use ts-jest for TypeScript files.
 

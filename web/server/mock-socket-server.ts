@@ -164,24 +164,23 @@ export class MockSocketServer extends EventEmitter {
   }
   
   private generatePlayerColor(socketId: string): Color {
-    // Get color from pool if available
     if (this.availableColors.length > 0) {
-      const colorIndex = Math.floor(Math.random() * this.availableColors.length);
-      const color = this.availableColors[colorIndex];
-      this.availableColors.splice(colorIndex, 1);
+      const color = this.availableColors.pop();
+      if (!color) {
+        throw new Error('No available colors');
+      }
       this.lockedColors.set(socketId, color);
       return color;
     }
-    
-    // Otherwise generate a random color (simplified for testing)
-    const randomColor: Color = {
+
+    // Generate a random color if no pre-defined colors are available
+    const color: Color = {
       r: Math.random(),
       g: Math.random(),
       b: Math.random()
     };
-    
-    this.lockedColors.set(socketId, randomColor);
-    return randomColor;
+    this.lockedColors.set(socketId, color);
+    return color;
   }
   
   private recycleColor(color: Color, socketId: string): void {

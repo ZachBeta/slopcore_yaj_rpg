@@ -233,4 +233,27 @@ describe('Game Server Core Logic', () => {
       expect(gameServer.getUsedRandomColors().size).toBe(1);
     });
   });
+
+  it('should assign colors to players', async () => {
+    const server = new TestGameServer();
+    const socketId = 'test-socket';
+    const color = await server.generatePlayerColor(socketId);
+    
+    expect(color).toBeDefined();
+    expect(typeof color.r).toBe('number');
+    expect(typeof color.g).toBe('number');
+    expect(typeof color.b).toBe('number');
+
+    const player: Player = {
+      id: socketId,
+      position: { x: 0, y: 0, z: 0 },
+      rotation: { x: 0, y: 0, z: 0 },
+      color: color
+    };
+
+    server.addPlayer(player);
+    
+    const colorKey = getColorKey(color);
+    expect(colorKey).toBeDefined();
+  });
 }); 

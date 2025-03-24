@@ -169,6 +169,15 @@ function generatePlayerColor(): { r: number; g: number; b: number } {
   return { ...randomColor };
 }
 
+function generateRandomColor(): Color {
+  const randomColor = {
+    r: Math.random(),
+    g: Math.random(),
+    b: Math.random()
+  };
+  return randomColor;
+}
+
 // Socket.io event handling
 io.on('connection', (socket: Socket) => {
   console.log(`Player connected: ${socket.id}`);

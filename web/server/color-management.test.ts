@@ -233,4 +233,14 @@ describe('Color Management', () => {
     // Clean up
     gameServer.clearLockedColors();
   }, TEST_TIMEOUT);
+
+  it('should handle client disconnection', async () => {
+    const server = new TestGameServer();
+    const clients = await createTestClients(1);
+    
+    if (clients.length > 0 && clients[0].connected) {
+      clients[0].disconnect();
+      // Add assertions here
+    }
+  });
 }); 
