@@ -36,6 +36,7 @@ export interface Player {
   position: Position;
   rotation: Rotation;
   color: Color;
+  lastActivity: Milliseconds;
 }
 
 export type ConnectionStatus = 'connected' | 'disconnected' | 'error';

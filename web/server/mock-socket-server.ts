@@ -99,7 +99,8 @@ export class MockSocketServer extends EventEmitter {
       id: socket.id,
       position: data.position || { x: 0, y: 1, z: 0 },
       rotation: { x: 0, y: 0, z: 0 },
-      color: color
+      color: color,
+      lastActivity: Date.now()
     };
     
     // Add to players map

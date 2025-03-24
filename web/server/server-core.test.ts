@@ -5,7 +5,7 @@ import { createServer, Server as HttpServer } from 'http';
 
 // Create a class that extends GameServer but only adds accessor methods
 // to the protected properties without trying to override private methods
-class TestGameServer extends GameServer {
+export class TestGameServer extends GameServer {
   private httpServer: HttpServer;
 
   constructor() {
@@ -18,6 +18,15 @@ class TestGameServer extends GameServer {
     
     // Initialize with a real server, but we won't actually use the network
     httpServer.listen(0);
+  }
+
+  // Get the port number the server is listening on
+  getPort(): number {
+    const address = this.httpServer.address();
+    if (!address || typeof address === 'string') {
+      return 0;
+    }
+    return address.port;
   }
 
   // Override close to ensure cleanup of both socket.io and HTTP servers
@@ -73,9 +82,9 @@ class TestGameServer extends GameServer {
   }
   
   // Directly add a player for testing
-  addPlayer(player: Player): void {
-    this.players.set(player.id, player);
-    this.lockedColors.set(player.id, player.color);
+  addPlayer(socketId: string, player: Player): void {
+    this.players.set(socketId, player);
+    this.lockedColors.set(socketId, player.color);
     
     // Remove from available colors
     this.availableColors = this.availableColors.filter(
@@ -128,17 +137,25 @@ describe('Game Server Core Logic', () => {
       
       for (let i = 0; i < numPlayers; i++) {
         const playerId = `test-player-${i}`;
-        const color = gameServer.getAvailableColors()[0]; // Get next available color
+        const availableColors = gameServer.getAvailableColors();
+        if (availableColors.length === 0) {
+          throw new Error('No colors available');
+        }
+        const color = availableColors[0];
+        if (!color) {
+          throw new Error('Color is undefined');
+        }
         
         const player: Player = {
           id: playerId,
           position: { x: 0, y: 1, z: 0 },
           rotation: { x: 0, y: 0, z: 0 },
-          color: color
+          color: color,
+          lastActivity: Date.now()
         };
         
         // Use our helper to add the player
-        gameServer.addPlayer(player);
+        gameServer.addPlayer(playerId, player);
         players.push(player);
         
         // Verify state after each addition
@@ -159,20 +176,28 @@ describe('Game Server Core Logic', () => {
     test('recycles colors when players disconnect', () => {
       // Create and add a player
       const playerId = 'test-player';
-      const color = gameServer.getAvailableColors()[0];
+      const availableColors = gameServer.getAvailableColors();
+      if (availableColors.length === 0) {
+        throw new Error('No colors available');
+      }
+      const color = availableColors[0];
+      if (!color) {
+        throw new Error('Color is undefined');
+      }
       
       const player: Player = {
         id: playerId,
         position: { x: 0, y: 1, z: 0 },
         rotation: { x: 0, y: 0, z: 0 },
-        color: color
+        color: color,
+        lastActivity: Date.now()
       };
       
       // Track initial state
       const initialAvailableSize = gameServer.getAvailableColors().length;
       
       // Add player
-      gameServer.addPlayer(player);
+      gameServer.addPlayer(playerId, player);
       
       // Verify player was added and color removed from pool
       expect(gameServer.getPlayers().size).toBe(1);
@@ -235,9 +260,10 @@ describe('Game Server Core Logic', () => {
   });
 
   it('should assign colors to players', async () => {
-    const server = new TestGameServer();
+    const server = createServer();
+    const gameServer = new TestGameServer(server, 0);
     const socketId = 'test-socket';
-    const color = await server.generatePlayerColor(socketId);
+    const color = await gameServer.generatePlayerColor(socketId);
     
     expect(color).toBeDefined();
     expect(typeof color.r).toBe('number');
@@ -248,10 +274,11 @@ describe('Game Server Core Logic', () => {
       id: socketId,
       position: { x: 0, y: 0, z: 0 },
       rotation: { x: 0, y: 0, z: 0 },
-      color: color
+      color,
+      lastActivity: Date.now()
     };
 
-    server.addPlayer(player);
+    gameServer.addPlayer(socketId, player);
     
     const colorKey = getColorKey(color);
     expect(colorKey).toBeDefined();

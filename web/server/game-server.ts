@@ -432,7 +432,8 @@ export class GameServer {
             y: Math.random() * Math.PI * 2, // Random initial facing direction
             z: 0
           },
-          color: playerColor
+          color: playerColor,
+          lastActivity: Date.now()
         };
         this.players.set(socket.id, player);
 
@@ -581,7 +582,8 @@ export class GameServer {
       id: playerId,
       position: data.position,
       rotation: { x: 0, y: 0, z: 0 },
-      color
+      color,
+      lastActivity: Date.now()
     };
 
     this.players.set(playerId, player);
