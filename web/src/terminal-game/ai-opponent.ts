@@ -150,21 +150,17 @@ export class AIOpponent {
               pointValue: 2,
               advancementRequired: 4
             };
-            
             this.agenda.push(newAgenda);
-            actionsLog.push(`Corporation created new agenda: ${newAgenda.name}.`);
-          } else if (this.agenda.length > 0) {
-            // Advance an existing agenda
-            const agendaIndex = Math.floor(this.random() * this.agenda.length);
-            const agenda = this.agenda[agendaIndex];
-            
+          }
+
+          const agenda = this.agenda[Math.floor(this.random() * this.agenda.length)] as Agenda;
+          if (agenda) {
             agenda.advancement++;
             actionsLog.push(`Corporation advanced agenda: ${agenda.name} (${agenda.advancement}/${agenda.advancementRequired}).`);
-            
-            // Check if agenda is completed
+
             if (agenda.advancement >= agenda.advancementRequired) {
               actionsLog.push(`Corporation scored agenda: ${agenda.name} for ${agenda.pointValue} points!`);
-              this.agenda.splice(agendaIndex, 1);
+              // TODO: Update score
             }
           }
           break;

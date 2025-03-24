@@ -30,6 +30,7 @@ import {
   Server,
   CommandHandler,
   CommandArguments,
+  GameState,
   RunState,
   CardTrigger
 } from './game-types';
