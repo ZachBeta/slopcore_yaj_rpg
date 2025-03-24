@@ -8,14 +8,15 @@ import { Player } from '../src/types';
 // Test timeouts
 const CONNECTION_TIMEOUT = 3000;
 const CLEANUP_TIMEOUT = 5000;
+const TEST_PORT = 3001;
 
 interface GameServerOptions {
   isTestMode?: boolean;
 }
 
 /**
- * Creates an in-memory socket.io server and client for testing.
- * This uses real socket.io instances but with in-memory communication.
+ * Creates a socket.io server and client for testing on port 3001.
+ * This uses real socket.io instances for reliable testing.
  */
 export async function createSocketTestEnvironment<T extends GameServer = GameServer>(
   ServerClass: new (server: HttpServer, port: number, options: GameServerOptions) => T = GameServer as any
@@ -23,21 +24,30 @@ export async function createSocketTestEnvironment<T extends GameServer = GameSer
   // Create real HTTP server
   const httpServer = createServer();
   
-  // Start server on a random available port
-  await new Promise<void>(resolve => {
-    httpServer.listen(0, '127.0.0.1', () => {
+  // Start server on fixed test port
+  await new Promise<void>((resolve, reject) => {
+    httpServer.listen(TEST_PORT, '127.0.0.1', () => {
       resolve();
+    }).on('error', (err) => {
+      if ((err as any).code === 'EADDRINUSE') {
+        console.log('Port 3001 in use, waiting for it to be available...');
+        setTimeout(() => {
+          httpServer.listen(TEST_PORT, '127.0.0.1', () => {
+            resolve();
+          });
+        }, 1000);
+      } else {
+        reject(err);
+      }
     });
   });
   
-  const port = (httpServer.address() as AddressInfo).port;
-  
   // Create real GameServer with test mode enabled
-  const gameServer = new ServerClass(httpServer, port, { isTestMode: true });
+  const gameServer = new ServerClass(httpServer, TEST_PORT, { isTestMode: true });
   
   // Function to create a connected client
   const createClient = () => {
-    return Client(`http://127.0.0.1:${port}`, {
+    return Client(`http://127.0.0.1:${TEST_PORT}`, {
       transports: ['websocket'],
       forceNew: true,
       reconnection: true,
@@ -133,7 +143,7 @@ export async function createSocketTestEnvironment<T extends GameServer = GameSer
   return {
     httpServer,
     gameServer,
-    port,
+    port: TEST_PORT,
     createClient,
     connectAndJoin,
     cleanup

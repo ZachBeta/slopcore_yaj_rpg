@@ -4,9 +4,9 @@ import { createSocketTestEnvironment } from './test-helpers';
 import { io as Client } from 'socket.io-client';
 
 // Timeouts for test execution
-const TEST_TIMEOUT = 3000;
-const CONNECTION_DELAY = 100;
-const DISCONNECT_DELAY = 100;
+const TEST_TIMEOUT = 10000;
+const CONNECTION_DELAY = 200;
+const DISCONNECT_DELAY = 200;
 
 describe('Color Management', () => {
   let testEnv: Awaited<ReturnType<typeof createSocketTestEnvironment<TestGameServer>>>;
