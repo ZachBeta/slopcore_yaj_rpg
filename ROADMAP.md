@@ -39,7 +39,7 @@
   - [ ] Allow multiple terminals to connect to same game
 
 ### Developer Experience
-- [ ] Containerize Python environment
+- [ ] Containerize Development Environment
   - [ ] Create Docker setup
   - [ ] Make running easier on other userspace environments
 

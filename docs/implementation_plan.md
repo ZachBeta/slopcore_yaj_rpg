@@ -11,7 +11,7 @@ Core implementation steps for gameplay improvements:
 - Add "work" command for additional credits
 
 **Files:**
-- `cmd/terminal_game/terminal_game.py`
+- `web/src/terminal-game/terminal-game.ts`
 
 ## Phase 2: Enhanced Run Mechanics
 
@@ -25,8 +25,8 @@ Core implementation steps for gameplay improvements:
   - `--careful`: Safe jack out, fewer rewards
 
 **Files:**
-- `cmd/terminal_game/terminal_game.py`
-- `cmd/terminal_game/_cmd_run` method
+- `web/src/terminal-game/terminal-game.ts`
+- `web/src/terminal-game/game-phases.ts`
 
 ## Phase 3: Visual Enhancements
 
@@ -36,7 +36,7 @@ Core implementation steps for gameplay improvements:
 - Add distinct ICE type representations
 
 **Files:**
-- `cmd/terminal_game/game_renderer.py`
+- `web/src/terminal-game/console-renderer.ts`
 - ASCII art assets
 
 ## Testing Strategy

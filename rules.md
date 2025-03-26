@@ -37,4 +37,4 @@ When you run the tests from the web directory, Jest properly uses the TypeScript
 
 ## OO Design
 * Try to keep the classes as SOLID as possible so that they're easy to reason about, have a reasonable abstraction, and are easy to test
-* Use consistent naming conventions across Python and GDScript implementations
+* Use consistent naming conventions across the codebase
