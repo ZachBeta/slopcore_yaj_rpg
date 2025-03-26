@@ -6,6 +6,7 @@ export class AudioManager {
   private backgroundMusic: HTMLAudioElement | null = null;
   private isMuted: boolean = false;
   private volume: number = 0.5;
+  private isInitialized: boolean = false;
 
   private constructor() {
     // Private constructor for singleton pattern
@@ -22,13 +23,12 @@ export class AudioManager {
   }
 
   /**
-   * Play background music
+   * Initialize the audio system
    * @param track - Path to the MP3 file
    * @param loop - Whether to loop the track (default: true)
    */
-  public playBackgroundMusic(track: string, loop: boolean = true): void {
-    // Stop any currently playing background music
-    this.stopBackgroundMusic();
+  public initialize(track: string, loop: boolean = true): void {
+    if (this.isInitialized) return;
 
     // Create a new audio element
     this.backgroundMusic = new Audio(track);
@@ -38,6 +38,18 @@ export class AudioManager {
     // Apply mute state if needed
     if (this.isMuted) {
       this.backgroundMusic.muted = true;
+    }
+
+    this.isInitialized = true;
+  }
+
+  /**
+   * Play background music after user interaction
+   */
+  public playBackgroundMusic(): void {
+    if (!this.backgroundMusic) {
+      console.error('Audio not initialized. Call initialize() first.');
+      return;
     }
 
     // Play the music
@@ -53,7 +65,6 @@ export class AudioManager {
     if (this.backgroundMusic) {
       this.backgroundMusic.pause();
       this.backgroundMusic.currentTime = 0;
-      this.backgroundMusic = null;
     }
   }
 
@@ -123,5 +134,13 @@ export class AudioManager {
    */
   public isMutedState(): boolean {
     return this.isMuted;
+  }
+
+  /**
+   * Check if audio is initialized
+   * @returns Initialization state
+   */
+  public isInitializedState(): boolean {
+    return this.isInitialized;
   }
 } 

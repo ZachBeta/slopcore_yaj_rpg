@@ -2,6 +2,7 @@
 
 ## open world game
 
+* dig up favicon - somewhere it got dropped
 * typing and linting 
 * colors are good, position and rotation are not, I think we tried to extract types to help that
 * consistent map
