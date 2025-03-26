@@ -77,10 +77,11 @@ Run the demo with various options:
 
 ### Alternative Launch Method
 
-If you prefer to run the Python script directly:
+The game can also be run using npm directly:
 
 ```bash
-python3 cmd/terminal_game/main.py
+cd web
+npm run terminal-game
 ```
 
 ## Gameplay Commands
@@ -143,47 +144,57 @@ The game features a Corporation AI opponent with:
 ## Project Structure
 
 ```
-cmd/terminal_game/    # GAME IMPLEMENTATION
-├── main.py           # Entry point
-├── terminal_game.py  # Core game logic
-├── ai_opponent.py    # Corporation AI
-└── game_renderer.py  # Terminal UI
+slopcore_yaj_rpg/
+├── web/                  # Web implementation
+│   ├── src/              # Source code
+│   │   ├── terminal-game/    # Terminal game implementation
+│   │   │   ├── terminal-game.ts  # Core game logic
+│   │   │   ├── ai-opponent.ts    # Corporation AI
+│   │   │   └── console-renderer.ts  # Terminal UI
+│   │   └── ...
+│   └── ...
+├── game/                 # Godot implementation
+├── docs/                 # Documentation
+└── ...
+```
 
-docs/                 # DOCUMENTATION
-├── gameplay_enhancements.md  # Planned improvements
-└── implementation_plan.md    # Implementation roadmap
+## Requirements
+
+- [Node.js](https://nodejs.org/) 14.x or newer
+- npm 6.x or newer
+
+## Testing
+
+The project includes a comprehensive test suite for the TypeScript implementation:
+
+```bash
+cd web
+npm test                  # Run all tests
+npm test -- terminal-game.test.ts  # Run a specific test file
 ```
 
 ## For Developers
 
 ### Prerequisites
 
-- [Python 3.x](https://www.python.org/downloads/) or newer
+- [Node.js](https://nodejs.org/) 14.x or newer
+- npm 6.x or newer
 
 ### Running Tests
 
 The game includes a comprehensive test suite to verify game mechanics and functionality.
 
-Run all tests with the test runner script:
+Run all tests with the npm test command:
 
 ```bash
-./run_tests.sh
+cd web
+npm test
 ```
 
 Additional options:
 ```bash
-./run_tests.sh --verbose                  # Detailed test output
-./run_tests.sh test_game_basics.py        # Run a specific test file
-./run_tests.sh --help                     # Show all options
-```
-
-Alternative methods:
-```bash
-# Run using the Python unittest framework
-python3 -m unittest discover -s cmd/terminal_game/tests
-
-# Run a specific test file directly
-python3 cmd/terminal_game/tests/test_game_basics.py
+npm test -- --verbose                  # Detailed test output
+npm test -- terminal-game.test.ts      # Run a specific test file
 ```
 
 ### Testing Best Practices
@@ -209,3 +220,14 @@ See [LICENSE](LICENSE) file for details.
 ## Acknowledgments
 
 - Inspired by Android: Netrunner and other cyberpunk media
+
+## Running the Game
+
+The terminal-based version of Neon Dominance can be run directly from the web directory:
+
+```bash
+cd web
+npm run terminal-game
+```
+
+This will launch the game in your terminal with all default settings.

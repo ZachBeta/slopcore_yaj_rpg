@@ -11,7 +11,9 @@
     "dev": "webpack serve --mode development --open",
     "lint": "deno lint",
     "lint:fix": "deno lint --fix",
-    "lint:types": "tsc --noEmit"
+    "lint:types": "tsc --noEmit",
+    "terminal-game": "ts-node src/terminal-game/main.ts",
+    "board-demo": "ts-node src/terminal-game/board-renderer.ts"
   },
   "keywords": [
     "rpg",
