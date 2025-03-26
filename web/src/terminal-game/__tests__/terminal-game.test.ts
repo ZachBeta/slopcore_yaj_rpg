@@ -24,7 +24,7 @@ jest.mock('../console-renderer', () => {
       instance.showPrompt = jest.fn();
       instance.clearConsole = jest.fn();
       return instance;
-    })
+    }),
   };
 });
 
@@ -36,11 +36,11 @@ jest.mock('../ai-opponent', () => {
       const instance = new original.AIOpponent();
       instance.takeTurn = jest.fn().mockReturnValue({
         actionsLog: ['AI action 1', 'AI action 2'],
-        iceInstalled: 1
+        iceInstalled: 1,
       });
       instance.getTraceLevel = jest.fn().mockReturnValue(25);
       return instance;
-    })
+    }),
   };
 });
 
@@ -51,7 +51,7 @@ describe('TerminalGame', () => {
   beforeEach(() => {
     // Reset mocks
     jest.clearAllMocks();
-    
+
     // Create a new game instance for each test
     game = new TerminalGame(SEED);
   });
@@ -59,7 +59,7 @@ describe('TerminalGame', () => {
   describe.skip('initialization', () => {
     it('should initialize with correct default values', () => {
       expect(game).toBeDefined();
-      
+
       // Verify initial values
       expect(game.getPlayerCredits()).toBe(5);
       expect(game.getMemoryUnitsAvailable()).toBe(4);
@@ -71,7 +71,7 @@ describe('TerminalGame', () => {
     it('should initialize the game with proper setup', () => {
       // Initialize the game
       game.initialize();
-      
+
       // Check if initialization happened correctly
       expect(game.getPlayerDeck().length).toBeGreaterThan(0);
       expect(game.getHandCards().length).toBe(5); // Initial hand size
@@ -93,13 +93,19 @@ describe('TerminalGame', () => {
     });
 
     it('should handle invalid commands', () => {
-      const renderSpy = jest.spyOn((game as unknown as { renderer: { renderError: (msg: string) => void } }).renderer, 'renderError');
+      const renderSpy = jest.spyOn(
+        (game as unknown as { renderer: { renderError: (msg: string) => void } }).renderer,
+        'renderError',
+      );
       game.processCommand('invalid');
       expect(renderSpy).toHaveBeenCalledWith(expect.stringContaining('Unknown command'));
     });
 
     it('should parse commands correctly', () => {
-      const parseSpy = jest.spyOn(game as unknown as { parseCommand: (cmd: string) => string[] }, 'parseCommand');
+      const parseSpy = jest.spyOn(
+        game as unknown as { parseCommand: (cmd: string) => string[] },
+        'parseCommand',
+      );
       game.processCommand('draw');
       expect(parseSpy).toHaveBeenCalledWith('draw');
     });
@@ -115,10 +121,10 @@ describe('TerminalGame', () => {
       // Set up the test state
       game.setClicksRemaining(4);
       game.setCurrentPhase(GamePhase.ACTION);
-      
+
       // Process the draw command
       game.processCommand('draw');
-      
+
       // Check if clicks were deducted
       expect(game.getClicksRemaining()).toBe(3);
     });
@@ -127,13 +133,16 @@ describe('TerminalGame', () => {
       // Set up for end of turn
       game.setHandCards([]); // Empty hand so no discard needed
       game.setCurrentPhase(GamePhase.ACTION);
-      
+
       // Spy on AI turn processing
-      const aiSpy = jest.spyOn((game as unknown as { aiOpponent: { takeTurn: () => void } }).aiOpponent, 'takeTurn');
-      
+      const aiSpy = jest.spyOn(
+        (game as unknown as { aiOpponent: { takeTurn: () => void } }).aiOpponent,
+        'takeTurn',
+      );
+
       // End the turn
       game.processCommand('end');
-      
+
       // Verify turn transition happened
       expect(aiSpy).toHaveBeenCalled();
     });
@@ -143,13 +152,13 @@ describe('TerminalGame', () => {
     it('should detect runner win by agenda points', () => {
       // Initialize the game
       game.initialize();
-      
+
       // Set up win condition
       game.setRunnerAgendaPoints(7);
-      
+
       // Check win conditions
       game.checkWinConditions();
-      
+
       // Game should be over with runner win
       expect(game.isGameOver()).toBe(true);
       expect(game.getWinMessage()).toContain('won the game');
@@ -158,13 +167,13 @@ describe('TerminalGame', () => {
     it('should detect corporation win by agenda points', () => {
       // Initialize the game
       game.initialize();
-      
+
       // Set up win condition
       game.setCorpAgendaPoints(7);
-      
+
       // Check win conditions
       game.checkWinConditions();
-      
+
       // Game should be over with corp win
       expect(game.isGameOver()).toBe(true);
       expect(game.getWinMessage()).toContain('Corporation has scored');
@@ -173,14 +182,14 @@ describe('TerminalGame', () => {
     it('should detect runner loss by deck depletion', () => {
       // Initialize the game
       game.initialize();
-      
+
       // Set up loss condition
       game.setPlayerDeck([]);
       game.setHandCards([]);
-      
+
       // Check win conditions
       game.checkWinConditions();
-      
+
       // Game should be over with runner loss
       expect(game.isGameOver()).toBe(true);
       expect(game.getWinMessage()).toContain('no cards left');
@@ -191,7 +200,7 @@ describe('TerminalGame', () => {
     beforeEach(() => {
       // Initialize the game
       game.initialize();
-      
+
       // Set phase to action
       game.setCurrentPhase(GamePhase.ACTION);
       game.setClicksRemaining(3);
@@ -201,13 +210,13 @@ describe('TerminalGame', () => {
       // Set up test state
       const initialHandSize = game.getHandCards().length;
       const initialPlayedSize = game.getPlayedCards().length;
-      
+
       // Make sure we have credits for the card
       game.setPlayerCredits(10);
-      
+
       // Install the first card (index 0)
       game.processCommand('install 0');
-      
+
       // Verify installation
       expect(game.getHandCards().length).toBe(initialHandSize - 1);
       expect(game.getPlayedCards().length).toBe(initialPlayedSize + 1);
@@ -217,13 +226,13 @@ describe('TerminalGame', () => {
     it('should fail to install a card with insufficient credits', () => {
       // Set up test state
       const initialHandSize = game.getHandCards().length;
-      
+
       // Make sure first card costs more than we have
       game.setPlayerCredits(0);
-      
+
       // Try to install the first card
       game.processCommand('install 0');
-      
+
       // Verify installation failed
       expect(game.getHandCards().length).toBe(initialHandSize);
       expect(game.getClicksRemaining()).toBe(3); // Unchanged
@@ -234,7 +243,7 @@ describe('TerminalGame', () => {
     beforeEach(() => {
       // Initialize the game
       game.initialize();
-      
+
       // Set phase to action
       game.setCurrentPhase(GamePhase.ACTION);
       game.setClicksRemaining(3);
@@ -243,7 +252,7 @@ describe('TerminalGame', () => {
     it('should initiate a run on a valid server', () => {
       // Try to run on a valid server
       game.processCommand('run R&D');
-      
+
       // Verify run was initiated
       expect(game.getCurrentRun()).not.toBeNull();
       expect(game.getCurrentRun()?.target).toBe('R&D');
@@ -253,7 +262,7 @@ describe('TerminalGame', () => {
     it('should fail to run on an invalid server', () => {
       // Try to run on an invalid server
       game.processCommand('run InvalidServer');
-      
+
       // Verify run was not initiated
       expect(game.getCurrentRun()).toBeNull();
       expect(game.getClicksRemaining()).toBe(3); // Unchanged
@@ -294,9 +303,12 @@ describe('TerminalGame', () => {
 
   describe('AI interaction', () => {
     it('should handle AI opponent turns', () => {
-      const aiSpy = jest.spyOn((game as unknown as { aiOpponent: { takeTurn: () => void } }).aiOpponent, 'takeTurn');
+      const aiSpy = jest.spyOn(
+        (game as unknown as { aiOpponent: { takeTurn: () => void } }).aiOpponent,
+        'takeTurn',
+      );
       game.processCommand('end');
       expect(aiSpy).toHaveBeenCalled();
     });
   });
-}); 
+});

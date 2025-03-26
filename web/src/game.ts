@@ -1,4 +1,4 @@
-import { Socket, io } from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
 
 interface ServerDiagnostics {
   fps: number;
@@ -31,10 +31,10 @@ class Game {
     this.pingInterval = 1000; // Ping every second
     this.lastPing = Date.now();
     this.diagnosticsDiv = null;
-    
+
     // Add connection status to diagnostics
     this.setupDiagnostics();
-    
+
     // Setup socket event handlers
     this.socket.on('connect', () => {
       console.log('Connected to server');
@@ -56,19 +56,19 @@ class Game {
 
   private updateDiagnostics(data: DiagnosticsData): void {
     if (!this.diagnosticsDiv) return;
-    
+
     const currentContent = this.diagnosticsDiv.innerHTML;
     const lines = currentContent.split('<br>');
     const status = `status: ${data.status || 'Unknown'}`;
-    
+
     // Update or add status line
-    const statusIndex = lines.findIndex(line => line.startsWith('status:'));
+    const statusIndex = lines.findIndex((line) => line.startsWith('status:'));
     if (statusIndex >= 0) {
       lines[statusIndex] = status;
     } else {
       lines.unshift(status);
     }
-    
+
     this.diagnosticsDiv.innerHTML = lines.join('<br>');
   }
 
@@ -112,7 +112,7 @@ class Game {
         players: `${data.playerCount} players`,
         uptime: `${Math.floor(data.uptime / 60)}:${(data.uptime % 60).toString().padStart(2, '0')}`,
         colors: `${data.availableColors}/${data.colorPoolSize} available`,
-        connections: `${data.connections} connected`
+        connections: `${data.connections} connected`,
       };
 
       this.diagnosticsDiv!.innerHTML = Object.entries(diagnostics)
@@ -135,4 +135,4 @@ class Game {
 if (typeof document !== 'undefined') {
   // Only initialize in browser environment
   globalThis.game = new Game();
-} 
+}

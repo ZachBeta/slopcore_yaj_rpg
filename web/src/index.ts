@@ -36,12 +36,21 @@ function initializeGame(): void {
   game.initialize();
 
   // Add a message about how to play the game
-  console.log("%cTo play, type commands in the browser console after the '>' prompt.", 'color: #4CAF50; font-weight: bold');
-  console.log("%cFor example, type 'help' and press Enter to see available commands.", 'color: #4CAF50;');
+  console.log(
+    "%cTo play, type commands in the browser console after the '>' prompt.",
+    'color: #4CAF50; font-weight: bold',
+  );
+  console.log(
+    "%cFor example, type 'help' and press Enter to see available commands.",
+    'color: #4CAF50;',
+  );
 
   // Display instructions for how to input commands
-  console.log("");
-  console.log("%cTo enter commands, call the following function:", 'color: #2196F3; font-weight: bold');
+  console.log('');
+  console.log(
+    '%cTo enter commands, call the following function:',
+    'color: #2196F3; font-weight: bold',
+  );
   console.log("%cprocessCommand('your command here')", 'color: #2196F3; font-style: italic');
   console.log("%cFor example: processCommand('draw')", 'color: #2196F3;');
 }
@@ -96,22 +105,22 @@ function initializeOpenWorldGame(): void {
   backButton.style.padding = '8px 16px';
   backButton.style.borderRadius = '4px';
   backButton.style.cursor = 'pointer';
-  
+
   backButton.addEventListener('click', () => {
     // Stop and cleanup the open world game
     if (openWorldGame) {
       openWorldGame.dispose();
       openWorldGame = null;
     }
-    
+
     // Remove the open world container
     openWorldContainer.remove();
-    
+
     // Show the menu container again
     if (menuContainer instanceof HTMLElement) {
       menuContainer.style.display = 'flex';
     }
-    
+
     // Show the Three.js scene again
     if (threeScene) {
       const canvasContainer = document.getElementById('canvas-container');
@@ -119,11 +128,11 @@ function initializeOpenWorldGame(): void {
         canvasContainer.style.display = 'block';
       }
     }
-    
+
     // Remove the back button
     backButton.remove();
   });
-  
+
   document.body.appendChild(backButton);
 }
 
@@ -133,11 +142,13 @@ interface ProcessCommandGlobal {
 }
 
 // Create a function to handle console input
-(globalThis as unknown as ProcessCommandGlobal).processCommand = function(command: string): void {
+(globalThis as unknown as ProcessCommandGlobal).processCommand = function (command: string): void {
   if (game && command && typeof command === 'string') {
     game.processCommand(command);
   } else {
-    console.error("Game not initialized or invalid command. Please provide a valid command as a string.");
+    console.error(
+      'Game not initialized or invalid command. Please provide a valid command as a string.',
+    );
   }
 };
 
@@ -155,17 +166,17 @@ function initializeAudio(): void {
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize the Three.js scene as soon as the DOM is loaded
   initializeThreeScene();
-  
+
   // Initialize audio for the menu
   initializeAudio();
-  
+
   // Add event listener for the start game button
   const startButton = document.getElementById('start-game');
   if (startButton) {
     startButton.addEventListener('click', () => {
       // Play button click sound
       AudioManager.getInstance().playSoundEffect('/audio/button-click.mp3');
-      
+
       // Fade out menu music
       const audioManager = AudioManager.getInstance();
       const currentVolume = audioManager.getVolume();
@@ -180,25 +191,25 @@ document.addEventListener('DOMContentLoaded', () => {
           audioManager.setVolume(fadeVolume);
         }
       }, 100);
-      
+
       // Hide the menu container
       const menuContainer = document.querySelector('.menu-container');
       if (menuContainer instanceof HTMLElement) {
         menuContainer.style.display = 'none';
       }
-      
+
       // Initialize and start the game
       initializeGame();
     });
   }
-  
+
   // Add event listener for the demo mode button
   const demoButton = document.getElementById('demo-mode');
   if (demoButton) {
     demoButton.addEventListener('click', () => {
       // Play button click sound
       AudioManager.getInstance().playSoundEffect('/audio/button-click.mp3');
-      
+
       // Fade out menu music
       const audioManager = AudioManager.getInstance();
       const currentVolume = audioManager.getVolume();
@@ -213,92 +224,94 @@ document.addEventListener('DOMContentLoaded', () => {
           audioManager.setVolume(fadeVolume);
         }
       }, 100);
-      
+
       // Hide the menu container
       const menuContainer = document.querySelector('.menu-container');
       if (menuContainer instanceof HTMLElement) {
         menuContainer.style.display = 'none';
       }
-      
+
       // Initialize and start the demo mode
       initializeDemoMode();
     });
   }
-  
+
   // Add event listener for the open world button
   const openWorldButton = document.getElementById('open-world-game');
   if (openWorldButton) {
     openWorldButton.addEventListener('click', () => {
       // Play button click sound
       AudioManager.getInstance().playSoundEffect('/audio/button-click.mp3');
-      
+
       initializeOpenWorldGame();
     });
   }
-  
+
   // Add event listeners for other menu buttons
   const optionsButton = document.getElementById('options');
   if (optionsButton) {
     optionsButton.addEventListener('click', () => {
       // Play button click sound
       AudioManager.getInstance().playSoundEffect('/audio/button-click.mp3');
-      
+
       alert('Options are not implemented yet.');
     });
   }
-  
+
   const aboutButton = document.getElementById('about');
   if (aboutButton) {
     aboutButton.addEventListener('click', () => {
       // Play button click sound
       AudioManager.getInstance().playSoundEffect('/audio/button-click.mp3');
-      
-      alert('Neon Dominance is a cyberpunk card game inspired by Android: Netrunner. Play as a hacker running against corporate servers in a dystopian future.');
+
+      alert(
+        'Neon Dominance is a cyberpunk card game inspired by Android: Netrunner. Play as a hacker running against corporate servers in a dystopian future.',
+      );
     });
   }
-  
+
   // Add event listener for page unload to clean up resources
   globalThis.addEventListener('beforeunload', () => {
     console.log('Page unloading, cleaning up resources...');
-    
+
     // Clean up the open world game
     if (openWorldGame) {
       openWorldGame.dispose();
       openWorldGame = null;
     }
-    
+
     // Clean up the Three.js scene
     if (threeScene) {
       threeScene.stop();
       threeScene = null;
     }
-    
+
     // Clean up the terminal game
     if (game) {
       game = null;
     }
-    
+
     // Remove any event listeners
     const startButton = document.getElementById('start-game');
     if (startButton) {
       startButton.replaceWith(startButton.cloneNode(true));
     }
-    
+
     const demoButton = document.getElementById('demo-mode');
     if (demoButton) {
       demoButton.replaceWith(demoButton.cloneNode(true));
     }
-    
+
     const openWorldButton = document.getElementById('open-world-game');
     if (openWorldButton) {
       openWorldButton.replaceWith(openWorldButton.cloneNode(true));
     }
-    
+
     const optionsButton = document.getElementById('options');
     if (optionsButton) {
       optionsButton.replaceWith(optionsButton.cloneNode(true));
     }
-    
+
     const aboutButton = document.getElementById('about');
     if (aboutButton) {
       aboutButton.replaceWith(aboutButton.cloneNode(true));
@@ -320,33 +333,33 @@ function createGameInstructions(): void {
   container.style.borderRadius = '10px';
   container.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.5)';
   container.style.marginTop = '50px';
-  
+
   const title = document.createElement('h1');
   title.textContent = 'Neon Dominance - Browser Console Game';
   title.style.color = '#00ffff';
   title.style.textShadow = '0 0 10px rgba(0, 255, 255, 0.5)';
   title.style.fontSize = '28px';
   title.style.marginBottom = '20px';
-  
+
   const instructions = document.createElement('p');
   instructions.style.fontSize = '16px';
   instructions.style.lineHeight = '1.6';
   instructions.style.marginBottom = '30px';
-  
+
   // Create DOM elements instead of using innerHTML for better security
   const instructionsText = document.createTextNode('This game runs in your browser console!');
   const strongText = document.createElement('strong');
   strongText.style.color = '#00ffff';
   strongText.style.fontSize = '20px';
   strongText.appendChild(instructionsText);
-  
+
   instructions.appendChild(strongText);
   instructions.appendChild(document.createElement('br'));
   instructions.appendChild(document.createElement('br'));
-  
+
   // Add instruction steps
   const steps = [
-    '1. Open your browser\'s Developer Tools (',
+    "1. Open your browser's Developer Tools (",
     'F12',
     ' or ',
     'Ctrl+Shift+I',
@@ -358,9 +371,9 @@ function createGameInstructions(): void {
     '" tab',
     '3. The game has already started in the console',
     '4. Use the console to enter commands like: ',
-    'processCommand(\'help\')'
+    "processCommand('help')",
   ];
-  
+
   for (let i = 0; i < steps.length; i++) {
     if (i === 1 || i === 3 || i === 5 || i === 8) {
       const strong = document.createElement('strong');
@@ -381,7 +394,7 @@ function createGameInstructions(): void {
       instructions.appendChild(document.createTextNode(steps[i]));
     }
   }
-  
+
   const examples = document.createElement('div');
   examples.style.marginTop = '20px';
   examples.style.textAlign = 'left';
@@ -390,7 +403,7 @@ function createGameInstructions(): void {
   examples.style.borderRadius = '5px';
   examples.style.fontSize = '16px';
   examples.style.lineHeight = '1.8';
-  
+
   // Create examples using DOM methods instead of innerHTML
   const examplesTitle = document.createElement('strong');
   examplesTitle.style.color = '#00ffff';
@@ -398,16 +411,16 @@ function createGameInstructions(): void {
   examplesTitle.textContent = 'Example commands:';
   examples.appendChild(examplesTitle);
   examples.appendChild(document.createElement('br'));
-  
+
   // Create example commands
   const exampleCommands = [
-    { cmd: 'processCommand(\'help\')', desc: ' - List all available commands' },
-    { cmd: 'processCommand(\'draw\')', desc: ' - Draw a card' },
-    { cmd: 'processCommand(\'hand\')', desc: ' - View your hand' },
-    { cmd: 'processCommand(\'install 0\')', desc: ' - Install the first card from your hand' }
+    { cmd: "processCommand('help')", desc: ' - List all available commands' },
+    { cmd: "processCommand('draw')", desc: ' - Draw a card' },
+    { cmd: "processCommand('hand')", desc: ' - View your hand' },
+    { cmd: "processCommand('install 0')", desc: ' - Install the first card from your hand' },
   ];
-  
-  exampleCommands.forEach(example => {
+
+  exampleCommands.forEach((example) => {
     const code = document.createElement('code');
     code.style.display = 'block';
     code.style.margin = '10px 0';
@@ -415,12 +428,12 @@ function createGameInstructions(): void {
     code.style.padding = '8px';
     code.style.borderRadius = '4px';
     code.textContent = example.cmd;
-    
+
     examples.appendChild(code);
     examples.appendChild(document.createTextNode(example.desc));
     examples.appendChild(document.createElement('br'));
   });
-  
+
   // Add a reminder button to open console
   const consoleButton = document.createElement('button');
   consoleButton.textContent = 'Open Developer Console (F12)';
@@ -433,12 +446,13 @@ function createGameInstructions(): void {
   consoleButton.style.fontSize = '16px';
   consoleButton.style.marginTop = '20px';
   consoleButton.style.fontWeight = 'bold';
-  consoleButton.onclick = () => alert('Press F12 (Windows/Linux) or Cmd+Option+I (Mac) to open the developer console');
-  
+  consoleButton.onclick = () =>
+    alert('Press F12 (Windows/Linux) or Cmd+Option+I (Mac) to open the developer console');
+
   container.appendChild(title);
   container.appendChild(instructions);
   container.appendChild(examples);
   container.appendChild(consoleButton);
-  
+
   document.body.appendChild(container);
-} 
+}

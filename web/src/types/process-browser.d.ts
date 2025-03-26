@@ -4,7 +4,7 @@ declare module 'process/browser' {
     browser: boolean;
     version: string;
     platform: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   export default process;
-} 
+}

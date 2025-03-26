@@ -114,20 +114,20 @@ export interface Server {
 export type CommandHandler = (args: string[]) => void;
 
 export const validCommands = {
-  help: "Display a list of available commands",
-  man: "Display detailed manual for a command",
-  draw: "Draw a card from your deck (costs 1 click)",
-  hand: "Display cards in your hand",
-  install: "Install a card from your hand (costs 1 click)",
-  run: "Initiate a run on a server (costs 1 click)",
-  end: "End your turn",
-  info: "Display game information",
-  discard: "Discard a card from your hand",
-  system: "Display system status",
-  installed: "Display your installed cards",
-  credits: "Display your credit balance",
-  memory: "Display memory unit status",
-  jack_out: "Jack out of a run"
+  help: 'Display a list of available commands',
+  man: 'Display detailed manual for a command',
+  draw: 'Draw a card from your deck (costs 1 click)',
+  hand: 'Display cards in your hand',
+  install: 'Install a card from your hand (costs 1 click)',
+  run: 'Initiate a run on a server (costs 1 click)',
+  end: 'End your turn',
+  info: 'Display game information',
+  discard: 'Discard a card from your hand',
+  system: 'Display system status',
+  installed: 'Display your installed cards',
+  credits: 'Display your credit balance',
+  memory: 'Display memory unit status',
+  jack_out: 'Jack out of a run',
 } as const;
 
 export interface GameState {

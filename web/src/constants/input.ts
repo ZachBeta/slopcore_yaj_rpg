@@ -16,7 +16,7 @@ export enum InputAction {
   DESCEND = 'DESCEND',
   DEBUG_TOGGLE = 'DEBUG_TOGGLE',
   MOVE_UP = 'MOVE_UP',
-  MOVE_DOWN = 'MOVE_DOWN'
+  MOVE_DOWN = 'MOVE_DOWN',
 }
 
 export interface InputMapping {
@@ -37,15 +37,15 @@ export const INPUT_MAPPINGS: InputMapping[] = [
   { keyCode: 'KeyV', action: InputAction.VERIFY_STATE },
   { keyCode: 'KeyR', action: InputAction.THROTTLE_FORWARD },
   { keyCode: 'KeyF', action: InputAction.THROTTLE_BACKWARD },
-  { keyCode: 'KeyX', action: InputAction.DEBUG_TOGGLE }
+  { keyCode: 'KeyX', action: InputAction.DEBUG_TOGGLE },
 ];
 
 export const getActionFromKeyCode = (keyCode: KeyCode): InputAction | undefined => {
-  const mapping = INPUT_MAPPINGS.find(m => m.keyCode === keyCode);
+  const mapping = INPUT_MAPPINGS.find((m) => m.keyCode === keyCode);
   return mapping?.action;
 };
 
 export const getKeyCodeFromAction = (action: InputAction): KeyCode | undefined => {
-  const mapping = INPUT_MAPPINGS.find(m => m.action === action);
+  const mapping = INPUT_MAPPINGS.find((m) => m.action === action);
   return mapping?.keyCode;
-}; 
+};

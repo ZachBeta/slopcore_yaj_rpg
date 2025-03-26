@@ -10,10 +10,10 @@ const mockCanvasInstance = {
     fillRect: jest.fn(),
     font: '',
     textAlign: '',
-    fillText: jest.fn()
+    fillText: jest.fn(),
   }),
   width: 256,
-  height: 64
+  height: 64,
 };
 
 // Properly typed mock for document.createElement
@@ -32,22 +32,22 @@ jest.mock('three/examples/jsm/renderers/CSS2DRenderer', () => {
     CSS2DObject: jest.fn().mockImplementation(() => {
       return {
         position: { set: jest.fn() },
-        element: document.createElement('div')
+        element: document.createElement('div'),
       };
     }),
     CSS2DRenderer: jest.fn().mockImplementation(() => {
       return {
         setSize: jest.fn(),
         domElement: document.createElement('div'),
-        render: jest.fn()
+        render: jest.fn(),
       };
-    })
+    }),
   };
 });
 
 describe('Player Movement with Orientation', () => {
   let player: Player;
-  
+
   beforeEach(() => {
     player = new Player('test-player', true);
     // Start player well above ground to avoid ground collision affecting tests
@@ -55,7 +55,7 @@ describe('Player Movement with Orientation', () => {
     // Reset rotation to default
     player.resetRotation();
   });
-  
+
   afterEach(() => {
     if (player && player.dispose) {
       player.dispose();
@@ -66,10 +66,10 @@ describe('Player Movement with Orientation', () => {
   // Helper function to prepare player with specific rotation
   const rotatePlayer = (pitch: number, yaw: number, roll: number) => {
     const euler = new THREE.Euler(
-      THREE.MathUtils.degToRad(pitch),  // pitch (x)
-      THREE.MathUtils.degToRad(yaw),    // yaw (y)
-      THREE.MathUtils.degToRad(roll),   // roll (z)
-      'YXZ'
+      THREE.MathUtils.degToRad(pitch), // pitch (x)
+      THREE.MathUtils.degToRad(yaw), // yaw (y)
+      THREE.MathUtils.degToRad(roll), // roll (z)
+      'YXZ',
     );
     player.setRotationFromEuler(euler);
   };
@@ -77,15 +77,15 @@ describe('Player Movement with Orientation', () => {
   // Helper to get movement direction after an action
   const getMovementDirection = (action: InputAction, duration: number = 0.1): THREE.Vector3 => {
     const initialPosition = player.getPosition().clone();
-    
+
     const inputManager = player.getInputManager();
     inputManager.handleActionDown(action);
     player.update(duration);
     inputManager.handleActionUp(action);
-    
+
     const finalPosition = player.getPosition();
     const direction = new THREE.Vector3().subVectors(finalPosition, initialPosition);
-    
+
     return direction;
   };
 
@@ -93,7 +93,7 @@ describe('Player Movement with Orientation', () => {
     it('should move along local Y axis when drone is level', () => {
       // Default orientation (level)
       rotatePlayer(0, 0, 0);
-      
+
       // Test upward movement (W key)
       const upDirection = getMovementDirection(InputAction.MOVE_UP);
       // Should move mostly in global +Y direction
@@ -101,7 +101,7 @@ describe('Player Movement with Orientation', () => {
       // Should have minimal movement in X and Z
       expect(Math.abs(upDirection.x)).toBeLessThan(0.01);
       expect(Math.abs(upDirection.z)).toBeLessThan(0.01);
-      
+
       // Test downward movement (S key)
       const downDirection = getMovementDirection(InputAction.MOVE_DOWN);
       // Should move mostly in global -Y direction
@@ -110,28 +110,28 @@ describe('Player Movement with Orientation', () => {
       expect(Math.abs(downDirection.x)).toBeLessThan(0.01);
       expect(Math.abs(downDirection.z)).toBeLessThan(0.01);
     });
-    
+
     it('should move along local Y axis when drone is pitched forward', () => {
       // Pitch forward 45 degrees
       rotatePlayer(45, 0, 0);
-      
+
       // Test upward movement (W key)
       const upDirection = getMovementDirection(InputAction.MOVE_UP);
       // When pitched forward, the drone should move in positive Y and positive Z
       expect(upDirection.y).toBeGreaterThan(0);
       expect(upDirection.z).toBeGreaterThan(0);
-      
+
       // Test downward movement (S key)
       const downDirection = getMovementDirection(InputAction.MOVE_DOWN);
       // Should move in negative Y and negative Z when pitched forward
       expect(downDirection.y).toBeLessThan(0);
       expect(downDirection.z).toBeLessThan(0);
     });
-    
+
     it('should move along local Y axis when drone is pitched and yawed', () => {
       // Pitch 30 degrees forward and yaw 45 degrees right
       rotatePlayer(30, 45, 0);
-      
+
       // Test upward movement (W key)
       const upDirection = getMovementDirection(InputAction.MOVE_UP);
       // Should have components in all three directions
@@ -139,7 +139,7 @@ describe('Player Movement with Orientation', () => {
       // Due to the rotation, local Y axis now has X and Z components in world space
       expect(upDirection.x).toBeGreaterThan(0); // With this rotation, X component is positive
       expect(upDirection.z).toBeGreaterThan(0); // With this rotation, Z component is positive
-      
+
       // Test downward movement (S key)
       const downDirection = getMovementDirection(InputAction.MOVE_DOWN);
       // Should have opposite components
@@ -153,7 +153,7 @@ describe('Player Movement with Orientation', () => {
     it('should move along local Z axis when level', () => {
       // Default orientation
       rotatePlayer(0, 0, 0);
-      
+
       // Test forward movement (R key)
       const forwardDirection = getMovementDirection(InputAction.THROTTLE_FORWARD);
       // Should move mostly in global -Z direction
@@ -162,7 +162,7 @@ describe('Player Movement with Orientation', () => {
       // Relax the Y constraint to match actual behavior
       expect(Math.abs(forwardDirection.x)).toBeLessThan(0.25);
       expect(Math.abs(forwardDirection.y)).toBeLessThan(0.25);
-      
+
       // Test backward movement (F key)
       const backwardDirection = getMovementDirection(InputAction.THROTTLE_BACKWARD);
       // Should move mostly in global +Z direction
@@ -171,18 +171,18 @@ describe('Player Movement with Orientation', () => {
       expect(Math.abs(backwardDirection.x)).toBeLessThan(0.25);
       expect(Math.abs(backwardDirection.y)).toBeLessThan(0.25);
     });
-    
+
     it('should move along local Z axis when pitched up', () => {
       // Pitch up 45 degrees
       rotatePlayer(-45, 0, 0);
-      
+
       // Test forward movement (R key)
       const forwardDirection = getMovementDirection(InputAction.THROTTLE_FORWARD);
       // Should move in a combination of -Z and -Y (since pitching up 45 degrees aims down slightly)
       expect(forwardDirection.z).toBeLessThan(0);
       // Y component is negative when pitched up and moving forward
       expect(forwardDirection.y).toBeLessThan(0);
-      
+
       // Test backward movement (F key)
       const backwardDirection = getMovementDirection(InputAction.THROTTLE_BACKWARD);
       // Should move in a combination of +Z and +Y
@@ -195,32 +195,32 @@ describe('Player Movement with Orientation', () => {
     it('should properly translate global to local coordinates with all rotations', () => {
       // Apply complex rotation: pitched up 30 degrees, yawed 45 degrees, rolled 15 degrees
       rotatePlayer(-30, 45, 15);
-      
+
       // Capture the initial position
       const initialPosition = player.getPosition().clone();
-      
+
       // Apply a sequence of movements
       const inputManager = player.getInputManager();
-      
+
       // Move up
       inputManager.handleActionDown(InputAction.MOVE_UP);
       player.update(0.1);
       inputManager.handleActionUp(InputAction.MOVE_UP);
-      
+
       // Move forward
       inputManager.handleActionDown(InputAction.THROTTLE_FORWARD);
       player.update(0.1);
       inputManager.handleActionUp(InputAction.THROTTLE_FORWARD);
-      
+
       // Move down
       inputManager.handleActionDown(InputAction.MOVE_DOWN);
       player.update(0.1);
       inputManager.handleActionUp(InputAction.MOVE_DOWN);
-      
+
       // Check final position differs from initial position
       const finalPosition = player.getPosition();
       const totalMovement = new THREE.Vector3().subVectors(finalPosition, initialPosition);
-      
+
       // We should have moved, but not returned to the exact starting point
       expect(totalMovement.length()).toBeGreaterThan(0.1);
     });
@@ -228,19 +228,19 @@ describe('Player Movement with Orientation', () => {
     it('should move according to drone orientation after rotation changes', () => {
       // Start with default orientation
       rotatePlayer(0, 0, 0);
-      
+
       // Capture movement direction with initial orientation
       const initialUpDirection = getMovementDirection(InputAction.MOVE_UP);
-      
+
       // Now rotate the drone 180 degrees (yaw)
       rotatePlayer(0, 180, 0);
-      
+
       // Capture movement direction with new orientation
       const newUpDirection = getMovementDirection(InputAction.MOVE_UP);
-      
+
       // The Y components should be similar (still moving up)
       expect(initialUpDirection.y * newUpDirection.y).toBeGreaterThan(0);
-      
+
       // But the X and Z components should be approximately reversed
       // due to the 180 degree rotation
       expect(initialUpDirection.x * newUpDirection.x).toBeLessThan(0.01);
@@ -253,83 +253,87 @@ describe('Player Movement with Orientation', () => {
       // Start the drone at origin
       player.setPosition(new THREE.Vector3(0, GROUND_LEVEL + 20, 0));
       rotatePlayer(0, 0, 0);
-      
+
       // Planned trajectory:
       // 1. Move up
       // 2. Pitch forward and move forward
       // 3. Yaw right and move forward
       // 4. Roll left and move up
       // 5. Return to level and move down
-      
+
       const inputManager = player.getInputManager();
-      const trajectory: Array<{position: THREE.Vector3, label: string}> = [];
-      
+      const trajectory: Array<{ position: THREE.Vector3; label: string }> = [];
+
       // Record initial position
       trajectory.push({
         position: player.getPosition().clone(),
-        label: 'Start'
+        label: 'Start',
       });
-      
+
       // 1. Move up
       inputManager.handleActionDown(InputAction.MOVE_UP);
       player.update(0.5);
       inputManager.handleActionUp(InputAction.MOVE_UP);
-      
+
       trajectory.push({
         position: player.getPosition().clone(),
-        label: 'After up'
+        label: 'After up',
       });
-      
+
       // 2. Pitch forward and move forward
       rotatePlayer(30, 0, 0);
       inputManager.handleActionDown(InputAction.THROTTLE_FORWARD);
       player.update(0.5);
       inputManager.handleActionUp(InputAction.THROTTLE_FORWARD);
-      
+
       trajectory.push({
         position: player.getPosition().clone(),
-        label: 'After forward'
+        label: 'After forward',
       });
-      
+
       // 3. Yaw right and move forward
       rotatePlayer(30, 90, 0);
       inputManager.handleActionDown(InputAction.THROTTLE_FORWARD);
       player.update(0.5);
       inputManager.handleActionUp(InputAction.THROTTLE_FORWARD);
-      
+
       trajectory.push({
         position: player.getPosition().clone(),
-        label: 'After yaw right'
+        label: 'After yaw right',
       });
-      
+
       // 4. Roll left and move up
       rotatePlayer(30, 90, 30);
       inputManager.handleActionDown(InputAction.MOVE_UP);
       player.update(0.5);
       inputManager.handleActionUp(InputAction.MOVE_UP);
-      
+
       trajectory.push({
         position: player.getPosition().clone(),
-        label: 'After roll'
+        label: 'After roll',
       });
-      
+
       // 5. Return to level and move down
       rotatePlayer(0, 0, 0);
       inputManager.handleActionDown(InputAction.MOVE_DOWN);
       player.update(0.5);
       inputManager.handleActionUp(InputAction.MOVE_DOWN);
-      
+
       trajectory.push({
         position: player.getPosition().clone(),
-        label: 'End'
+        label: 'End',
       });
-      
+
       // Print the trajectory for visualization
       console.log('Drone movement trajectory:');
       trajectory.forEach((point, index) => {
-        console.log(`${index}: ${point.label} - (${point.position.x.toFixed(2)}, ${point.position.y.toFixed(2)}, ${point.position.z.toFixed(2)})`);
+        console.log(
+          `${index}: ${point.label} - (${point.position.x.toFixed(2)}, ${
+            point.position.y.toFixed(2)
+          }, ${point.position.z.toFixed(2)})`,
+        );
       });
-      
+
       // Verify the drone moved in a reasonable pattern
       // The start and end points should be different
       const start = trajectory[0];
@@ -337,7 +341,7 @@ describe('Player Movement with Orientation', () => {
       if (start && end) {
         expect(start.position.distanceTo(end.position)).toBeGreaterThan(1);
       }
-      
+
       // Because of the fixed movement direction, we can't check for the exact Y difference
       // We just need to make sure movement occurred between each step
       for (let i = 0; i < trajectory.length - 1; i++) {
@@ -349,4 +353,4 @@ describe('Player Movement with Orientation', () => {
       }
     });
   });
-}); 
+});

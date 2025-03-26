@@ -8,4 +8,4 @@ declare global {
   }
   var game: Game | undefined;
   var testMockGame: Partial<TerminalGame> | undefined;
-} 
+}

@@ -10,10 +10,10 @@ describe('GamePhase', () => {
     expect(GamePhase.END_TURN).toBe('end_turn');
     expect(GamePhase.GAME_OVER).toBe('game_over');
   });
-  
+
   it('should have exactly 6 phases defined', () => {
     // Count the number of phases in the enum
     const phaseCount = Object.keys(GamePhase).length;
     expect(phaseCount).toBe(6);
   });
-}); 
+});

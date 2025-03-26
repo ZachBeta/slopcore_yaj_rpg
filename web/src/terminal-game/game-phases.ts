@@ -8,5 +8,5 @@ export enum GamePhase {
   DISCARD = 'discard',
   END_TURN = 'end_turn',
   CLEANUP = 'cleanup',
-  GAME_OVER = 'game_over'
-} 
+  GAME_OVER = 'game_over',
+}

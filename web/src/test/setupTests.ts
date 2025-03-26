@@ -32,7 +32,7 @@ globalThis.console = {
 // Set up mocks for browser environment
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: jest.fn().mockImplementation(query => ({
+  value: jest.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -45,14 +45,14 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 // Mock document methods
-document.createElement = jest.fn().mockImplementation(_tag => {
+document.createElement = jest.fn().mockImplementation((_tag) => {
   const element = {
     style: {},
     innerHTML: '',
     appendChild: jest.fn(),
     addEventListener: jest.fn(),
     classList: {
-      add: jest.fn()
+      add: jest.fn(),
     },
     setAttribute: jest.fn(),
   };
@@ -73,7 +73,7 @@ Object.defineProperty(document, 'body', {
     removeChild: mockRemoveChild,
     style: {},
   },
-  writable: false
+  writable: false,
 });
 
 // Export mocks for use in tests
@@ -83,4 +83,4 @@ describe('Test Environment Setup', () => {
   test('Jest is working', () => {
     expect(true).toBe(true);
   });
-}); 
+});

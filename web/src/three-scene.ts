@@ -13,12 +13,18 @@ export class ThreeScene {
   private d20: THREE.Mesh;
   private animating: boolean = false;
   private d20FollowingMouse: boolean = false;
-  private controls: { mouseX: number; mouseY: number; lastX: number; lastY: number; isRotating: boolean } = {
+  private controls: {
+    mouseX: number;
+    mouseY: number;
+    lastX: number;
+    lastY: number;
+    isRotating: boolean;
+  } = {
     mouseX: 0,
     mouseY: 0,
     lastX: 0,
     lastY: 0,
-    isRotating: false
+    isRotating: false,
   };
 
   /**
@@ -35,10 +41,10 @@ export class ThreeScene {
 
     // Set up the scene
     this.scene = new THREE.Scene();
-    
+
     // Add a neon cyberpunk feel to the background
     this.scene.background = new THREE.Color(0x0a0a14);
-    
+
     // Add a subtle fog for depth
     this.scene.fog = new THREE.FogExp2(0x0a0a14, 0.01);
 
@@ -47,7 +53,7 @@ export class ThreeScene {
       75,
       globalThis.innerWidth / globalThis.innerHeight,
       0.1,
-      1000
+      1000,
     );
     this.camera.position.z = 5;
 
@@ -68,11 +74,11 @@ export class ThreeScene {
     // Create a cube with neon wireframe
     const geometry = new THREE.BoxGeometry(3, 3, 3);
     const edges = new THREE.EdgesGeometry(geometry);
-    const material = new THREE.LineBasicMaterial({ 
-      color: 0x00ffff, 
+    const material = new THREE.LineBasicMaterial({
+      color: 0x00ffff,
       transparent: true,
       opacity: 0.9,
-      linewidth: 2
+      linewidth: 2,
     });
     this.cube = new THREE.LineSegments(edges, material);
     this.scene.add(this.cube);
@@ -80,11 +86,11 @@ export class ThreeScene {
     // Create a glowing edge effect
     const glowGeometry = new THREE.BoxGeometry(3.05, 3.05, 3.05);
     const glowEdges = new THREE.EdgesGeometry(glowGeometry);
-    const glowMaterial = new THREE.LineBasicMaterial({ 
-      color: 0x00aaff, 
+    const glowMaterial = new THREE.LineBasicMaterial({
+      color: 0x00aaff,
       transparent: true,
       opacity: 0.4,
-      linewidth: 1
+      linewidth: 1,
     });
     this.glowingEdges = new THREE.LineSegments(glowEdges, glowMaterial);
     this.scene.add(this.glowingEdges);
@@ -97,7 +103,7 @@ export class ThreeScene {
       shininess: 100,
       transparent: true,
       opacity: 0.1,
-      flatShading: true
+      flatShading: true,
     });
     this.d20 = new THREE.Mesh(d20Geometry, d20Material);
     this.d20.position.set(15, 5, -10);
@@ -132,17 +138,17 @@ export class ThreeScene {
    */
   private animate(): void {
     if (!this.animating) return;
-    
+
     requestAnimationFrame(this.animate.bind(this));
-    
+
     // Rotate the cube
     this.cube.rotation.x += 0.01;
     this.cube.rotation.y += 0.01;
-    
+
     // Rotate the glowing edges
     this.glowingEdges.rotation.x = this.cube.rotation.x;
     this.glowingEdges.rotation.y = this.cube.rotation.y;
-    
+
     // Render the scene
     this.renderer.render(this.scene, this.camera);
   }
@@ -171,31 +177,31 @@ export class ThreeScene {
   private onMouseMove(event: MouseEvent): void {
     this.controls.mouseX = event.clientX;
     this.controls.mouseY = event.clientY;
-    
+
     if (this.controls.isRotating) {
       const deltaX = this.controls.mouseX - this.controls.lastX;
       const deltaY = this.controls.mouseY - this.controls.lastY;
-      
+
       this.cube.rotation.y += deltaX * 0.01;
       this.cube.rotation.x += deltaY * 0.01;
-      
+
       this.glowingEdges.rotation.y = this.cube.rotation.y;
       this.glowingEdges.rotation.x = this.cube.rotation.x;
-      
+
       this.controls.lastX = this.controls.mouseX;
       this.controls.lastY = this.controls.mouseY;
     }
-    
+
     if (this.d20FollowingMouse) {
       // Convert mouse position to 3D coordinates
       const mouseX = (event.clientX / globalThis.innerWidth) * 2 - 1;
       const mouseY = -(event.clientY / globalThis.innerHeight) * 2 + 1;
-      
+
       // Update d20 position
       this.d20.position.x = mouseX * 5;
       this.d20.position.y = mouseY * 3;
       this.d20.position.z = 0;
-      
+
       // Rotate the d20
       this.d20.rotation.x += 0.05;
       this.d20.rotation.y += 0.05;
@@ -214,24 +220,24 @@ export class ThreeScene {
    */
   public dispose(): void {
     this.stop();
-    
+
     // Clean up event listeners
     globalThis.removeEventListener('resize', this.onWindowResize.bind(this));
-    
+
     // Dispose of geometries and materials
     this.scene.traverse((object) => {
       if (object instanceof THREE.Mesh) {
         object.geometry.dispose();
-        
+
         if (object.material instanceof Array) {
-          object.material.forEach(material => material.dispose());
+          object.material.forEach((material) => material.dispose());
         } else {
           object.material.dispose();
         }
       }
     });
-    
+
     // Dispose of the renderer
     this.renderer.dispose();
   }
-} 
+}

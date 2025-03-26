@@ -1,4 +1,4 @@
-import { InputAction, getActionFromKeyCode, KeyCode } from '../constants/input';
+import { getActionFromKeyCode, InputAction, KeyCode } from '../constants/input';
 import { Milliseconds } from '../types';
 
 // Define more specific types for input manager
@@ -20,13 +20,13 @@ export class InputManager {
 
   constructor(
     onActionDown: ActionHandler,
-    onActionUp: ActionHandler
+    onActionUp: ActionHandler,
   ) {
     this.state = {
       activeActions: new Set(),
       isDemoMode: false,
       demoModeActions: [],
-      demoModeIndex: 0
+      demoModeIndex: 0,
     };
     this.onActionDown = onActionDown;
     this.onActionUp = onActionUp;
@@ -108,7 +108,7 @@ export class InputManager {
       const action = this.state.demoModeActions[this.state.demoModeIndex];
       if (action) {
         this.handleActionDown(action);
-        
+
         // Release the action after a short delay
         setTimeout(() => {
           if (action) {
@@ -131,7 +131,7 @@ export class InputManager {
     }
 
     // Release all active actions
-    this.state.activeActions.forEach(action => {
+    this.state.activeActions.forEach((action) => {
       this.handleActionUp(action);
     });
 
@@ -153,4 +153,4 @@ export class InputManager {
   public dispose(): void {
     this.disableDemoMode();
   }
-} 
+}

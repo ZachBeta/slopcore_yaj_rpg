@@ -1,4 +1,4 @@
-import { Position, Rotation, Player, ServerDiagnostics, MapData } from './types';
+import { MapData, Player, Position, Rotation, ServerDiagnostics } from './types';
 
 export enum GameEvent {
   // Player events
@@ -11,33 +11,33 @@ export enum GameEvent {
   ROTATION_UPDATE = 'rotation_update',
   PLAYERS_LIST = 'players_list',
   MAP_DATA = 'map_data',
-  
+
   // Game state events
   GAME_STATE_UPDATE = 'game_state_update',
   SERVER_DIAGNOSTICS = 'server_diagnostics',
-  
+
   // Connection events
   CONNECTION_STATUS = 'connection_status',
   CONNECTION_ERROR = 'connection_error',
-  
+
   // Game control events
   START_GAME = 'start_game',
   PAUSE_GAME = 'pause_game',
   RESUME_GAME = 'resume_game',
   STOP_GAME = 'stop_game',
-  
+
   // Chat events
   CHAT_MESSAGE = 'chat_message',
-  
+
   // Network events
   PING = 'ping',
-  PONG = 'pong'
+  PONG = 'pong',
 }
 
 export enum ConnectionStatus {
   CONNECTED = 'connected',
   DISCONNECTED = 'disconnected',
-  ERROR = 'error'
+  ERROR = 'error',
 }
 
 // UI Element IDs
@@ -47,7 +47,7 @@ export enum ElementId {
   ABOUT_BUTTON = 'about-button',
   MENU_CONTAINER = 'menu-container',
   CANVAS_CONTAINER = 'canvas-container',
-  BACK_BUTTON = 'back-button'
+  BACK_BUTTON = 'back-button',
 }
 
 // Game configuration
@@ -58,7 +58,7 @@ export const GAME_CONFIG = {
   COLOR_POOL_SIZE: 100,
   SPAWN_RADIUS: 50,
   CAMERA_DISTANCE: 10,
-  CAMERA_HEIGHT: 2
+  CAMERA_HEIGHT: 2,
 } as const;
 
 // Event Payload Types
@@ -90,4 +90,4 @@ export interface GameEventEmitter {
   on<T extends GameEvent>(event: T, listener: (payload: GameEventPayloads[T]) => void): void;
   emit<T extends GameEvent>(event: T, payload: GameEventPayloads[T]): void;
   off<T extends GameEvent>(event: T, listener: (payload: GameEventPayloads[T]) => void): void;
-} 
+}

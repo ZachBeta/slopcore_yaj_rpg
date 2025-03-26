@@ -5,15 +5,19 @@ This module implements a simple isomorphic open world multiplayer game using Thr
 ## Components
 
 ### OpenWorldGame (open-world.ts)
+
 The main game controller that coordinates all other components. It sets up the Three.js scene, manages the game loop, and handles the integration of all the other components.
 
 ### Player (player.ts)
+
 Handles player movement, rendering, and collision detection. It implements simple physics for jumping and gravity, and provides visual feedback for collisions.
 
 ### WorldManager (world-manager.ts)
+
 Creates and manages the 3D environment including ground, obstacles, skybox, and lighting. It provides an immersive world for players to explore.
 
 ### NetworkManager (network-manager.ts)
+
 Currently implements a mock multiplayer system where other players are simulated. In the future, this will be replaced with real Socket.io communication.
 
 ## How to Use
@@ -44,6 +48,7 @@ game.start();
 ## Future Improvements
 
 ### Real Multiplayer
+
 The current implementation uses a mock system for multiplayer. To implement real multiplayer:
 
 1. Set up a Socket.io server using Express
@@ -51,6 +56,7 @@ The current implementation uses a mock system for multiplayer. To implement real
 3. Implement server-side logic for player synchronization
 
 ### Enhanced Environment
+
 The current world is relatively simple. To enhance it:
 
 1. Add terrain with hills and valleys
@@ -59,6 +65,7 @@ The current world is relatively simple. To enhance it:
 4. Add weather effects
 
 ### Improved Player Experience
+
 To improve the player experience:
 
 1. Add better player models with animations
@@ -70,4 +77,4 @@ To improve the player experience:
 
 - The code is structured to make it easy to replace the mock multiplayer with a real implementation
 - The rendering system is separated from game logic for better maintainability
-- All component interfaces are designed to be extensible for future features 
+- All component interfaces are designed to be extensible for future features

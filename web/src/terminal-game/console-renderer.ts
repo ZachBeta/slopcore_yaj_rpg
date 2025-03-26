@@ -71,7 +71,7 @@ export class ConsoleRenderer {
     credit: 'color: #FFCC44; font-size: 14px;',
     memory: 'color: #88AAFF; font-size: 14px;',
     system: 'color: #AACCDD; font-size: 14px;',
-    trace: 'color: #FF6677; font-size: 14px; font-weight: bold;'
+    trace: 'color: #FF6677; font-size: 14px; font-weight: bold;',
   };
 
   /**
@@ -87,14 +87,16 @@ export class ConsoleRenderer {
    */
   private applyConsoleStyles(): void {
     // Increase console text size and improve readability with these styles
-    console.log("%cConsole styling applied for better readability", 
-      "color: #00ffff; font-size: 14px; font-weight: bold; background-color: #222; padding: 5px;");
-    
+    console.log(
+      '%cConsole styling applied for better readability',
+      'color: #00ffff; font-size: 14px; font-weight: bold; background-color: #222; padding: 5px;',
+    );
+
     // Try to apply styles to body element to make console more visible
     try {
       if (document.body) {
-        document.body.style.backgroundColor = "#121212";
-        
+        document.body.style.backgroundColor = '#121212';
+
         // Create a tip at the top of the page
         const consoleTip = document.createElement('div');
         consoleTip.style.position = 'fixed';
@@ -109,7 +111,7 @@ export class ConsoleRenderer {
         consoleTip.style.fontFamily = 'monospace';
         consoleTip.style.boxShadow = '0 0 10px rgba(0, 255, 255, 0.3)';
         consoleTip.innerHTML = 'Press <strong>F12</strong> to open the console';
-        
+
         // Create a menu button to return to main screen
         const menuButton = document.createElement('div');
         menuButton.style.position = 'fixed';
@@ -130,7 +132,7 @@ export class ConsoleRenderer {
 
         // Add click event to show menu options
         menuButton.addEventListener('click', () => this.showMenuOptions());
-        
+
         document.body.appendChild(consoleTip);
         document.body.appendChild(menuButton);
       }
@@ -227,16 +229,18 @@ export class ConsoleRenderer {
         const menuContainer = document.querySelector('.menu-container');
         if (menuContainer) {
           (menuContainer as HTMLElement).style.display = 'block';
-          
+
           // Remove any game instructions that might have been added
-          const gameInstructions = document.querySelectorAll('body > div:not(.menu-container):not(#canvas-container)');
-          gameInstructions.forEach(el => {
+          const gameInstructions = document.querySelectorAll(
+            'body > div:not(.menu-container):not(#canvas-container)',
+          );
+          gameInstructions.forEach((el) => {
             if (el !== modalOverlay) {
               document.body.removeChild(el);
             }
           });
         }
-        
+
         document.body.removeChild(modalOverlay);
         console.clear();
       });
@@ -257,7 +261,6 @@ export class ConsoleRenderer {
       });
 
       document.body.appendChild(modalOverlay);
-
     } catch {
       // Ignore any errors with DOM manipulation
     }
@@ -281,8 +284,9 @@ export class ConsoleRenderer {
     demoOverlay.style.fontFamily = 'Arial, sans-serif';
     demoOverlay.style.fontWeight = 'bold';
     demoOverlay.style.boxShadow = '0 0 10px rgba(153, 51, 204, 0.5)';
-    demoOverlay.innerHTML = '<span style="color: #ffcc00;">⚡</span> DEMO MODE <span style="color: #ffcc00;">⚡</span>';
-    
+    demoOverlay.innerHTML =
+      '<span style="color: #ffcc00;">⚡</span> DEMO MODE <span style="color: #ffcc00;">⚡</span>';
+
     // Create a stop button
     const stopButton = document.createElement('button');
     stopButton.textContent = 'Stop Demo';
@@ -318,7 +322,7 @@ export class ConsoleRenderer {
       { command: 'draw', delay: 2000 },
       { command: 'hand', delay: 2000 },
       { command: 'run R&D', delay: 3000 },
-      { command: 'end', delay: 4000 }
+      { command: 'end', delay: 4000 },
     ];
 
     let currentIndex = 0;
@@ -330,7 +334,10 @@ export class ConsoleRenderer {
       document.body.removeChild(demoOverlay);
       document.body.removeChild(stopButton);
       // Add a message that demo was stopped
-      console.log("%cDemo mode stopped. You can now enter your own commands.", "color: #cc3333; font-weight: bold;");
+      console.log(
+        '%cDemo mode stopped. You can now enter your own commands.',
+        'color: #cc3333; font-weight: bold;',
+      );
     };
 
     // Add stop event
@@ -341,7 +348,10 @@ export class ConsoleRenderer {
       if (!isRunning || currentIndex >= demoCommands.length) {
         if (isRunning) {
           // Demo completed
-          console.log("%cDemo mode completed. You can now enter your own commands.", "color: #9933cc; font-weight: bold;");
+          console.log(
+            '%cDemo mode completed. You can now enter your own commands.',
+            'color: #9933cc; font-weight: bold;',
+          );
           document.body.removeChild(demoOverlay);
           document.body.removeChild(stopButton);
         }
@@ -349,16 +359,16 @@ export class ConsoleRenderer {
       }
 
       const { command, delay } = demoCommands[currentIndex];
-      
+
       // Display a highlighted message showing the command
-      console.log(`%c> ${command}`, "color: #9933cc; font-weight: bold; font-size: 14px;");
-      
+      console.log(`%c> ${command}`, 'color: #9933cc; font-weight: bold; font-size: 14px;');
+
       // Execute the command using the global processCommand function
       const g = globalThis as unknown as ProcessCommandGlobal;
       if (g.processCommand) {
         g.processCommand(command);
       }
-      
+
       // Move to the next command after the specified delay
       currentIndex++;
       setTimeout(runNextCommand, delay);
@@ -366,11 +376,20 @@ export class ConsoleRenderer {
 
     // Display demo mode info
     console.clear();
-    console.log("%c=== DEMO MODE ACTIVATED ===", "color: #9933cc; font-weight: bold; font-size: 16px;");
-    console.log("%cWatch as the game automatically demonstrates key features.", "color: #ffffff; font-size: 14px;");
-    console.log("%cClick 'Stop Demo' button to take control at any time.", "color: #ffffff; font-size: 14px;");
-    console.log("");
-    
+    console.log(
+      '%c=== DEMO MODE ACTIVATED ===',
+      'color: #9933cc; font-weight: bold; font-size: 16px;',
+    );
+    console.log(
+      '%cWatch as the game automatically demonstrates key features.',
+      'color: #ffffff; font-size: 14px;',
+    );
+    console.log(
+      "%cClick 'Stop Demo' button to take control at any time.",
+      'color: #ffffff; font-size: 14px;',
+    );
+    console.log('');
+
     // Start the demo sequence
     setTimeout(runNextCommand, 2000);
   }
@@ -387,7 +406,10 @@ export class ConsoleRenderer {
    * @param message The message to display
    * @param type The type of message (error, warning, success, info)
    */
-  public renderMessage(message: string, type: 'error' | 'warning' | 'success' | 'info' = 'info'): void {
+  public renderMessage(
+    message: string,
+    type: 'error' | 'warning' | 'success' | 'info' = 'info',
+  ): void {
     console.log(`%c${message}`, this.colors[type]);
   }
 
@@ -429,16 +451,16 @@ export class ConsoleRenderer {
     cards.forEach((card, index) => {
       console.log(
         `%c[${index}] ${card.name} - ${card.type} - Cost: ${card.cost}`,
-        this.colors.card
+        this.colors.card,
       );
-      
+
       // Display ASCII art if available
       if (card.ascii_art && card.ascii_art.length > 0) {
         card.ascii_art.forEach((line: string) => {
           console.log(`    ${line}`);
         });
       }
-      
+
       console.log(`    ${card.description || 'No description'}`);
     });
   }
@@ -457,16 +479,16 @@ export class ConsoleRenderer {
     installed.forEach((card, index) => {
       console.log(
         `%c[${index}] ${card.name} - ${card.type}`,
-        this.colors.card
+        this.colors.card,
       );
-      
+
       // Display ASCII art if available
       if (card.ascii_art && card.ascii_art.length > 0) {
         card.ascii_art.forEach((line: string) => {
           console.log(`    ${line}`);
         });
       }
-      
+
       if (card.memoryUsage) {
         console.log(`    Memory Usage: ${card.memoryUsage} MU`);
       }
@@ -528,21 +550,35 @@ export class ConsoleRenderer {
    * Render ASCII art banner for the game
    */
   public renderBanner(): void {
-    console.log("%c███╗   ██╗███████╗ ██████╗ ███╗   ██╗    ██████╗  ██████╗ ███╗   ███╗██╗███╗   ██╗ █████╗ ███╗   ██╗ ██████╗███████╗",
-      "color: #00ffff; font-weight: bold;");
-    console.log("%c████╗  ██║██╔════╝██╔═══██╗████╗  ██║    ██╔══██╗██╔═══██╗████╗ ████║██║████╗  ██║██╔══██╗████╗  ██║██╔════╝██╔════╝",
-      "color: #00ffff; font-weight: bold;");
-    console.log("%c██╔██╗ ██║█████╗  ██║   ██║██╔██╗ ██║    ██║  ██║██║   ██║██╔████╔██║██║██╔██╗ ██║███████║██╔██╗ ██║██║     █████╗  ",
-      "color: #00ffff; font-weight: bold;");
-    console.log("%c██║╚██╗██║██╔══╝  ██║   ██║██║╚██╗██║    ██║  ██║██║   ██║██║╚██╔╝██║██║██║╚██╗██║██╔══██║██║╚██╗██║██║     ██╔══╝  ",
-      "color: #00ffff; font-weight: bold;");
-    console.log("%c██║ ╚████║███████╗╚██████╔╝██║ ╚████║    ██████╔╝╚██████╔╝██║ ╚═╝ ██║██║██║ ╚████║██║  ██║██║ ╚████║╚██████╗███████╗",
-      "color: #00ffff; font-weight: bold;");
-    console.log("%c╚═╝  ╚═══╝╚══════╝ ╚═════╝ ╚═╝  ╚═══╝    ╚═════╝  ╚═════╝ ╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝╚══════╝",
-      "color: #00ffff; font-weight: bold;");
-    console.log("%c                                       A CYBERPUNK HACKING CARD GAME\n                                   ",
-      "color: #ffffff; background-color: #222; font-size: 14px;");
-    console.log("");
+    console.log(
+      '%c███╗   ██╗███████╗ ██████╗ ███╗   ██╗    ██████╗  ██████╗ ███╗   ███╗██╗███╗   ██╗ █████╗ ███╗   ██╗ ██████╗███████╗',
+      'color: #00ffff; font-weight: bold;',
+    );
+    console.log(
+      '%c████╗  ██║██╔════╝██╔═══██╗████╗  ██║    ██╔══██╗██╔═══██╗████╗ ████║██║████╗  ██║██╔══██╗████╗  ██║██╔════╝██╔════╝',
+      'color: #00ffff; font-weight: bold;',
+    );
+    console.log(
+      '%c██╔██╗ ██║█████╗  ██║   ██║██╔██╗ ██║    ██║  ██║██║   ██║██╔████╔██║██║██╔██╗ ██║███████║██╔██╗ ██║██║     █████╗  ',
+      'color: #00ffff; font-weight: bold;',
+    );
+    console.log(
+      '%c██║╚██╗██║██╔══╝  ██║   ██║██║╚██╗██║    ██║  ██║██║   ██║██║╚██╔╝██║██║██║╚██╗██║██╔══██║██║╚██╗██║██║     ██╔══╝  ',
+      'color: #00ffff; font-weight: bold;',
+    );
+    console.log(
+      '%c██║ ╚████║███████╗╚██████╔╝██║ ╚████║    ██████╔╝╚██████╔╝██║ ╚═╝ ██║██║██║ ╚████║██║  ██║██║ ╚████║╚██████╗███████╗',
+      'color: #00ffff; font-weight: bold;',
+    );
+    console.log(
+      '%c╚═╝  ╚═══╝╚══════╝ ╚═════╝ ╚═╝  ╚═══╝    ╚═════╝  ╚═════╝ ╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝╚══════╝',
+      'color: #00ffff; font-weight: bold;',
+    );
+    console.log(
+      '%c                                       A CYBERPUNK HACKING CARD GAME\n                                   ',
+      'color: #ffffff; background-color: #222; font-size: 14px;',
+    );
+    console.log('');
   }
 
   displayError(message: string): void {
@@ -554,7 +590,7 @@ export class ConsoleRenderer {
   }
 
   displayHelp(commands: Record<string, string>): void {
-    console.log("\nAvailable commands:");
+    console.log('\nAvailable commands:');
     Object.entries(commands).forEach(([cmd, desc]) => {
       console.log(`  ${cmd.padEnd(10)} - ${desc}`);
     });
@@ -579,4 +615,4 @@ interface SystemStatus {
   neuralInterface: string;
   traceDetection: number;
   securityLevel: string;
-} 
+}

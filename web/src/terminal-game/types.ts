@@ -55,14 +55,14 @@ export interface GameState {
   memoryUnitsUsed: number;
   playerSide: string;
   opponentSide: string;
-  
+
   // Game phases and turns
   currentPhase: GamePhase;
   clicksRemaining: number;
   maxClicks: number;
   turnNumber: number;
   activePlayer: string;
-  
+
   // Win conditions
   runnerAgendaPoints: number;
   corpAgendaPoints: number;
@@ -71,18 +71,18 @@ export interface GameState {
   corpCardsRemaining: number;
   gameOver: boolean;
   winMessage: string;
-  
+
   // Card data
   playerDeck: Card[];
   handCards: Card[];
   playedCards: PlayedCard[];
   selectedCardIndex: number;
-  
+
   // Special gameplay flags
   bypassNextIce: number;
   nextRunUntraceable: boolean;
   currentRun: RunState | null;
-  
+
   // Command history
   commandHistory: string[];
   commandHistoryIndex: number;
@@ -92,4 +92,4 @@ export interface GameState {
 }
 
 // Command handler function
-export type CommandHandler = (args: string[]) => void; 
+export type CommandHandler = (args: string[]) => void;

@@ -1,5 +1,5 @@
 // Unit types to replace primitive numbers
-export type Seconds = number; 
+export type Seconds = number;
 export type Milliseconds = number;
 export type UnitInterval = number; // A number between 0 and 1
 export type Coordinate = number; // A spatial coordinate
@@ -100,4 +100,4 @@ export interface DebugState {
     total: Color[];
   };
   diagnostics: ServerDiagnostics;
-} 
+}

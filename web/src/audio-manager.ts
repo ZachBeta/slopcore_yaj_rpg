@@ -34,7 +34,7 @@ export class AudioManager {
     this.backgroundMusic = new Audio(track);
     this.backgroundMusic.loop = loop;
     this.backgroundMusic.volume = this.volume;
-    
+
     // Apply mute state if needed
     if (this.isMuted) {
       this.backgroundMusic.muted = true;
@@ -53,7 +53,7 @@ export class AudioManager {
     }
 
     // Play the music
-    this.backgroundMusic.play().catch(error => {
+    this.backgroundMusic.play().catch((error) => {
       console.error('Error playing background music:', error);
     });
   }
@@ -77,12 +77,12 @@ export class AudioManager {
     const soundEffect = new Audio(sound);
     soundEffect.loop = false;
     soundEffect.volume = volume !== undefined ? volume : this.volume;
-    
+
     if (this.isMuted) {
       soundEffect.muted = true;
     }
 
-    soundEffect.play().catch(error => {
+    soundEffect.play().catch((error) => {
       console.error('Error playing sound effect:', error);
     });
   }
@@ -93,7 +93,7 @@ export class AudioManager {
    */
   public setMute(mute: boolean): void {
     this.isMuted = mute;
-    
+
     if (this.backgroundMusic) {
       this.backgroundMusic.muted = mute;
     }
@@ -114,7 +114,7 @@ export class AudioManager {
    */
   public setVolume(volume: number): void {
     this.volume = Math.max(0, Math.min(1, volume));
-    
+
     if (this.backgroundMusic) {
       this.backgroundMusic.volume = this.volume;
     }
@@ -143,4 +143,4 @@ export class AudioManager {
   public isInitializedState(): boolean {
     return this.isInitialized;
   }
-} 
+}

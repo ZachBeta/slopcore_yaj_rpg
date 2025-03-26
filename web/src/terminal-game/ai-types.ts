@@ -20,4 +20,4 @@ export interface AIState {
   memory: number;
   installedPrograms: string[];
   serverStrengths: Record<string, number>;
-} 
+}

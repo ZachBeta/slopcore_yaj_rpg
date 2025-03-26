@@ -7,32 +7,32 @@ import { ConsoleRenderer } from './console-renderer';
 import { AIOpponent } from './ai-opponent';
 import { GamePhase } from './game-phases';
 import {
-  Credits,
-  MemoryUnits,
-  ClickCount,
-  TurnNumber,
   AgendaPoints,
   CardCount,
   CardIndex,
-  RandomSeed,
-  PlayerSide,
-  ServerName,
-  CommandName,
-  GameResources,
-  TurnState,
-  WinState,
   CardState,
-  CommandState,
-  GameComponents,
-  CommandDoc,
-  validCommands,
-  PlayedCard,
-  Server,
-  CommandHandler,
+  CardTrigger,
+  ClickCount,
   CommandArguments,
+  CommandDoc,
+  CommandHandler,
+  CommandName,
+  CommandState,
+  Credits,
+  GameComponents,
+  GameResources,
   GameState,
+  MemoryUnits,
+  PlayedCard,
+  PlayerSide,
+  RandomSeed,
   RunState,
-  CardTrigger
+  Server,
+  ServerName,
+  TurnNumber,
+  TurnState,
+  validCommands,
+  WinState,
 } from './game-types';
 
 // Command documentation
@@ -40,75 +40,79 @@ interface CommandManPage extends CommandDoc {}
 
 const commandManPages: Record<string, CommandManPage> = {
   help: {
-    NAME: "help - display available commands",
-    SYNOPSIS: "help [command]",
-    DESCRIPTION: "Display a list of available commands or get help on a specific command.",
-    EXAMPLES: "help\nhelp install",
-    SEE_ALSO: "man"
+    NAME: 'help - display available commands',
+    SYNOPSIS: 'help [command]',
+    DESCRIPTION: 'Display a list of available commands or get help on a specific command.',
+    EXAMPLES: 'help\nhelp install',
+    SEE_ALSO: 'man',
   },
   man: {
-    NAME: "man - display command manual",
-    SYNOPSIS: "man <command>",
-    DESCRIPTION: "Display the manual page for a specific command with detailed information about its usage.",
-    EXAMPLES: "man install\nman run",
-    SEE_ALSO: "help"
+    NAME: 'man - display command manual',
+    SYNOPSIS: 'man <command>',
+    DESCRIPTION:
+      'Display the manual page for a specific command with detailed information about its usage.',
+    EXAMPLES: 'man install\nman run',
+    SEE_ALSO: 'help',
   },
   draw: {
-    NAME: "draw - draw a card",
-    SYNOPSIS: "draw",
-    DESCRIPTION: "Draw a card from your deck. Costs 1 click and can only be used during the action phase.",
-    EXAMPLES: "draw",
-    SEE_ALSO: "hand, discard"
+    NAME: 'draw - draw a card',
+    SYNOPSIS: 'draw',
+    DESCRIPTION:
+      'Draw a card from your deck. Costs 1 click and can only be used during the action phase.',
+    EXAMPLES: 'draw',
+    SEE_ALSO: 'hand, discard',
   },
   hand: {
-    NAME: "hand - view cards in hand",
-    SYNOPSIS: "hand",
-    DESCRIPTION: "Display all cards currently in your hand/grip.",
-    EXAMPLES: "hand",
-    SEE_ALSO: "draw, install, discard"
+    NAME: 'hand - view cards in hand',
+    SYNOPSIS: 'hand',
+    DESCRIPTION: 'Display all cards currently in your hand/grip.',
+    EXAMPLES: 'hand',
+    SEE_ALSO: 'draw, install, discard',
   },
   install: {
-    NAME: "install - install a card",
-    SYNOPSIS: "install <card_index>",
-    DESCRIPTION: "Install a card from your hand. Costs 1 click and the credits shown on the card. Programs require memory units.",
-    EXAMPLES: "install 0\ninstall 2",
-    SEE_ALSO: "hand, memory, credits"
+    NAME: 'install - install a card',
+    SYNOPSIS: 'install <card_index>',
+    DESCRIPTION:
+      'Install a card from your hand. Costs 1 click and the credits shown on the card. Programs require memory units.',
+    EXAMPLES: 'install 0\ninstall 2',
+    SEE_ALSO: 'hand, memory, credits',
   },
   run: {
-    NAME: "run - attack a server",
-    SYNOPSIS: "run <server>",
-    DESCRIPTION: "Initiate a run on a server. Costs 1 click. Valid servers are R&D, HQ, and Archives.",
-    EXAMPLES: "run R&D\nrun HQ",
-    SEE_ALSO: "jack_out, system"
+    NAME: 'run - attack a server',
+    SYNOPSIS: 'run <server>',
+    DESCRIPTION:
+      'Initiate a run on a server. Costs 1 click. Valid servers are R&D, HQ, and Archives.',
+    EXAMPLES: 'run R&D\nrun HQ',
+    SEE_ALSO: 'jack_out, system',
   },
   end: {
-    NAME: "end - end your turn",
-    SYNOPSIS: "end",
-    DESCRIPTION: "End your turn. You must discard down to your maximum hand size first.",
-    EXAMPLES: "end",
-    SEE_ALSO: "discard"
-  }
+    NAME: 'end - end your turn',
+    SYNOPSIS: 'end',
+    DESCRIPTION: 'End your turn. You must discard down to your maximum hand size first.',
+    EXAMPLES: 'end',
+    SEE_ALSO: 'discard',
+  },
 };
 
 export class TerminalGame {
   // Game dependencies
   private renderer: ConsoleRenderer;
   private randomSeed: RandomSeed;
-  
+
   // Game resources
   private playerCredits: Credits = 5;
   private memoryUnitsAvailable: MemoryUnits = 4;
   private memoryUnitsUsed: MemoryUnits = 0;
-  private playerSide: PlayerSide = "runner";
-  private opponentSide: PlayerSide = "corp";
-  
+  private playerSide: PlayerSide = 'runner';
+  private opponentSide: PlayerSide = 'corp';
+
   // Game phases and turns
   private currentPhase: GamePhase = GamePhase.SETUP;
   private clicksRemaining: ClickCount = 0;
   private maxClicks: ClickCount = 4;
   private turnNumber: TurnNumber = 0;
   private activePlayer: PlayerSide | null = null;
-  
+
   // Win conditions
   private runnerAgendaPoints: AgendaPoints = 0;
   private corpAgendaPoints: AgendaPoints = 0;
@@ -116,19 +120,19 @@ export class TerminalGame {
   private runnerCardsRemaining: CardCount = 0;
   private corpCardsRemaining: CardCount = 30;
   private gameOver: boolean = false;
-  private winMessage: string = "";
-  
+  private winMessage: string = '';
+
   // Card data
   private playerDeck: Card[] = [];
   private handCards: Card[] = [];
   private playedCards: PlayedCard[] = [];
   private selectedCardIndex: CardIndex = -1;
-  
+
   // Special gameplay flags
   private bypassNextIce: number = 0;
   private nextRunUntraceable: boolean = false;
   private currentRun: RunState | null = null;
-  
+
   // Command history
   private commandHistory: string[] = [];
   private commandHistoryIndex: number = -1;
@@ -154,7 +158,7 @@ export class TerminalGame {
     installed: (args: string[]) => this.cmdInstalled({ command: 'installed', args, options: {} }),
     credits: (args: string[]) => this.cmdCredits({ command: 'credits', args, options: {} }),
     memory: (args: string[]) => this.cmdMemory({ command: 'memory', args, options: {} }),
-    jack_out: (args: string[]) => this.cmdJackOut({ command: 'jack_out', args, options: {} })
+    jack_out: (args: string[]) => this.cmdJackOut({ command: 'jack_out', args, options: {} }),
   };
 
   constructor(randomSeed: RandomSeed = Math.floor(Math.random() * 100000)) {
@@ -168,25 +172,25 @@ export class TerminalGame {
   initialize(): void {
     // Set up the random seed for consistent behavior
     this.setRandomSeed(this.randomSeed);
-    
+
     // Initialize AI opponent with the same seed
     this.aiOpponent = new AIOpponent('medium', this.randomSeed);
-    
+
     // Initialize servers
     this.initializeServers();
-    
+
     // Set up the initial deck, shuffle, and draw starting hand
     this.initializeDeck();
     this.drawStartingHand();
-    
+
     // Set initial game phase and active player
     this.currentPhase = GamePhase.SETUP;
     this.activePlayer = this.playerSide;
-    
+
     // Display welcome message and help
     this.displayWelcome();
-    this.processCommand("help");
-    
+    this.processCommand('help');
+
     // Start the game
     this.startTurn();
   }
@@ -215,13 +219,13 @@ export class TerminalGame {
    * Initialize corporate servers
    */
   private initializeServers(): void {
-    const serverNames: ServerName[] = ["HQ", "R&D", "Archives"];
+    const serverNames: ServerName[] = ['HQ', 'R&D', 'Archives'];
     this.servers = serverNames.reduce((acc, name) => {
       acc[name] = {
         name,
         ice: [],
         cards: [],
-        root: null
+        root: null,
       };
       return acc;
     }, {} as Record<ServerName, Server>);
@@ -233,7 +237,7 @@ export class TerminalGame {
   private initializeDeck(): void {
     // Create a starter deck with the same random seed
     this.playerDeck = createStarterDeck(this.randomSeed);
-    
+
     // Set number of cards for status tracking
     this.runnerCardsRemaining = this.playerDeck.length;
   }
@@ -277,7 +281,7 @@ export class TerminalGame {
    * Process abilities of played cards based on a trigger
    */
   private processCardAbilities(trigger: CardTrigger): void {
-    this.playedCards.forEach(card => {
+    this.playedCards.forEach((card) => {
       if (card.type === 'program' && trigger === 'turn_start') {
         if (card.recurringCredits) {
           this.playerCredits = (this.playerCredits + card.recurringCredits) as Credits;
@@ -321,16 +325,16 @@ export class TerminalGame {
   private checkWinConditions(): void {
     if (this.runnerAgendaPoints >= this.agendaPointsToWin) {
       this.gameOver = true;
-      this.winMessage = "Runner wins by agenda points!";
+      this.winMessage = 'Runner wins by agenda points!';
     } else if (this.corpAgendaPoints >= this.agendaPointsToWin) {
       this.gameOver = true;
-      this.winMessage = "Corporation wins by agenda points!";
+      this.winMessage = 'Corporation wins by agenda points!';
     } else if (this.runnerCardsRemaining <= 0) {
       this.gameOver = true;
-      this.winMessage = "Corporation wins by decking the Runner!";
+      this.winMessage = 'Corporation wins by decking the Runner!';
     } else if (this.corpCardsRemaining <= 0) {
       this.gameOver = true;
-      this.winMessage = "Runner wins by decking the Corporation!";
+      this.winMessage = 'Runner wins by decking the Corporation!';
     }
   }
 
@@ -338,7 +342,7 @@ export class TerminalGame {
    * Display game over screen
    */
   private displayGameOver(): void {
-    const winner = this.runnerAgendaPoints >= this.agendaPointsToWin ? "Runner" : "Corporation";
+    const winner = this.runnerAgendaPoints >= this.agendaPointsToWin ? 'Runner' : 'Corporation';
     this.renderer.renderMessage(`\n=== GAME OVER ===`, 'info');
     this.renderer.renderMessage(`Winner: ${winner}`, 'success');
     this.renderer.renderMessage(this.winMessage, 'info');
@@ -352,12 +356,12 @@ export class TerminalGame {
       credits: this.playerCredits,
       memory: {
         total: this.memoryUnitsAvailable,
-        used: this.memoryUnitsUsed
+        used: this.memoryUnitsUsed,
       },
       agendaPoints: this.runnerAgendaPoints,
-      clicksRemaining: this.clicksRemaining
+      clicksRemaining: this.clicksRemaining,
     };
-    
+
     this.renderer.renderGameStats(stats);
   }
 
@@ -366,13 +370,20 @@ export class TerminalGame {
    */
   private getPhaseDescription(): string {
     switch (this.currentPhase) {
-      case GamePhase.SETUP: return "Setup";
-      case GamePhase.START_TURN: return "Start of Turn";
-      case GamePhase.ACTION: return "Action Phase";
-      case GamePhase.DISCARD: return "Discard Phase";
-      case GamePhase.END_TURN: return "End of Turn";
-      case GamePhase.GAME_OVER: return "Game Over";
-      default: return "Unknown";
+      case GamePhase.SETUP:
+        return 'Setup';
+      case GamePhase.START_TURN:
+        return 'Start of Turn';
+      case GamePhase.ACTION:
+        return 'Action Phase';
+      case GamePhase.DISCARD:
+        return 'Discard Phase';
+      case GamePhase.END_TURN:
+        return 'End of Turn';
+      case GamePhase.GAME_OVER:
+        return 'Game Over';
+      default:
+        return 'Unknown';
     }
   }
 
@@ -398,26 +409,26 @@ export class TerminalGame {
    */
   private cmdMan(args: string[]): void {
     if (args.length === 0) {
-      this.renderer.renderError("Usage: man <command>");
-      this.renderer.renderMessage("Example: man install", 'info');
+      this.renderer.renderError('Usage: man <command>');
+      this.renderer.renderMessage('Example: man install', 'info');
       return;
     }
-    
+
     const commandName = args[0].toLowerCase();
     const manPage = commandManPages[commandName];
-    
+
     if (manPage) {
       // Display the man page
       this.renderer.renderMessage(manPage.NAME, 'info');
-      this.renderer.renderMessage("\nSYNOPSIS", 'info');
+      this.renderer.renderMessage('\nSYNOPSIS', 'info');
       this.renderer.renderMessage(`  ${manPage.SYNOPSIS}`, 'info');
-      this.renderer.renderMessage("\nDESCRIPTION", 'info');
+      this.renderer.renderMessage('\nDESCRIPTION', 'info');
       this.renderer.renderMessage(`  ${manPage.DESCRIPTION}`, 'info');
-      this.renderer.renderMessage("\nEXAMPLES", 'info');
+      this.renderer.renderMessage('\nEXAMPLES', 'info');
       manPage.EXAMPLES.split('\n').forEach((example: string) => {
         this.renderer.renderMessage(`  ${example}`, 'info');
       });
-      this.renderer.renderMessage("\nSEE ALSO", 'info');
+      this.renderer.renderMessage('\nSEE ALSO', 'info');
       this.renderer.renderMessage(`  ${manPage.SEE_ALSO}`, 'info');
     } else {
       this.renderer.renderError(`No manual entry for ${commandName}`);
@@ -429,12 +440,12 @@ export class TerminalGame {
    */
   private cmdDraw(args: CommandArguments): void {
     if (this.clicksRemaining < 1) {
-      this.renderer.displayError("Not enough clicks remaining");
+      this.renderer.displayError('Not enough clicks remaining');
       return;
     }
 
     if (this.playerDeck.length === 0) {
-      this.renderer.displayError("No cards left in deck");
+      this.renderer.displayError('No cards left in deck');
       return;
     }
 
@@ -450,10 +461,10 @@ export class TerminalGame {
    */
   private cmdHand(_args: string[]): void {
     if (this.handCards.length === 0) {
-      this.renderer.renderMessage("Your hand is empty.", 'info');
+      this.renderer.renderMessage('Your hand is empty.', 'info');
       return;
     }
-    
+
     // Render the player's hand
     this.renderer.renderHand(this.handCards);
   }
@@ -463,29 +474,29 @@ export class TerminalGame {
    */
   private cmdInstall(args: CommandArguments): void {
     if (args.args.length === 0) {
-      this.renderer.displayError("Please specify a card index to install");
+      this.renderer.displayError('Please specify a card index to install');
       return;
     }
 
     const cardIndex = parseInt(args.args[0], 10) as CardIndex;
     if (isNaN(cardIndex) || cardIndex < 0 || cardIndex >= this.handCards.length) {
-      this.renderer.displayError("Invalid card index");
+      this.renderer.displayError('Invalid card index');
       return;
     }
 
     if (this.clicksRemaining < 1) {
-      this.renderer.displayError("Not enough clicks remaining");
+      this.renderer.displayError('Not enough clicks remaining');
       return;
     }
 
     const card = this.handCards[cardIndex];
     if (this.playerCredits < card.installCost) {
-      this.renderer.displayError("Not enough credits to install this card");
+      this.renderer.displayError('Not enough credits to install this card');
       return;
     }
 
     if (card.memoryUsage && this.memoryUnitsUsed + card.memoryUsage > this.memoryUnitsAvailable) {
-      this.renderer.displayError("Not enough memory units available");
+      this.renderer.displayError('Not enough memory units available');
       return;
     }
 
@@ -510,7 +521,7 @@ export class TerminalGame {
       installed: true,
       faceUp: true,
       rezzed: false,
-      recurringCredits: card.recurringCredits
+      recurringCredits: card.recurringCredits,
     };
     this.playedCards.push(playedCard);
 
@@ -529,25 +540,25 @@ export class TerminalGame {
    */
   private cmdRun(args: CommandArguments): void {
     if (args.args.length === 0) {
-      this.renderer.displayError("Please specify a server to run on");
+      this.renderer.displayError('Please specify a server to run on');
       return;
     }
 
     const serverName = args.args[0] as ServerName;
     const server = this.servers[serverName];
-    
+
     if (!server) {
       this.renderer.displayError(`Unknown server: ${serverName}`);
       return;
     }
 
     if (this.clicksRemaining < 1) {
-      this.renderer.displayError("Not enough clicks remaining");
+      this.renderer.displayError('Not enough clicks remaining');
       return;
     }
 
     if (this.currentRun) {
-      this.renderer.displayError("Already in a run");
+      this.renderer.displayError('Already in a run');
       return;
     }
 
@@ -558,7 +569,7 @@ export class TerminalGame {
       phase: 'approach',
       encounterIndex: 0,
       bypassNextIce: this.bypassNextIce > 0,
-      untraceable: this.nextRunUntraceable
+      untraceable: this.nextRunUntraceable,
     };
 
     this.clicksRemaining--;
@@ -579,27 +590,27 @@ export class TerminalGame {
 
     const server = this.servers[this.currentRun.server];
     switch (this.currentRun.phase) {
-      case "approach":
+      case 'approach':
         if (server.ice.length > 0) {
-          this.currentRun.phase = "encounter";
-          this.renderer.displayMessage("Encountering ICE...");
+          this.currentRun.phase = 'encounter';
+          this.renderer.displayMessage('Encountering ICE...');
         } else {
-          this.currentRun.phase = "access";
-          this.renderer.displayMessage("Accessing server...");
+          this.currentRun.phase = 'access';
+          this.renderer.displayMessage('Accessing server...');
         }
         break;
 
-      case "encounter":
+      case 'encounter':
         if (this.currentRun.bypassNextIce) {
           this.currentRun.encounterIndex++;
           if (this.currentRun.encounterIndex >= server.ice.length) {
-            this.currentRun.phase = "access";
-            this.renderer.displayMessage("Accessing server...");
+            this.currentRun.phase = 'access';
+            this.renderer.displayMessage('Accessing server...');
           }
         }
         break;
 
-      case "access":
+      case 'access':
         // Handle server access
         this.accessServer(this.currentRun.server);
         this.currentRun = null;
@@ -628,43 +639,45 @@ export class TerminalGame {
     const maxHandSize = 5;
     if (this.handCards.length > maxHandSize) {
       this.currentPhase = GamePhase.DISCARD;
-      this.renderer.renderError(`You must discard ${this.handCards.length - maxHandSize} card(s) before ending your turn.`);
+      this.renderer.renderError(
+        `You must discard ${this.handCards.length - maxHandSize} card(s) before ending your turn.`,
+      );
       return;
     }
-    
+
     // End the turn
     this.currentPhase = GamePhase.END_TURN;
-    
+
     // Corp's turn
     this.activePlayer = this.opponentSide;
-    
+
     // Run the AI opponent's turn
     this.renderer.renderMessage(`\nCorporation's turn...`, 'info');
-    
+
     if (this.aiOpponent) {
       const aiActions = this.aiOpponent.takeTurn();
-      
+
       // Display AI actions
-      aiActions.actionsLog.forEach(action => {
+      aiActions.actionsLog.forEach((action) => {
         this.renderer.renderMessage(action, 'info');
       });
-      
+
       // Update game state based on AI turn
       if (aiActions.iceInstalled > 0) {
         // Update server protection levels based on new ICE
-        Object.keys(this.servers).forEach(server => {
+        Object.keys(this.servers).forEach((server) => {
           this.servers[server].strength += this.getRandomNumber(0, 1);
         });
       }
-      
+
       // Reduce remaining corp cards (simulating card draw)
       this.corpCardsRemaining = Math.max(0, this.corpCardsRemaining - 1);
     }
-    
+
     // Wait a moment before starting the player's turn (simulate delay)
     setTimeout(() => {
-      this.renderer.renderMessage("Corporation ends turn.", 'info');
-      
+      this.renderer.renderMessage('Corporation ends turn.', 'info');
+
       // Back to runner's turn
       this.startTurn();
     }, 1000);
@@ -674,11 +687,14 @@ export class TerminalGame {
    * Command handler for 'info'
    */
   private cmdInfo(_args: string[]): void {
-    this.renderer.renderMessage("\nGame Information:", 'info');
+    this.renderer.renderMessage('\nGame Information:', 'info');
     this.renderer.renderMessage(`Turn: ${this.turnNumber}`, 'info');
     this.renderer.renderMessage(`Phase: ${this.getPhaseDescription()}`, 'info');
     this.renderer.renderMessage(`Active Player: ${this.activePlayer}`, 'info');
-    this.renderer.renderMessage(`Agenda Points: Runner ${this.runnerAgendaPoints}, Corp ${this.corpAgendaPoints}`, 'info');
+    this.renderer.renderMessage(
+      `Agenda Points: Runner ${this.runnerAgendaPoints}, Corp ${this.corpAgendaPoints}`,
+      'info',
+    );
     this.renderer.renderMessage(`Cards Remaining: ${this.playerDeck.length}`, 'info');
   }
 
@@ -687,38 +703,38 @@ export class TerminalGame {
    */
   private cmdDiscard(args: CommandArguments): void {
     if (args.args.length === 0) {
-      this.renderer.renderError("Please specify which card to discard. Example: discard 2");
+      this.renderer.renderError('Please specify which card to discard. Example: discard 2');
       return;
     }
-    
+
     const cardIndex = parseInt(args.args[0]);
     if (isNaN(cardIndex) || cardIndex < 0 || cardIndex >= this.handCards.length) {
       this.renderer.renderError(`Invalid card index: ${args.args[0]}`);
       return;
     }
-    
+
     // Check if we need to spend a click (not during discard phase)
     if (this.currentPhase === GamePhase.ACTION) {
       if (this.clicksRemaining < 1) {
-        this.renderer.renderError("Not enough clicks remaining.");
+        this.renderer.renderError('Not enough clicks remaining.');
         return;
       }
       this.clicksRemaining--;
     }
-    
+
     // Discard the card
     const discardedCard = this.handCards.splice(cardIndex, 1)[0];
     this.renderer.renderSuccess(`Discarded ${discardedCard.name}.`);
-    
+
     // Check if we can end turn now (after discarding to hand size)
     if (this.currentPhase === GamePhase.DISCARD) {
       const maxHandSize = 5;
       if (this.handCards.length <= maxHandSize) {
         // Auto-end turn
-        this.processCommand("end");
+        this.processCommand('end');
       }
     }
-    
+
     this.updateStatus();
   }
 
@@ -728,22 +744,22 @@ export class TerminalGame {
   private cmdSystem(_args: string[]): void {
     // Get trace level from AI opponent
     const traceLevel = this.aiOpponent ? this.aiOpponent.getTraceLevel() : 25;
-    
+
     // Determine security level based on turn number
-    let securityLevel = "Low";
+    let securityLevel = 'Low';
     if (this.turnNumber > 5) {
-      securityLevel = "Medium";
+      securityLevel = 'Medium';
     }
     if (this.turnNumber > 10) {
-      securityLevel = "High";
+      securityLevel = 'High';
     }
-    
+
     const status = {
-      neuralInterface: "Online",
+      neuralInterface: 'Online',
       traceDetection: traceLevel,
-      securityLevel: securityLevel
+      securityLevel: securityLevel,
     };
-    
+
     this.renderer.renderSystemStatus(status);
   }
 
@@ -752,10 +768,10 @@ export class TerminalGame {
    */
   private cmdInstalled(_args: string[]): void {
     if (this.playedCards.length === 0) {
-      this.renderer.renderMessage("You have no installed programs or hardware.", 'info');
+      this.renderer.renderMessage('You have no installed programs or hardware.', 'info');
       return;
     }
-    
+
     this.renderer.renderInstalledCards(this.playedCards);
   }
 
@@ -771,7 +787,7 @@ export class TerminalGame {
    */
   private cmdMemory(args: CommandArguments): void {
     this.renderer.displayMessage(
-      `Memory units: ${this.memoryUnitsUsed}/${this.memoryUnitsAvailable} used`
+      `Memory units: ${this.memoryUnitsUsed}/${this.memoryUnitsAvailable} used`,
     );
   }
 
@@ -780,12 +796,12 @@ export class TerminalGame {
    */
   private cmdJackOut(_args: string[]): void {
     if (!this.currentRun || !this.currentRun.active) {
-      this.renderer.renderError("You are not currently on a run.");
+      this.renderer.renderError('You are not currently on a run.');
       return;
     }
-    
+
     // In this demo, jacking out is always successful
-    this.renderer.renderSuccess("Successfully jacked out of the run.");
+    this.renderer.renderSuccess('Successfully jacked out of the run.');
     this.currentRun.active = false;
     this.updateStatus();
   }
@@ -798,14 +814,14 @@ export class TerminalGame {
       resources: {
         credits: this.playerCredits,
         memoryAvailable: this.memoryUnitsAvailable,
-        memoryUsed: this.memoryUnitsUsed
+        memoryUsed: this.memoryUnitsUsed,
       },
       turn: {
         phase: this.currentPhase,
         clicksRemaining: this.clicksRemaining,
         maxClicks: this.maxClicks,
         turnNumber: this.turnNumber,
-        activePlayer: this.activePlayer
+        activePlayer: this.activePlayer,
       },
       win: {
         runnerAgendaPoints: this.runnerAgendaPoints,
@@ -814,24 +830,24 @@ export class TerminalGame {
         runnerCardsRemaining: this.runnerCardsRemaining,
         corpCardsRemaining: this.corpCardsRemaining,
         gameOver: this.gameOver,
-        winMessage: this.winMessage
+        winMessage: this.winMessage,
       },
       cards: {
         playerDeck: this.playerDeck,
         handCards: this.handCards,
         playedCards: this.playedCards,
-        selectedCardIndex: this.selectedCardIndex
+        selectedCardIndex: this.selectedCardIndex,
       },
       run: this.currentRun,
       command: {
         history: this.commandHistory,
-        historyIndex: this.commandHistoryIndex
+        historyIndex: this.commandHistoryIndex,
       },
       components: {
         renderer: this.renderer,
-        aiOpponent: this.aiOpponent
+        aiOpponent: this.aiOpponent,
       },
-      servers: this.servers
+      servers: this.servers,
     };
   }
 
@@ -863,7 +879,7 @@ export class TerminalGame {
     this.currentPhase = GamePhase.SETUP;
     this.activePlayer = null;
     this.gameOver = false;
-    this.winMessage = "";
+    this.winMessage = '';
 
     // Initialize card collections
     this.playerDeck = createStarterDeck();
@@ -882,7 +898,7 @@ export class TerminalGame {
     // Initialize AI opponent
     this.aiOpponent = new AIOpponent();
 
-    this.renderer.displayMessage("Game initialized");
+    this.renderer.displayMessage('Game initialized');
   }
 
   /**
@@ -890,7 +906,7 @@ export class TerminalGame {
    */
   public endTurn(): void {
     if (this.currentRun) {
-      this.renderer.displayError("Cannot end turn during a run");
+      this.renderer.displayError('Cannot end turn during a run');
       return;
     }
 
@@ -909,7 +925,7 @@ export class TerminalGame {
    */
   private processEndOfTurn(): void {
     // Process recurring credits
-    this.playedCards.forEach(card => {
+    this.playedCards.forEach((card) => {
       if (card.recurringCredits) {
         this.playerCredits = (this.playerCredits + card.recurringCredits) as Credits;
       }
@@ -1000,4 +1016,4 @@ export class TerminalGame {
   public isGameOver(): boolean {
     return this.gameOver;
   }
-} 
+}
