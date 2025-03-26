@@ -28,7 +28,9 @@ function initializeAudio(): void {
   const audioManager = AudioManager.getInstance();
   
   // Start playing menu background music
-  audioManager.playBackgroundMusic('/audio/menu-theme.mp3', true);
+  // audioManager.playBackgroundMusic('/audio/menu-theme.mp3', true);
+  audioManager.playBackgroundMusic('/audio/the_netrunner2.mp3', true);
+
   
   // Add audio controls to the menu container
   try {

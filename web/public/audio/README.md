@@ -6,7 +6,7 @@ This directory contains audio files used by the game.
 
 The following audio files are used by the game:
 
-- `menu-theme.mp3` - Background music for the main menu
+- `the_netrunner2.mp3` - Background music for the main menu
 - `button-click.mp3` - Sound effect played when buttons are clicked
 
 ## Adding Your Own Audio
