@@ -116,11 +116,11 @@ describe('ConsoleRenderer', () => {
       // Create sample cards
       const sampleCards: Card[] = [
         {
-          id: 'test-program',
-          name: 'Test Program',
-          type: 'program',
-          cost: 3,
-          description: 'A test program'
+          id: '1',
+          name: 'Test Card',
+          type: 'Program',
+          cost: 2,
+          description: 'A test card'
         }
       ];
       

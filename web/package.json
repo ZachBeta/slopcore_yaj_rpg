@@ -7,8 +7,12 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "build": "webpack --mode production",
+    "build:client": "webpack --mode production",
+    "build:server": "tsc --project tsconfig.server.json",
+    "build": "npm run build:client && npm run build:server",
     "dev": "webpack serve --mode development --open",
+    "serve": "node dist/server/server.js",
+    "start": "npm run build && npm run serve",
     "lint": "deno lint",
     "lint:fix": "deno lint --fix",
     "lint:types": "tsc --noEmit"

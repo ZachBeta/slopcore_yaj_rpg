@@ -50,8 +50,10 @@ const config: WebpackConfigWithDevServer = {
       chunks: ['main', 'game']
     }),
     new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify('development'),
-      'process.env.SOCKET_SERVER_URL': JSON.stringify('http://localhost:8080')
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+      'process.env.SOCKET_SERVER_URL': JSON.stringify(process.env.NODE_ENV === 'production' 
+        ? process.env.SOCKET_SERVER_URL || '' 
+        : 'http://localhost:8080')
     }),
     new webpack.HotModuleReplacementPlugin(),
     new webpack.ProvidePlugin({

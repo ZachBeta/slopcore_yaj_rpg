@@ -30,7 +30,8 @@ __pycache__/
 node_modules/
 dist/
 
-music/
+*.wav
+2021-12-25\ -\ audio\ magnitude\ mix\ -\ v2.mp3
 
 docs_backup*/
 coverage/

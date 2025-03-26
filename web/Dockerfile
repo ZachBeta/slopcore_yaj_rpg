@@ -15,12 +15,25 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM nginx:alpine
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package.json and package-lock.json
+COPY package*.json ./
+
+# Install production dependencies only
+RUN npm ci --production
 
 # Copy built assets from the build stage
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /app/dist /app/dist
 
-# Expose port 80
-EXPOSE 80
+# Expose port 8080
+EXPOSE 8080
 
-CMD ["nginx", "-g", "daemon off;"] 
+# Set production environment
+ENV NODE_ENV=production
+ENV PORT=8080
+
+# Run the server
+CMD ["node", "dist/server/server.js"] 

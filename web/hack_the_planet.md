@@ -1,5 +1,11 @@
 # Neon Dominance Web Version - Development Roadmap
 
+
+## music
+
+for my music stuff? audiocraft repo/websockets backend + max for live node scripts + electron UI for ease of use and drag/droppability
+modified audiocraft repo that has melodyflow in it since they havent updated the official yet lol
+
 ## open world game
 
 * typing and linting 

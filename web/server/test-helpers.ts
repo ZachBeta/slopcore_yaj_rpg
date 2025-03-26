@@ -1,17 +1,33 @@
-import { io as Client, Socket as ClientSocket } from 'socket.io-client';
-import { createServer, Server as HttpServer } from 'http';
+import { Server as SocketIOServer } from 'socket.io';
+import { io as SocketIOClient, Socket as ClientSocket } from 'socket.io-client';
+import { createServer, Server as HTTPServer } from 'http';
 import { AddressInfo } from 'net';
 import { GameServer } from './game-server';
 import { GameEvent } from '../src/constants';
 import { Player } from '../src/types';
 
 // Test timeouts
-const CONNECTION_TIMEOUT = 3000;
-const CLEANUP_TIMEOUT = 5000;
+const CONNECTION_TIMEOUT = 5000;
+const CLEANUP_TIMEOUT = 10000;
 const TEST_PORT = 3001;
+const RETRY_DELAY = 1000;
+const MAX_RETRIES = 3;
+
+let httpServer: HTTPServer | null = null;
+let io: SocketIOServer | null = null;
+let gameServer: GameServer | null = null;
 
 interface GameServerOptions {
   isTestMode?: boolean;
+}
+
+interface TestEnvironment<T extends GameServer = GameServer> {
+  httpServer: HTTPServer;
+  io: SocketIOServer;
+  gameServer: T;
+  cleanup: () => Promise<void>;
+  createClient: () => ClientSocket;
+  connectAndJoin: (client: ClientSocket) => Promise<{ player: Player }>;
 }
 
 /**
@@ -19,133 +35,166 @@ interface GameServerOptions {
  * This uses real socket.io instances for reliable testing.
  */
 export async function createSocketTestEnvironment<T extends GameServer = GameServer>(
-  ServerClass: new (server: HttpServer, port: number, options: GameServerOptions) => T = GameServer as any
-) {
-  // Create real HTTP server
-  const httpServer = createServer();
-  
-  // Start server on fixed test port
-  await new Promise<void>((resolve, reject) => {
-    httpServer.listen(TEST_PORT, '127.0.0.1', () => {
-      resolve();
-    }).on('error', (err) => {
-      if ((err as any).code === 'EADDRINUSE') {
-        console.log('Port 3001 in use, waiting for it to be available...');
-        setTimeout(() => {
-          httpServer.listen(TEST_PORT, '127.0.0.1', () => {
-            resolve();
-          });
-        }, 1000);
-      } else {
-        reject(err);
+  ServerClass: new (server: SocketIOServer, port: number, options: GameServerOptions) => T = GameServer as any
+): Promise<TestEnvironment<T>> {
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      if (httpServer || io || gameServer) {
+        await cleanupTestEnvironment();
       }
-    });
-  });
-  
-  // Create real GameServer with test mode enabled
-  const gameServer = new ServerClass(httpServer, TEST_PORT, { isTestMode: true });
-  
-  // Function to create a connected client
-  const createClient = () => {
-    return Client(`http://127.0.0.1:${TEST_PORT}`, {
-      transports: ['websocket'],
-      forceNew: true,
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 100,
-      autoConnect: false // Don't connect automatically
-    });
-  };
-  
-  // Function to connect a client and join the game
-  const connectAndJoin = async (client: ClientSocket) => {
-    return new Promise<{ player: Player, socket: ClientSocket }>((resolve, reject) => {
-      console.log('Attempting to connect and join...');
-      
-      // Make sure we're starting with a fresh connection
-      if (client.connected) {
-        console.log('Client already connected, disconnecting first');
-        client.disconnect();
-      }
-      
-      // Set a longer timeout for connection
-      const timeout = setTimeout(() => {
-        console.error('Connection timeout - client connected:', client.connected);
-        client.disconnect();
-        reject(new Error('Connection timeout - client connected but no PLAYER_JOINED event received'));
-      }, CONNECTION_TIMEOUT);
-      
-      client.on('connect', () => {
-        console.log('Socket connected, sending player_join event');
-        client.emit(GameEvent.PLAYER_JOIN, {
-          position: { x: 0, y: 1, z: 0 }
+
+      httpServer = createServer();
+      io = new SocketIOServer(httpServer);
+      gameServer = new ServerClass(io, TEST_PORT, { isTestMode: true });
+
+      await new Promise<void>((resolve, reject) => {
+        httpServer!.once('error', (err: any) => {
+          if (err.code === 'EADDRINUSE') {
+            console.log(`Port ${TEST_PORT} in use, attempt ${attempt}/${MAX_RETRIES}`);
+            cleanupTestEnvironment()
+              .then(() => {
+                if (attempt === MAX_RETRIES) {
+                  reject(new Error(`Port ${TEST_PORT} is still in use after ${MAX_RETRIES} attempts`));
+                } else {
+                  setTimeout(resolve, RETRY_DELAY);
+                }
+              })
+              .catch(reject);
+          } else {
+            reject(err);
+          }
+        });
+
+        httpServer!.listen(TEST_PORT, () => {
+          console.log(`Test server listening on port ${TEST_PORT}`);
+          resolve();
         });
       });
-      
-      client.on(GameEvent.PLAYER_JOINED, (player: Player) => {
-        console.log('Received player_joined event with id:', player.id);
-        clearTimeout(timeout);
-        resolve({ player, socket: client });
-      });
-      
-      // Debug events
-      client.onAny((event, ...args) => {
-        console.log(`Received event: ${event}`, args);
-      });
-      
-      client.on('connect_error', (err) => {
-        console.error('Connection error:', err);
-        clearTimeout(timeout);
-        reject(err);
-      });
-      
-      client.on('error', (err) => {
-        console.error('Socket error:', err);
-        clearTimeout(timeout);
-        reject(new Error(`Socket error: ${err}`));
-      });
-      
-      // Listen for disconnect events
-      client.on('disconnect', (reason) => {
-        console.log('Socket disconnected during connection:', reason);
-      });
-      
-      console.log('Calling client.connect()');
-      client.connect();
-    });
-  };
-  
-  // Function to shut down the test environment
-  const cleanup = async () => {
-    return new Promise<void>((resolve) => {
-      console.log('Cleaning up test environment');
-      
-      // Close the game server first
-      if (gameServer && typeof gameServer.close === 'function') {
-        console.log('Closing game server');
-        gameServer.close();
+
+      return {
+        httpServer: httpServer as HTTPServer,
+        io: io as SocketIOServer,
+        gameServer: gameServer as T,
+        cleanup: cleanupTestEnvironment,
+        createClient,
+        connectAndJoin: async (client: ClientSocket) => {
+          const player = await connectAndJoinInternal(client);
+          return { player };
+        }
+      };
+    } catch (err) {
+      if (attempt === MAX_RETRIES) {
+        throw err;
       }
-      
-      // Close the HTTP server with a timeout to ensure all connections are cleaned up
-      const closeTimeout = setTimeout(() => {
-        console.warn('Server close timeout exceeded, forcing shutdown');
-        resolve();
-      }, CLEANUP_TIMEOUT);
-      
-      httpServer.close(() => {
-        console.log('HTTP server closed');
-        clearTimeout(closeTimeout);
-        resolve();
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+    }
+  }
+
+  throw new Error('Failed to create test environment after all retries');
+}
+
+async function cleanupTestEnvironment() {
+  const cleanup = async () => {
+    const promises: Promise<void>[] = [];
+
+    if (gameServer) {
+      promises.push(
+        new Promise<void>((resolve) => {
+          console.log('Closing game server');
+          gameServer.close();
+          gameServer = null;
+          resolve();
+        })
+      );
+    }
+
+    if (io) {
+      promises.push(
+        new Promise<void>((resolve) => {
+          io.close(() => {
+            io = null;
+            resolve();
+          });
+        })
+      );
+    }
+
+    if (httpServer) {
+      promises.push(
+        new Promise<void>((resolve) => {
+          httpServer.close(() => {
+            console.log('HTTP server closed');
+            httpServer = null;
+            resolve();
+          });
+        })
+      );
+    }
+
+    await Promise.all(promises);
+  };
+
+  try {
+    await Promise.race([
+      cleanup(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Cleanup timeout')), CLEANUP_TIMEOUT))
+    ]);
+  } catch (err) {
+    console.error('Error during cleanup:', err);
+    // Force cleanup if timeout occurs
+    gameServer = null;
+    io = null;
+    httpServer = null;
+  }
+}
+
+function createClient(): ClientSocket {
+  return SocketIOClient(`http://localhost:${TEST_PORT}`, {
+    reconnection: false,
+    timeout: CONNECTION_TIMEOUT,
+    forceNew: true
+  });
+}
+
+function connectAndJoinInternal(client: ClientSocket): Promise<Player> {
+  let timeoutHandle: NodeJS.Timeout;
+  
+  return new Promise((resolve, reject) => {
+    const cleanup = () => {
+      clearTimeout(timeoutHandle);
+      client.removeAllListeners();
+    };
+
+    timeoutHandle = setTimeout(() => {
+      cleanup();
+      console.error('Connection timeout - client connected:', client.connected);
+      client.disconnect();
+      reject(new Error('Connection timeout - client connected but no PLAYER_JOINED event received'));
+    }, CONNECTION_TIMEOUT);
+
+    client.on('connect_error', (err) => {
+      cleanup();
+      console.error('Connection error:', err);
+      reject(err);
+    });
+
+    client.on('connect', () => {
+      client.emit(GameEvent.PLAYER_JOIN, {
+        position: { x: 0, y: 1, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 }
       });
     });
-  };
-  
-  return {
-    httpServer,
-    gameServer,
-    port: TEST_PORT,
-    createClient,
-    connectAndJoin,
-    cleanup
-  };
+
+    client.on(GameEvent.PLAYER_JOINED, (player: Player) => {
+      cleanup();
+      resolve(player);
+    });
+
+    client.on('error', (error: Error) => {
+      cleanup();
+      reject(error);
+    });
+
+    client.connect();
+  });
 } 

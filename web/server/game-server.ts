@@ -420,44 +420,50 @@ export class GameServer {
 
       // Handle player join
       socket.on(GameEvent.PLAYER_JOIN, async (data: GameEventPayloads[typeof GameEvent.PLAYER_JOIN]) => {
-        // Generate spawn position and color
-        const spawnPosition = this.generateSpawnPosition();
-        const playerColor = await this.generatePlayerColor(socket.id);
-        
-        const player: Player = {
-          id: socket.id,
-          position: data.position || spawnPosition,
-          rotation: data.rotation || { 
-            x: 0,
-            y: Math.random() * Math.PI * 2, // Random initial facing direction
-            z: 0
-          },
-          color: playerColor,
-          lastActivity: Date.now()
-        };
-        this.players.set(socket.id, player);
+        try {
+          // Generate spawn position and color
+          const spawnPosition = this.generateSpawnPosition();
+          const playerColor = await this.generatePlayerColor(socket.id);
+          
+          const player: Player = {
+            id: socket.id,
+            position: data.position || spawnPosition,
+            rotation: data.rotation || { 
+              x: 0,
+              y: Math.random() * Math.PI * 2, // Random initial facing direction
+              z: 0
+            },
+            color: playerColor,
+            lastActivity: Date.now()
+          };
+          this.players.set(socket.id, player);
 
-        // Send existing players to the new player
-        const existingPlayers = Array.from(this.players.values())
-          .filter(p => p.id !== socket.id)
-          .map(p => ({
-            id: p.id,
-            position: p.position,
-            rotation: p.rotation,
-            color: p.color
-          }));
+          // Send existing players to the new player
+          const existingPlayers = Array.from(this.players.values())
+            .filter(p => p.id !== socket.id)
+            .map(p => ({
+              id: p.id,
+              position: p.position,
+              rotation: p.rotation,
+              color: p.color
+            }));
 
-        // First send the player their own data
-        socket.emit(GameEvent.PLAYER_JOINED, player);
-        
-        // Send the map data to the client
-        socket.emit(GameEvent.MAP_DATA, this.mapData);
-        
-        // Then send them the list of other players
-        socket.emit(GameEvent.PLAYERS_LIST, existingPlayers);
+          // First send the player their own data
+          socket.emit(GameEvent.PLAYER_JOINED, player);
+          
+          // Send the map data to the client
+          socket.emit(GameEvent.MAP_DATA, this.mapData);
+          
+          // Then send them the list of other players
+          socket.emit(GameEvent.PLAYERS_LIST, existingPlayers);
 
-        // Broadcast new player to all other players
-        socket.broadcast.emit(GameEvent.PLAYER_JOINED, player);
+          // Broadcast new player to all other players
+          socket.broadcast.emit(GameEvent.PLAYER_JOINED, player);
+        } catch (error) {
+          console.error('Error during player join:', error);
+          socket.emit('error', { message: 'Failed to join game' });
+          socket.disconnect(true);
+        }
       });
 
       // Handle player position update
@@ -737,5 +743,18 @@ export class GameServer {
     
     // Convert HSL to RGB
     return this.hslToRgb(hue, s, l);
+  }
+
+  public clearPlayers(): void {
+    this.players.clear();
+  }
+
+  public clearLockedColors(): void {
+    this.lockedColors.clear();
+    this.availableColors = [...this.colorPool];
+  }
+
+  public clearUsedRandomColors(): void {
+    this.usedRandomColors.clear();
   }
 } 
