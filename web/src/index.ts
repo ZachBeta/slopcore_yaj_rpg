@@ -1,6 +1,8 @@
 import { TerminalGame } from './terminal-game/terminal-game';
 import { ThreeScene } from './three-scene';
 import { OpenWorldGame } from './open-world/open-world';
+import { AudioManager } from './audio-manager';
+import { AudioControls } from './audio-controls';
 
 // Define the global interface for the window object
 declare global {
@@ -139,68 +141,113 @@ interface ProcessCommandGlobal {
   }
 };
 
+// Initialize audio for the menu
+function initializeAudio(): void {
+  const audioManager = AudioManager.getInstance();
+  
+  // Start playing menu background music
+  audioManager.playBackgroundMusic('/audio/the_netrunner2.mp3', true);
+  
+  // Add audio controls to the menu container
+  try {
+    new AudioControls('canvas-container', 'top-right');
+  } catch (error) {
+    console.error('Failed to initialize audio controls:', error);
+  }
+}
+
 // Add an HTML element to provide instructions on the page
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize the Three.js scene as soon as the DOM is loaded
   initializeThreeScene();
   
+  // Initialize audio for the menu
+  initializeAudio();
+  
   // Add event listener for the start game button
   const startButton = document.getElementById('start-game');
   if (startButton) {
     startButton.addEventListener('click', () => {
+      // Play button click sound
+      AudioManager.getInstance().playSoundEffect('/audio/button-click.mp3');
+      
+      // Fade out menu music
+      const audioManager = AudioManager.getInstance();
+      const currentVolume = audioManager.getVolume();
+      let fadeVolume = currentVolume;
+      const fadeInterval = setInterval(() => {
+        fadeVolume -= 0.1;
+        if (fadeVolume <= 0) {
+          clearInterval(fadeInterval);
+          audioManager.stopBackgroundMusic();
+          audioManager.setVolume(currentVolume); // Restore original volume
+        } else {
+          audioManager.setVolume(fadeVolume);
+        }
+      }, 100);
+      
       // Hide the menu container
       const menuContainer = document.querySelector('.menu-container');
       if (menuContainer instanceof HTMLElement) {
         menuContainer.style.display = 'none';
       }
       
-      // Initialize the game
+      // Initialize and start the game
       initializeGame();
-      
-      // Create and show the game instructions
-      createGameInstructions();
     });
   }
   
-  // Add event listener for demo mode button
+  // Add event listener for the demo mode button
   const demoButton = document.getElementById('demo-mode');
   if (demoButton) {
     demoButton.addEventListener('click', () => {
+      // Play button click sound
+      AudioManager.getInstance().playSoundEffect('/audio/button-click.mp3');
+      
+      // Fade out menu music
+      const audioManager = AudioManager.getInstance();
+      const currentVolume = audioManager.getVolume();
+      let fadeVolume = currentVolume;
+      const fadeInterval = setInterval(() => {
+        fadeVolume -= 0.1;
+        if (fadeVolume <= 0) {
+          clearInterval(fadeInterval);
+          audioManager.stopBackgroundMusic();
+          audioManager.setVolume(currentVolume); // Restore original volume
+        } else {
+          audioManager.setVolume(fadeVolume);
+        }
+      }, 100);
+      
       // Hide the menu container
       const menuContainer = document.querySelector('.menu-container');
       if (menuContainer instanceof HTMLElement) {
         menuContainer.style.display = 'none';
       }
       
-      // Initialize the game
-      initializeGame();
-      
-      // Create and show the game instructions
-      createGameInstructions();
-      
-      // Start the demo mode after a short delay
-      setTimeout(() => {
-        // Access the renderer through the game's public API
-        if (game && game.getRenderer && typeof game.getRenderer === 'function') {
-          const renderer = game.getRenderer();
-          if (renderer && typeof renderer.startDemoMode === 'function') {
-            renderer.startDemoMode();
-          }
-        }
-      }, 2000);
+      // Initialize and start the demo mode
+      initializeDemoMode();
     });
   }
   
   // Add event listener for the open world button
   const openWorldButton = document.getElementById('open-world-game');
   if (openWorldButton) {
-    openWorldButton.addEventListener('click', initializeOpenWorldGame);
+    openWorldButton.addEventListener('click', () => {
+      // Play button click sound
+      AudioManager.getInstance().playSoundEffect('/audio/button-click.mp3');
+      
+      initializeOpenWorldGame();
+    });
   }
   
   // Add event listeners for other menu buttons
   const optionsButton = document.getElementById('options');
   if (optionsButton) {
     optionsButton.addEventListener('click', () => {
+      // Play button click sound
+      AudioManager.getInstance().playSoundEffect('/audio/button-click.mp3');
+      
       alert('Options are not implemented yet.');
     });
   }
@@ -208,6 +255,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const aboutButton = document.getElementById('about');
   if (aboutButton) {
     aboutButton.addEventListener('click', () => {
+      // Play button click sound
+      AudioManager.getInstance().playSoundEffect('/audio/button-click.mp3');
+      
       alert('Neon Dominance is a cyberpunk card game inspired by Android: Netrunner. Play as a hacker running against corporate servers in a dystopian future.');
     });
   }
