@@ -6,6 +6,6 @@ declare global {
     game?: Game;
     testMockGame?: Partial<TerminalGame>;
   }
-  var game: Game | undefined;
-  var testMockGame: Partial<TerminalGame> | undefined;
+  let game: Game | undefined;
+  let testMockGame: Partial<TerminalGame> | undefined;
 }
