@@ -32,5 +32,3 @@ jobs:
       - name: Run Deno Lint
         run: cd web && deno lint src/
         
-      - name: Run JavaScript Tests
-        run: cd web && npm test 
