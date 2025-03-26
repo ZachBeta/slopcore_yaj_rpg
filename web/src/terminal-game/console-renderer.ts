@@ -204,15 +204,6 @@ export class ConsoleRenderer {
         document.body.removeChild(modalOverlay);
       });
 
-      const demoModeButton = document.createElement('button');
-      demoModeButton.textContent = 'Start Demo Mode';
-      demoModeButton.style.cssText = buttonStyle;
-      demoModeButton.style.backgroundColor = '#9933cc';
-      demoModeButton.addEventListener('click', () => {
-        document.body.removeChild(modalOverlay);
-        this.startDemoMode();
-      });
-
       const resetButton = document.createElement('button');
       resetButton.textContent = 'Restart Game';
       resetButton.style.cssText = buttonStyle;
@@ -248,7 +239,6 @@ export class ConsoleRenderer {
       // Append elements to modal
       modalContent.appendChild(title);
       modalContent.appendChild(continueButton);
-      modalContent.appendChild(demoModeButton);
       modalContent.appendChild(resetButton);
       modalContent.appendChild(mainMenuButton);
       modalOverlay.appendChild(modalContent);

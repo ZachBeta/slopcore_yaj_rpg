@@ -203,39 +203,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Add event listener for the demo mode button
-  const demoButton = document.getElementById('demo-mode');
-  if (demoButton) {
-    demoButton.addEventListener('click', () => {
-      // Play button click sound
-      AudioManager.getInstance().playSoundEffect('/audio/button-click.mp3');
-
-      // Fade out menu music
-      const audioManager = AudioManager.getInstance();
-      const currentVolume = audioManager.getVolume();
-      let fadeVolume = currentVolume;
-      const fadeInterval = setInterval(() => {
-        fadeVolume -= 0.1;
-        if (fadeVolume <= 0) {
-          clearInterval(fadeInterval);
-          audioManager.stopBackgroundMusic();
-          audioManager.setVolume(currentVolume); // Restore original volume
-        } else {
-          audioManager.setVolume(fadeVolume);
-        }
-      }, 100);
-
-      // Hide the menu container
-      const menuContainer = document.querySelector('.menu-container');
-      if (menuContainer instanceof HTMLElement) {
-        menuContainer.style.display = 'none';
-      }
-
-      // Initialize and start the demo mode
-      initializeDemoMode();
-    });
-  }
-
   // Add event listener for the open world button
   const openWorldButton = document.getElementById('open-world-game');
   if (openWorldButton) {
@@ -295,11 +262,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const startButton = document.getElementById('start-game');
     if (startButton) {
       startButton.replaceWith(startButton.cloneNode(true));
-    }
-
-    const demoButton = document.getElementById('demo-mode');
-    if (demoButton) {
-      demoButton.replaceWith(demoButton.cloneNode(true));
     }
 
     const openWorldButton = document.getElementById('open-world-game');

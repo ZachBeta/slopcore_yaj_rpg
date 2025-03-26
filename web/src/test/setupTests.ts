@@ -13,7 +13,6 @@ class MockConsoleRenderer {
   renderInstalledCards() {}
   showPrompt() {}
   clearConsole() {}
-  startDemoMode() {}
   applyConsoleStyles() {}
   showMenuOptions() {}
 }

@@ -3,7 +3,6 @@ import './setupTests';
 // Mock TerminalGame class
 jest.mock('../terminal-game/terminal-game', () => {
   const mockRenderer = {
-    startDemoMode: jest.fn(),
     renderMessage: jest.fn(),
     renderBanner: jest.fn(),
   };
@@ -73,7 +72,6 @@ describe('Index', () => {
   let mockStartButton: HTMLButtonElement;
   let mockOptionsButton: HTMLButtonElement;
   let mockAboutButton: HTMLButtonElement;
-  let mockDemoButton: HTMLButtonElement;
   let mockOpenWorldButton: HTMLButtonElement;
   let mockMenuContainer: HTMLDivElement;
   let mockCanvasContainer: HTMLDivElement;
@@ -102,9 +100,6 @@ describe('Index', () => {
     mockAboutButton = document.createElement('button');
     mockAboutButton.id = 'about';
 
-    mockDemoButton = document.createElement('button');
-    mockDemoButton.id = 'demo-mode';
-
     mockOpenWorldButton = document.createElement('button');
     mockOpenWorldButton.id = 'open-world-game';
 
@@ -113,7 +108,6 @@ describe('Index', () => {
     mockMenuContainer.appendChild(mockStartButton);
     mockMenuContainer.appendChild(mockOptionsButton);
     mockMenuContainer.appendChild(mockAboutButton);
-    mockMenuContainer.appendChild(mockDemoButton);
     mockMenuContainer.appendChild(mockOpenWorldButton);
 
     mockCanvasContainer = document.createElement('div');
@@ -133,8 +127,6 @@ describe('Index', () => {
           return mockAboutButton;
         case 'canvas-container':
           return mockCanvasContainer;
-        case 'demo-mode':
-          return mockDemoButton;
         case 'open-world-game':
           return mockOpenWorldButton;
         default:
@@ -228,7 +220,6 @@ describe('Index', () => {
     const startButtonSpy = jest.spyOn(mockStartButton, 'addEventListener');
     const optionsButtonSpy = jest.spyOn(mockOptionsButton, 'addEventListener');
     const aboutButtonSpy = jest.spyOn(mockAboutButton, 'addEventListener');
-    const demoButtonSpy = jest.spyOn(mockDemoButton, 'addEventListener');
     const openWorldButtonSpy = jest.spyOn(mockOpenWorldButton, 'addEventListener');
 
     // Import the index module and call the DOMContentLoaded handler
@@ -247,7 +238,6 @@ describe('Index', () => {
     expect(startButtonSpy).toHaveBeenCalledWith('click', expect.any(Function));
     expect(optionsButtonSpy).toHaveBeenCalledWith('click', expect.any(Function));
     expect(aboutButtonSpy).toHaveBeenCalledWith('click', expect.any(Function));
-    expect(demoButtonSpy).toHaveBeenCalledWith('click', expect.any(Function));
     expect(openWorldButtonSpy).toHaveBeenCalledWith('click', expect.any(Function));
   });
 });
