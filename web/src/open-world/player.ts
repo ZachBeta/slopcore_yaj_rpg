@@ -200,12 +200,12 @@ export class Player {
 
     // W/S keys should move along the drone's local up/down axis (MOVE_UP/MOVE_DOWN)
     if (activeActions.has(InputAction.MOVE_UP)) {
-      console.log('Player moving up');
+      this.log('Player moving up');
       // Use the local up vector instead of global Y
       const moveVector = upVector.clone().multiplyScalar(this.moveSpeed);
       this.velocity.add(moveVector);
     } else if (activeActions.has(InputAction.MOVE_DOWN)) {
-      console.log('Player moving down');
+      this.log('Player moving down');
       // Use the local down vector instead of global -Y
       const moveVector = upVector.clone().multiplyScalar(-this.moveSpeed);
       this.velocity.add(moveVector);
@@ -213,22 +213,22 @@ export class Player {
 
     // Legacy controls for ASCEND/DESCEND (if used)
     if (activeActions.has(InputAction.ASCEND)) {
-      console.log('Drone ascending along local up axis');
+      this.log('Drone ascending along local up axis');
       const moveVector = upVector.clone().multiplyScalar(this.moveSpeed);
       this.velocity.add(moveVector);
     } else if (activeActions.has(InputAction.DESCEND)) {
-      console.log('Drone descending along local down axis');
+      this.log('Drone descending along local down axis');
       const moveVector = upVector.clone().multiplyScalar(-this.moveSpeed);
       this.velocity.add(moveVector);
     }
 
     // R/F controls throttle - movement along the drone's forward/backward axis
     if (activeActions.has(InputAction.THROTTLE_FORWARD)) {
-      console.log('Drone throttle forward');
+      this.log('Drone throttle forward');
       const thrustVector = forwardVector.clone().multiplyScalar(this.moveSpeed);
       this.velocity.add(thrustVector);
     } else if (activeActions.has(InputAction.THROTTLE_BACKWARD)) {
-      console.log('Drone throttle backward');
+      this.log('Drone throttle backward');
       const thrustVector = forwardVector.clone().multiplyScalar(-this.moveSpeed);
       this.velocity.add(thrustVector);
     }
@@ -269,19 +269,19 @@ export class Player {
 
     // Rotation around y-axis (yaw)
     if (activeActions.has(InputAction.ROTATE_LEFT)) {
-      console.log('Drone rotating left (yaw)');
+      this.log('Drone rotating left (yaw)');
       this.lookEuler.y += this.lookSpeed * deltaTime;
     } else if (activeActions.has(InputAction.ROTATE_RIGHT)) {
-      console.log('Drone rotating right (yaw)');
+      this.log('Drone rotating right (yaw)');
       this.lookEuler.y -= this.lookSpeed * deltaTime;
     }
 
     // Look up/down (pitch)
     if (activeActions.has(InputAction.LOOK_UP)) {
-      console.log('Drone pitching forward');
+      this.log('Drone pitching forward');
       this.lookEuler.x -= this.lookSpeed * deltaTime;
     } else if (activeActions.has(InputAction.LOOK_DOWN)) {
-      console.log('Drone pitching backward');
+      this.log('Drone pitching backward');
       this.lookEuler.x += this.lookSpeed * deltaTime;
     }
 
@@ -290,10 +290,10 @@ export class Player {
 
     // Roll left/right
     if (activeActions.has(InputAction.ROLL_LEFT)) {
-      console.log('Drone banking left (roll)');
+      this.log('Drone banking left (roll)');
       this.lookEuler.z += this.lookSpeed * deltaTime;
     } else if (activeActions.has(InputAction.ROLL_RIGHT)) {
-      console.log('Drone banking right (roll)');
+      this.log('Drone banking right (roll)');
       this.lookEuler.z -= this.lookSpeed * deltaTime;
     }
 
@@ -310,14 +310,14 @@ export class Player {
    * Handle input action activation
    */
   private handleActionDown(action: InputAction): void {
-    console.log('Player action down:', action);
+    this.log('Player action down: ' + action);
   }
 
   /**
    * Handle input action deactivation
    */
   private handleActionUp(action: InputAction): void {
-    console.log('Player action up:', action);
+    this.log('Player action up: ' + action);
   }
 
   /**
@@ -468,6 +468,12 @@ export class Player {
         const scale = this.collisionEffectTimer / this.collisionEffectDuration;
         this.collisionEffect.scale.set(scale * 3, scale * 3, scale * 3);
       }
+    }
+  }
+
+  private log(message: string): void {
+    if (process.env.NODE_ENV !== 'test') {
+      console.log(message);
     }
   }
 }

@@ -67,7 +67,11 @@ const config = {
         }]
       },
     }
-  ]
+  ],
+  // Set the test environment to 'test'
+  globals: {
+    'process.env.NODE_ENV': 'test'
+  }
 };
 
 module.exports = config; 

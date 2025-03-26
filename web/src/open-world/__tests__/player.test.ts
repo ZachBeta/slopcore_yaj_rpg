@@ -2,6 +2,7 @@ import { Player } from '../player';
 import { GROUND_LEVEL } from '../../constants/directions';
 import { InputAction } from '../../constants/input';
 import * as THREE from 'three';
+import { silenceConsole, type ConsoleSilencer } from '../../test/test-utils';
 
 // Mock document.createElement for canvas and context
 const mockCanvasInstance = {
@@ -47,13 +48,16 @@ jest.mock('three/examples/jsm/renderers/CSS2DRenderer', () => {
 
 describe('Player', () => {
   let player: Player;
+  let consoleControl: ConsoleSilencer;
 
   beforeEach(() => {
+    consoleControl = silenceConsole();
     player = new Player('test-player', true);
     player.setPosition(new THREE.Vector3(0, GROUND_LEVEL, 0));
   });
 
   afterEach(() => {
+    consoleControl.restore();
     if (player && player.dispose) {
       player.dispose();
     }
@@ -112,8 +116,6 @@ describe('Player', () => {
         const position = player.getPosition();
         const delta = position.y - initialPosition.y;
 
-        console.log(`Upward movement delta: ${delta}`);
-
         // Since we're moving up from ground level, there should be movement
         expect(delta).toBeGreaterThan(0);
       }
@@ -133,8 +135,6 @@ describe('Player', () => {
 
         const afterDownPosition = player.getPosition();
         const downDelta = beforeDownPosition.y - afterDownPosition.y;
-
-        console.log(`Downward movement delta: ${downDelta}`);
 
         // There should be downward movement
         expect(downDelta).toBeGreaterThan(0);

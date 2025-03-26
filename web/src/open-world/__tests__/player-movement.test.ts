@@ -2,6 +2,8 @@ import { Player } from '../player';
 import { GROUND_LEVEL } from '../../constants/directions';
 import { InputAction } from '../../constants/input';
 import * as THREE from 'three';
+import { InputManager } from '../input-manager';
+import { silenceConsole, type ConsoleSilencer } from '../../test/test-utils';
 
 // Mock document.createElement for canvas and context
 const mockCanvasInstance = {
@@ -45,10 +47,49 @@ jest.mock('three/examples/jsm/renderers/CSS2DRenderer', () => {
   };
 });
 
+// Mock Three.js components
+jest.mock('three', () => {
+  return {
+    ...jest.requireActual('three'),
+    Vector3: jest.fn().mockImplementation((x = 0, y = 0, z = 0) => ({
+      x,
+      y,
+      z,
+      clone: jest.fn().mockImplementation(() => ({ 
+        x, y, z, 
+        clone: jest.fn(),
+        add: jest.fn().mockReturnThis(),
+        multiplyScalar: jest.fn().mockReturnThis(),
+        normalize: jest.fn().mockReturnThis(),
+        copy: jest.fn().mockReturnThis(),
+        applyQuaternion: jest.fn().mockReturnThis(),
+        subVectors: jest.fn().mockImplementation((a, b) => {
+          return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+        }),
+        length: jest.fn().mockReturnValue(5) // Return a non-zero value for tests
+      })),
+      add: jest.fn().mockReturnThis(),
+      multiplyScalar: jest.fn().mockReturnThis(),
+      normalize: jest.fn().mockReturnThis(),
+      copy: jest.fn().mockReturnThis(),
+      applyQuaternion: jest.fn().mockReturnThis(),
+      subVectors: jest.fn().mockImplementation((a, b) => {
+        return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+      }),
+      length: jest.fn().mockReturnValue(5), // Return a non-zero value for tests
+      distanceTo: jest.fn().mockImplementation((v) => 
+        Math.sqrt(Math.pow(x - v.x, 2) + Math.pow(y - v.y, 2) + Math.pow(z - v.z, 2))
+      ),
+    })),
+  };
+});
+
 describe('Player Movement with Orientation', () => {
   let player: Player;
+  let consoleControl: ConsoleSilencer;
 
   beforeEach(() => {
+    consoleControl = silenceConsole();
     player = new Player('test-player', true);
     // Start player well above ground to avoid ground collision affecting tests
     player.setPosition(new THREE.Vector3(0, GROUND_LEVEL + 20, 0));
@@ -57,6 +98,7 @@ describe('Player Movement with Orientation', () => {
   });
 
   afterEach(() => {
+    consoleControl.restore();
     if (player && player.dispose) {
       player.dispose();
     }
@@ -322,16 +364,6 @@ describe('Player Movement with Orientation', () => {
       trajectory.push({
         position: player.getPosition().clone(),
         label: 'End',
-      });
-
-      // Print the trajectory for visualization
-      console.log('Drone movement trajectory:');
-      trajectory.forEach((point, index) => {
-        console.log(
-          `${index}: ${point.label} - (${point.position.x.toFixed(2)}, ${
-            point.position.y.toFixed(2)
-          }, ${point.position.z.toFixed(2)})`,
-        );
       });
 
       // Verify the drone moved in a reasonable pattern
