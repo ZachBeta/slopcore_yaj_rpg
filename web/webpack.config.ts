@@ -32,11 +32,7 @@ const config: WebpackConfigWithDevServer = {
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
     fallback: {
-      process: require.resolve('process/browser'),
-      buffer: require.resolve('buffer/'),
-      util: require.resolve('util/'),
-      stream: require.resolve('stream-browserify'),
-      path: require.resolve('path-browserify')
+      "process": require.resolve("process/browser")
     }
   },
   output: {
@@ -55,7 +51,7 @@ const config: WebpackConfigWithDevServer = {
     }),
     new webpack.HotModuleReplacementPlugin(),
     new webpack.ProvidePlugin({
-      process: 'process/browser',
+      process: 'process/browser'
     })
   ],
   devServer: {
