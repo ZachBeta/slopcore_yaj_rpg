@@ -3,13 +3,21 @@
  * Handles automated opponent actions during gameplay
  */
 
+import {
+  Card,
+  PlayedCard,
+  RunHistoryEntry,
+  Agenda
+} from './game-types';
+import { AIAction } from './ai-types';
+
 interface GameState {
   playerCredits: number;
   playerMemory: number;
   opponentCredits: number;
   opponentCards: number;
-  installedPrograms: any[];
-  runHistory: any[];
+  installedPrograms: PlayedCard[];
+  runHistory: RunHistoryEntry[];
   serverStrengths: Record<string, number>;
   turnNumber: number;
 }
@@ -17,8 +25,8 @@ interface GameState {
 export class AIOpponent {
   private difficulty: 'easy' | 'medium' | 'hard';
   private credits: number;
-  private iceInstalled: any[];
-  private agenda: any[];
+  private iceInstalled: PlayedCard[];
+  private agenda: Card[];
   private turn: number;
   private random: () => number;
 
@@ -106,9 +114,14 @@ export class AIOpponent {
             
             if (this.credits >= iceCost) {
               this.iceInstalled.push({
+                id: `ice-${iceName.toLowerCase()}`,
                 name: iceName,
-                strength: iceStrength,
-                cost: iceCost,
+                type: 'ice',
+                cost: 2,
+                strength: 3,
+                description: 'A piece of ice',
+                installed: true,
+                faceUp: false,
                 rezzed: false
               });
               
@@ -127,27 +140,27 @@ export class AIOpponent {
           
         case 'advanceAgenda':
           if (this.random() < 0.3 && this.agenda.length < 3) {
-            const newAgenda = {
-              name: this.generateAgendaName(),
+            const newAgenda: Agenda = {
+              id: `agenda-${Date.now()}`,
+              name: 'Corporate Agenda',
+              type: 'agenda',
+              cost: 0,
+              description: 'A corporate agenda',
               advancement: 0,
-              pointValue: Math.ceil(this.random() * 2) + 1,
-              advancementRequired: (Math.ceil(this.random() * 3) + 2)
+              pointValue: 2,
+              advancementRequired: 4
             };
-            
             this.agenda.push(newAgenda);
-            actionsLog.push(`Corporation created new agenda: ${newAgenda.name}.`);
-          } else if (this.agenda.length > 0) {
-            // Advance an existing agenda
-            const agendaIndex = Math.floor(this.random() * this.agenda.length);
-            const agenda = this.agenda[agendaIndex];
-            
+          }
+
+          const agenda = this.agenda[Math.floor(this.random() * this.agenda.length)] as Agenda;
+          if (agenda) {
             agenda.advancement++;
             actionsLog.push(`Corporation advanced agenda: ${agenda.name} (${agenda.advancement}/${agenda.advancementRequired}).`);
-            
-            // Check if agenda is completed
+
             if (agenda.advancement >= agenda.advancementRequired) {
               actionsLog.push(`Corporation scored agenda: ${agenda.name} for ${agenda.pointValue} points!`);
-              this.agenda.splice(agendaIndex, 1);
+              // TODO: Update score
             }
           }
           break;
@@ -194,11 +207,11 @@ export class AIOpponent {
   private determineNextAction(): 'installIce' | 'drawCard' | 'advanceAgenda' | 'gainCredit' {
     const roll = this.random();
     
-    // Weights for different actions based on game state
+    // Weights for different actions based on difficulty
     const weights = {
-      installIce: 0.25 + (this.credits > 5 ? 0.2 : 0) - (this.iceInstalled.length * 0.05),
-      drawCard: 0.2,
-      advanceAgenda: 0.3 + (this.turn > 3 ? 0.1 : 0),
+      installIce: 0.3 - (this.iceInstalled.length > 5 ? 0.2 : 0),
+      drawCard: 0.25 - (this.agenda.length > 3 ? 0.15 : 0),
+      advanceAgenda: 0.2 + (this.agenda.length > 2 ? 0.15 : 0),
       gainCredit: 0.25 - (this.credits > 8 ? 0.15 : 0)
     };
     
@@ -206,11 +219,11 @@ export class AIOpponent {
     for (const [action, weight] of Object.entries(weights)) {
       cumulativeWeight += weight;
       if (roll < cumulativeWeight) {
-        return action as any;
+        return action as 'installIce' | 'drawCard' | 'advanceAgenda' | 'gainCredit';
       }
     }
     
-    return 'gainCredit';
+    return 'drawCard'; // Default action
   }
   
   /**
@@ -259,14 +272,27 @@ export class AIOpponent {
   /**
    * Get the installed ICE
    */
-  public getInstalledIce(): any[] {
+  public getInstalledIce(): PlayedCard[] {
     return [...this.iceInstalled];
   }
   
   /**
    * Get the current agendas
    */
-  public getAgendas(): any[] {
+  public getAgendas(): Card[] {
     return [...this.agenda];
+  }
+
+  private selectAction(): AIAction {
+    const actions: AIAction[] = [
+      { type: 'draw' },
+      { type: 'install', card: 'ice' },
+      { type: 'advance' },
+      { type: 'score' },
+      { type: 'end' }
+    ];
+    
+    const index = Math.floor(this.random() * actions.length);
+    return actions[index];
   }
 } 

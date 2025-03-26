@@ -111,7 +111,7 @@ class MockServer extends EventEmitter {
   }
   
   // Broadcast event to all clients
-  broadcastToAll(event: string, data: any): void {
+  broadcastToAll(event: string, data: PlayerJoinData | string): void {
     this.emit('broadcast', event, data);
   }
   
@@ -126,17 +126,17 @@ class MockServer extends EventEmitter {
   // Connect a client to the server
   connectClient(clientId: string, clientManager: TestNetworkManager): void {
     // Set up event forwarding for this client
-    this.on(clientId, (event: string, data: any) => {
+    this.on(clientId, (event: string, data: PlayerJoinData | string) => {
       clientManager.emit(event, data);
     });
     
     // Set up client to server communication
-    clientManager.on('toServer', (event: string, data: any) => {
+    clientManager.on('toServer', (event: string, data: PlayerJoinData | string) => {
       this.handleClientEvent(clientId, event, data);
     });
     
     // Set up broadcast forwarding
-    this.on('broadcast', (event: string, data: any) => {
+    this.on('broadcast', (event: string, data: PlayerJoinData | string) => {
       // In real server, we wouldn't always broadcast to the sender
       clientManager.emit(event, data);
     });

@@ -1,6 +1,3 @@
-// Rename the file to .ts and ensure the exports are working
-export { TestSocket, TestServer, simulatePlayerJoining, isColorUnique, getColorKey };
-
 /**
  * Simple TestSocket that emulates a socket.io socket without network connections
  */

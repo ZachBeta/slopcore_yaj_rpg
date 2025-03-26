@@ -3,6 +3,7 @@ import { Player } from './player';
 import { io, Socket } from 'socket.io-client';
 import { GameEvent, GameEventPayloads, ConnectionStatus } from '../constants';
 import { DebugState } from '../types';
+import { process } from "../../deps";
 
 // Define EventHandler type
 type EventHandler<T extends GameEvent> = (payload: GameEventPayloads[T]) => void;
@@ -164,7 +165,7 @@ export class NetworkManager {
     });
   }
 
-  private setupDiagnostics() {
+  private setupDiagnostics(): void {
     // Create diagnostics overlay
     if (this.diagnosticsDiv) {
       document.body.removeChild(this.diagnosticsDiv);
@@ -210,7 +211,7 @@ export class NetworkManager {
     }, this.pingInterval);
   }
 
-  private updateDiagnostics(data: Partial<Diagnostics>) {
+  private updateDiagnostics(data: Partial<Diagnostics>): void {
     if (!this.diagnosticsDiv) return;
 
     const diagnostics = {
@@ -334,7 +335,7 @@ export class NetworkManager {
       // Log transport being used
       try {
         console.log('Using transport:', this.socket?.io.engine.transport.name);
-      } catch (_error) {
+      } catch {
         console.log('Could not determine transport type');
       }
       
@@ -655,7 +656,7 @@ export class NetworkManager {
         // Remove each handler from socket events
         if (this.socket) {
           Object.values(GameEvent).forEach(event => {
-            this.socket?.off(event, handler as (...args: any[]) => void);
+            this.socket?.off(event, handler as (...args: unknown[]) => void);
           });
         }
       });

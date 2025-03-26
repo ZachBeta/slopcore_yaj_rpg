@@ -2,6 +2,8 @@
  * Card Data - Provides sample cards for the terminal game including ASCII art representations
  */
 
+import { GameState } from './game-types';
+
 // ASCII Art for different card types
 export const CARD_ASCII_ART = {
   program: [
@@ -162,11 +164,17 @@ export interface Card {
   type: 'program' | 'hardware' | 'resource' | 'event' | 'ice' | 'agenda' | 'upgrade';
   subtype?: string;
   cost: number;
+  installCost?: number;
   memoryUsage?: number;
   strength?: number;
   description: string;
-  effect?: (gameState: any) => void;
+  effect?: (gameState: GameState) => void;
   ascii_art?: string[];
+  // Game-specific properties
+  rezzed?: boolean;
+  faceUp?: boolean;
+  installed?: boolean;
+  recurringCredits?: number;
 }
 
 /**

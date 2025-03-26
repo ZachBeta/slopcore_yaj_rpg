@@ -1,3 +1,6 @@
+// Define more specific types
+export type KeyCode = string;
+
 export enum InputAction {
   THROTTLE_FORWARD = 'THROTTLE_FORWARD',
   THROTTLE_BACKWARD = 'THROTTLE_BACKWARD',
@@ -17,7 +20,7 @@ export enum InputAction {
 }
 
 export interface InputMapping {
-  keyCode: string;
+  keyCode: KeyCode;
   action: InputAction;
 }
 
@@ -37,12 +40,12 @@ export const INPUT_MAPPINGS: InputMapping[] = [
   { keyCode: 'KeyX', action: InputAction.DEBUG_TOGGLE }
 ];
 
-export const getActionFromKeyCode = (keyCode: string): InputAction | undefined => {
+export const getActionFromKeyCode = (keyCode: KeyCode): InputAction | undefined => {
   const mapping = INPUT_MAPPINGS.find(m => m.keyCode === keyCode);
   return mapping?.action;
 };
 
-export const getKeyCodeFromAction = (action: InputAction): string | undefined => {
+export const getKeyCodeFromAction = (action: InputAction): KeyCode | undefined => {
   const mapping = INPUT_MAPPINGS.find(m => m.action === action);
   return mapping?.keyCode;
 }; 

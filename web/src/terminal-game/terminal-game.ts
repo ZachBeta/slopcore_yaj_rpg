@@ -6,34 +6,37 @@ import { Card, createStarterDeck } from './card-data';
 import { ConsoleRenderer } from './console-renderer';
 import { AIOpponent } from './ai-opponent';
 import { GamePhase } from './game-phases';
-import { CommandArguments, GameState, PlayedCard, RunState, Server, CommandHandler } from './types';
+import {
+  Credits,
+  MemoryUnits,
+  ClickCount,
+  TurnNumber,
+  AgendaPoints,
+  CardCount,
+  CardIndex,
+  RandomSeed,
+  PlayerSide,
+  ServerName,
+  CommandName,
+  GameResources,
+  TurnState,
+  WinState,
+  CardState,
+  CommandState,
+  GameComponents,
+  CommandDoc,
+  validCommands,
+  PlayedCard,
+  Server,
+  CommandHandler,
+  CommandArguments,
+  GameState,
+  RunState,
+  CardTrigger
+} from './game-types';
 
 // Command documentation
-const validCommands: Record<string, string> = {
-  help: "Display a list of available commands",
-  man: "Display detailed manual for a command",
-  draw: "Draw a card from your deck (costs 1 click)",
-  hand: "Display cards in your hand",
-  install: "Install a card from your hand (costs 1 click)",
-  run: "Initiate a run on a server (costs 1 click)",
-  end: "End your turn",
-  info: "Display game information",
-  discard: "Discard a card from your hand",
-  system: "Display system status",
-  installed: "Display your installed cards",
-  credits: "Display your credit balance",
-  memory: "Display memory unit status",
-  jack_out: "Jack out of a run"
-};
-
-// Command manual pages
-interface CommandManPage {
-  NAME: string;
-  SYNOPSIS: string;
-  DESCRIPTION: string;
-  EXAMPLES: string;
-  SEE_ALSO: string;
-}
+interface CommandManPage extends CommandDoc {}
 
 const commandManPages: Record<string, CommandManPage> = {
   help: {
@@ -90,28 +93,28 @@ const commandManPages: Record<string, CommandManPage> = {
 export class TerminalGame {
   // Game dependencies
   private renderer: ConsoleRenderer;
-  private randomSeed: number;
+  private randomSeed: RandomSeed;
   
-  // Game state
-  private playerCredits: number = 5;
-  private memoryUnitsAvailable: number = 4;
-  private memoryUnitsUsed: number = 0;
-  private playerSide: string = "runner";
-  private opponentSide: string = "corp";
+  // Game resources
+  private playerCredits: Credits = 5;
+  private memoryUnitsAvailable: MemoryUnits = 4;
+  private memoryUnitsUsed: MemoryUnits = 0;
+  private playerSide: PlayerSide = "runner";
+  private opponentSide: PlayerSide = "corp";
   
   // Game phases and turns
   private currentPhase: GamePhase = GamePhase.SETUP;
-  private clicksRemaining: number = 0;
-  private maxClicks: number = 4;
-  private turnNumber: number = 0;
-  private activePlayer: string | null = null;
+  private clicksRemaining: ClickCount = 0;
+  private maxClicks: ClickCount = 4;
+  private turnNumber: TurnNumber = 0;
+  private activePlayer: PlayerSide | null = null;
   
   // Win conditions
-  private runnerAgendaPoints: number = 0;
-  private corpAgendaPoints: number = 0;
-  private agendaPointsToWin: number = 7;
-  private runnerCardsRemaining: number = 0;
-  private corpCardsRemaining: number = 30;
+  private runnerAgendaPoints: AgendaPoints = 0;
+  private corpAgendaPoints: AgendaPoints = 0;
+  private agendaPointsToWin: AgendaPoints = 7;
+  private runnerCardsRemaining: CardCount = 0;
+  private corpCardsRemaining: CardCount = 30;
   private gameOver: boolean = false;
   private winMessage: string = "";
   
@@ -119,7 +122,7 @@ export class TerminalGame {
   private playerDeck: Card[] = [];
   private handCards: Card[] = [];
   private playedCards: PlayedCard[] = [];
-  private selectedCardIndex: number = -1;
+  private selectedCardIndex: CardIndex = -1;
   
   // Special gameplay flags
   private bypassNextIce: number = 0;
@@ -134,33 +137,29 @@ export class TerminalGame {
   private aiOpponent: AIOpponent | null = null;
 
   // Server data
-  private servers: Record<string, Server> = {};
+  private servers: Record<ServerName, Server> = {};
 
   // Command handlers map
-  private commandHandlers: Record<string, CommandHandler> = {};
+  private commandHandlers: Record<CommandName, CommandHandler> = {
+    help: (args: string[]) => this.cmdHelp({ command: 'help', args, options: {} }),
+    man: (args: string[]) => this.cmdMan({ command: 'man', args, options: {} }),
+    draw: (args: string[]) => this.cmdDraw({ command: 'draw', args, options: {} }),
+    hand: (args: string[]) => this.cmdHand({ command: 'hand', args, options: {} }),
+    install: (args: string[]) => this.cmdInstall({ command: 'install', args, options: {} }),
+    run: (args: string[]) => this.cmdRun({ command: 'run', args, options: {} }),
+    end: (args: string[]) => this.cmdEnd({ command: 'end', args, options: {} }),
+    info: (args: string[]) => this.cmdInfo({ command: 'info', args, options: {} }),
+    discard: (args: string[]) => this.cmdDiscard({ command: 'discard', args, options: {} }),
+    system: (args: string[]) => this.cmdSystem({ command: 'system', args, options: {} }),
+    installed: (args: string[]) => this.cmdInstalled({ command: 'installed', args, options: {} }),
+    credits: (args: string[]) => this.cmdCredits({ command: 'credits', args, options: {} }),
+    memory: (args: string[]) => this.cmdMemory({ command: 'memory', args, options: {} }),
+    jack_out: (args: string[]) => this.cmdJackOut({ command: 'jack_out', args, options: {} })
+  };
 
-  constructor(randomSeed: number = Math.floor(Math.random() * 100000)) {
-    // Set up dependencies
+  constructor(randomSeed: RandomSeed = Math.floor(Math.random() * 100000)) {
     this.randomSeed = randomSeed;
     this.renderer = new ConsoleRenderer();
-    
-    // Set up command handlers
-    this.commandHandlers = {
-      'help': this.cmdHelp.bind(this),
-      'man': this.cmdMan.bind(this),
-      'draw': this.cmdDraw.bind(this),
-      'hand': this.cmdHand.bind(this),
-      'install': this.cmdInstall.bind(this),
-      'run': this.cmdRun.bind(this),
-      'end': this.cmdEnd.bind(this),
-      'info': this.cmdInfo.bind(this),
-      'discard': this.cmdDiscard.bind(this),
-      'system': this.cmdSystem.bind(this),
-      'installed': this.cmdInstalled.bind(this),
-      'credits': this.cmdCredits.bind(this),
-      'memory': this.cmdMemory.bind(this),
-      'jack_out': this.cmdJackOut.bind(this)
-    };
   }
 
   /**
@@ -195,7 +194,7 @@ export class TerminalGame {
   /**
    * Set the random seed for consistent behavior
    */
-  private setRandomSeed(seed: number): void {
+  private setRandomSeed(seed: RandomSeed): void {
     this.randomSeed = seed;
     // We don't actually set JavaScript's Math.random seed here because
     // that's not directly possible. Instead, we use a predictable
@@ -216,27 +215,16 @@ export class TerminalGame {
    * Initialize corporate servers
    */
   private initializeServers(): void {
-    // Set up the three main servers
-    this.servers = {
-      'R&D': {
-        name: 'R&D',
+    const serverNames: ServerName[] = ["HQ", "R&D", "Archives"];
+    this.servers = serverNames.reduce((acc, name) => {
+      acc[name] = {
+        name,
         ice: [],
-        strength: 1,
-        cards: []
-      },
-      'HQ': {
-        name: 'HQ',
-        ice: [],
-        strength: 2,
-        cards: []
-      },
-      'Archives': {
-        name: 'Archives',
-        ice: [],
-        strength: 1,
-        cards: []
-      }
-    };
+        cards: [],
+        root: null
+      };
+      return acc;
+    }, {} as Record<ServerName, Server>);
   }
 
   /**
@@ -272,141 +260,77 @@ export class TerminalGame {
   /**
    * Start a new turn
    */
-  startTurn(): void {
-    // Increment turn counter if returning to the runner
-    if (this.activePlayer === this.opponentSide) {
-      this.turnNumber++;
-    }
-    
-    // Set active player to the runner
-    this.activePlayer = this.playerSide;
-    
-    // Update phase
-    this.currentPhase = GamePhase.START_TURN;
-    
-    // Reset clicks
+  public startTurn(): void {
     this.clicksRemaining = this.maxClicks;
-    
-    // Trigger start-of-turn effects
-    this.processCardAbilities('turn_start');
-    
-    // Display turn information
-    this.renderer.renderPhase(this.getPhaseDescription(), this.turnNumber);
-    
-    // Update phase to action phase
+    this.turnNumber++;
     this.currentPhase = GamePhase.ACTION;
-    
-    // Display status
-    this.updateStatus();
+    this.activePlayer = this.playerSide;
+
+    // Reset special flags
+    this.bypassNextIce = 0;
+    this.nextRunUntraceable = false;
+
+    this.renderer.displayMessage(`Turn ${this.turnNumber} started`);
   }
 
   /**
    * Process abilities of played cards based on a trigger
    */
-  private processCardAbilities(trigger: string, _context: Record<string, unknown> | null = null): void {
-    // Iterate through installed/played cards and check for matching abilities
+  private processCardAbilities(trigger: CardTrigger): void {
     this.playedCards.forEach(card => {
       if (card.type === 'program' && trigger === 'turn_start') {
-        if (card.id === 'prog_autoscript') {
-          // Draw 1 card
-          if (this.playerDeck.length > 0) {
-            this.handCards.push(this.playerDeck.pop()!);
-            this.renderer.renderSuccess(`${card.name} lets you draw a card.`);
-          }
-        } else if (card.id === 'prog_credit_miner') {
-          // Gain 1 credit
-          this.playerCredits += 1;
-          this.renderer.renderSuccess(`${card.name} generates 1 credit.`);
-        }
-      } else if (card.type === 'resource' && trigger === 'turn_start') {
-        if (card.id === 'res_darknet_contact' && this.playerCredits < 6) {
-          // Gain 1 credit if fewer than 6 credits
-          this.playerCredits += 1;
-          this.renderer.renderSuccess(`${card.name} generates 1 credit.`);
+        if (card.recurringCredits) {
+          this.playerCredits = (this.playerCredits + card.recurringCredits) as Credits;
+          this.renderer.renderSuccess(`${card.name} generates ${card.recurringCredits} credit(s).`);
         }
       }
     });
   }
 
   /**
-   * Process a command entered by the player
+   * Process a command from the user
    */
-  processCommand(commandText: string): void {
+  public processCommand(command: string): void {
+    if (!command.trim()) {
+      return;
+    }
+
     // Add to command history
-    this.commandHistory.push(commandText);
+    this.commandHistory.push(command);
     this.commandHistoryIndex = this.commandHistory.length;
-    
-    // Parse command and arguments
-    const { command, args } = this.parseCommand(commandText);
-    
-    // Check if command exists
-    if (command && this.commandHandlers[command]) {
-      // Execute the command
-      this.commandHandlers[command](args);
-    } else if (command) {
-      // Unknown command
-      this.renderer.renderError(`Unknown command: ${command}`);
-      this.renderer.renderMessage("Type 'help' for a list of available commands.", 'info');
-    }
-    
-    // Check win conditions after every command
-    this.checkWinConditions();
-    
-    // Display prompt if game is not over
-    if (!this.gameOver) {
-      this.renderer.showPrompt();
-    }
-  }
 
-  /**
-   * Parse a command string into command name and arguments
-   */
-  private parseCommand(commandText: string): CommandArguments {
-    const parts = commandText.trim().split(/\s+/);
-    const command = parts[0]?.toLowerCase();
-    const args = parts.slice(1);
-    const options: Record<string, string> = {};
-    
-    // Extract options (starts with --)
-    const filteredArgs = args.filter(arg => {
-      if (arg.startsWith('--')) {
-        const optParts = arg.substring(2).split('=');
-        options[optParts[0]] = optParts[1] || 'true';
-        return false;
-      }
-      return true;
-    });
-    
-    return { command, args: filteredArgs, options };
+    // Parse command and arguments
+    const [cmdName, ...args] = command.toLowerCase().split(' ');
+    const handler = this.commandHandlers[cmdName as CommandName];
+
+    if (!handler) {
+      this.renderer.displayError(`Unknown command: ${cmdName}`);
+      return;
+    }
+
+    try {
+      handler(args);
+    } catch (error) {
+      this.renderer.displayError(`Error executing command: ${error.message}`);
+    }
   }
 
   /**
    * Check if any win conditions are met
    */
   private checkWinConditions(): void {
-    // Check agenda points
     if (this.runnerAgendaPoints >= this.agendaPointsToWin) {
       this.gameOver = true;
-      this.winMessage = `You have collected ${this.runnerAgendaPoints} agenda points and won the game!`;
-      this.displayGameOver();
+      this.winMessage = "Runner wins by agenda points!";
     } else if (this.corpAgendaPoints >= this.agendaPointsToWin) {
       this.gameOver = true;
-      this.winMessage = `The Corporation has scored ${this.corpAgendaPoints} agenda points and won the game.`;
-      this.displayGameOver();
-    }
-    
-    // Check if runner is out of cards
-    if (this.playerDeck.length === 0 && this.handCards.length === 0) {
+      this.winMessage = "Corporation wins by agenda points!";
+    } else if (this.runnerCardsRemaining <= 0) {
       this.gameOver = true;
-      this.winMessage = "You have no cards left in your stack or grip. The Corporation wins.";
-      this.displayGameOver();
-    }
-    
-    // Check if corp is out of cards
-    if (this.corpCardsRemaining <= 0) {
+      this.winMessage = "Corporation wins by decking the Runner!";
+    } else if (this.corpCardsRemaining <= 0) {
       this.gameOver = true;
-      this.winMessage = "The Corporation has no cards left in R&D. You win!";
-      this.displayGameOver();
+      this.winMessage = "Runner wins by decking the Corporation!";
     }
   }
 
@@ -455,19 +379,17 @@ export class TerminalGame {
   /**
    * Command handler for 'help'
    */
-  private cmdHelp(args: string[]): void {
-    if (args.length > 0) {
-      // Display help for specific command
-      const commandName = args[0].toLowerCase();
-      if (validCommands[commandName]) {
-        this.renderer.renderMessage(`\n${commandName}: ${validCommands[commandName]}`, 'info');
-        this.renderer.renderMessage(`\nFor more detailed information, type 'man ${commandName}'`, 'info');
-      } else {
-        this.renderer.renderError(`No help available for command: ${commandName}`);
-      }
+  private cmdHelp(args: CommandArguments): void {
+    if (args.args.length === 0) {
+      this.renderer.displayHelp(validCommands);
+      return;
+    }
+
+    const command = args.args[0] as CommandName;
+    if (command in validCommands) {
+      this.renderer.displayCommandHelp(command, validCommands[command]);
     } else {
-      // Display general help
-      this.renderer.renderHelp(validCommands);
+      this.renderer.displayError(`No help available for command: ${command}`);
     }
   }
 
@@ -505,32 +427,22 @@ export class TerminalGame {
   /**
    * Command handler for 'draw'
    */
-  private cmdDraw(_args: string[]): void {
-    if (this.currentPhase !== GamePhase.ACTION) {
-      this.renderer.renderError("You can only draw cards during the action phase.");
-      return;
-    }
-    
+  private cmdDraw(args: CommandArguments): void {
     if (this.clicksRemaining < 1) {
-      this.renderer.renderError("Not enough clicks remaining.");
+      this.renderer.displayError("Not enough clicks remaining");
       return;
     }
-    
+
     if (this.playerDeck.length === 0) {
-      this.renderer.renderError("Your deck is empty.");
+      this.renderer.displayError("No cards left in deck");
       return;
     }
-    
-    // Draw a card from the top of the deck
-    const card = this.playerDeck.pop();
-    if (card) {
-      this.handCards.push(card);
-      this.clicksRemaining--;
-      this.renderer.renderSuccess(`You drew ${card.name}.`);
-      
-      // Update status
-      this.updateStatus();
-    }
+
+    const card = this.playerDeck.pop()!;
+    this.handCards.push(card);
+    this.clicksRemaining--;
+
+    this.renderer.displayMessage(`Drew card: ${card.name}`);
   }
 
   /**
@@ -549,140 +461,163 @@ export class TerminalGame {
   /**
    * Command handler for 'install'
    */
-  private cmdInstall(args: string[]): void {
-    if (this.currentPhase !== GamePhase.ACTION) {
-      this.renderer.renderError("You can only install cards during the action phase.");
+  private cmdInstall(args: CommandArguments): void {
+    if (args.args.length === 0) {
+      this.renderer.displayError("Please specify a card index to install");
       return;
     }
-    
-    if (this.clicksRemaining < 1) {
-      this.renderer.renderError("Not enough clicks remaining.");
-      return;
-    }
-    
-    if (args.length === 0) {
-      this.renderer.renderError("Please specify which card to install. Example: install 2");
-      return;
-    }
-    
-    const cardIndex = parseInt(args[0]);
+
+    const cardIndex = parseInt(args.args[0], 10) as CardIndex;
     if (isNaN(cardIndex) || cardIndex < 0 || cardIndex >= this.handCards.length) {
-      this.renderer.renderError(`Invalid card index: ${args[0]}`);
+      this.renderer.displayError("Invalid card index");
       return;
     }
-    
+
+    if (this.clicksRemaining < 1) {
+      this.renderer.displayError("Not enough clicks remaining");
+      return;
+    }
+
     const card = this.handCards[cardIndex];
-    
-    // Check if we can afford it
-    if (card.cost > this.playerCredits) {
-      this.renderer.renderError(`Not enough credits to install ${card.name}. Cost: ${card.cost}, Available: ${this.playerCredits}`);
+    if (this.playerCredits < card.installCost) {
+      this.renderer.displayError("Not enough credits to install this card");
       return;
     }
-    
-    // Check if we have enough memory for programs
-    if (card.type === 'program' && card.memoryUsage && card.memoryUsage + this.memoryUnitsUsed > this.memoryUnitsAvailable) {
-      this.renderer.renderError(`Not enough memory to install ${card.name}. Required: ${card.memoryUsage}, Available: ${this.memoryUnitsAvailable - this.memoryUnitsUsed}`);
+
+    if (card.memoryUsage && this.memoryUnitsUsed + card.memoryUsage > this.memoryUnitsAvailable) {
+      this.renderer.displayError("Not enough memory units available");
       return;
     }
-    
-    // Install the card
-    const playedCard: PlayedCard = {
-      ...card,
-      playedId: Date.now(),
-      faceup: true
-    };
-    
-    this.playedCards.push(playedCard);
+
+    // Remove card from hand and add to played cards
     this.handCards.splice(cardIndex, 1);
-    
+    if (!card) {
+      throw new Error('Invalid card index');
+    }
+
+    const playedCard: PlayedCard = {
+      id: card.id,
+      name: card.name,
+      type: card.type,
+      cost: card.cost,
+      description: card.description,
+      subtype: card.subtype,
+      memoryUsage: card.memoryUsage,
+      strength: card.strength,
+      effect: card.effect,
+      ascii_art: card.ascii_art,
+      installCost: card.installCost,
+      installed: true,
+      faceUp: true,
+      rezzed: false,
+      recurringCredits: card.recurringCredits
+    };
+    this.playedCards.push(playedCard);
+
     // Update resources
-    this.playerCredits -= card.cost;
-    this.clicksRemaining--;
-    
-    if (card.type === 'program' && card.memoryUsage) {
+    this.playerCredits -= card.installCost;
+    if (card.memoryUsage) {
       this.memoryUnitsUsed += card.memoryUsage;
     }
-    
-    if (card.type === 'hardware') {
-      // Hardware with memory bonus
-      if (card.id === 'hw_mem_chip') {
-        this.memoryUnitsAvailable += 1;
-        this.renderer.renderSuccess(`Your memory capacity increased by 1 unit.`);
-      } else if (card.id === 'hw_modded_console') {
-        this.memoryUnitsAvailable += 2;
-        this.renderer.renderSuccess(`Your memory capacity increased by 2 units.`);
-        
-        // Also draw a card
-        if (this.playerDeck.length > 0) {
-          this.handCards.push(this.playerDeck.pop()!);
-          this.renderer.renderSuccess(`You drew a card.`);
-        }
-      } else if (card.id === 'hw_quantum_processor') {
-        this.memoryUnitsAvailable += 3;
-        this.renderer.renderSuccess(`Your memory capacity increased by 3 units.`);
-      }
-    }
-    
-    this.renderer.renderSuccess(`Installed ${card.name}.`);
-    this.updateStatus();
+    this.clicksRemaining--;
+
+    this.renderer.displayMessage(`Installed ${card.name}`);
   }
 
   /**
    * Command handler for 'run'
    */
-  private cmdRun(args: string[]): void {
-    if (this.currentPhase !== GamePhase.ACTION) {
-      this.renderer.renderError("You can only initiate runs during the action phase.");
+  private cmdRun(args: CommandArguments): void {
+    if (args.args.length === 0) {
+      this.renderer.displayError("Please specify a server to run on");
       return;
     }
+
+    const serverName = args.args[0] as ServerName;
+    const server = this.servers[serverName];
     
+    if (!server) {
+      this.renderer.displayError(`Unknown server: ${serverName}`);
+      return;
+    }
+
     if (this.clicksRemaining < 1) {
-      this.renderer.renderError("Not enough clicks remaining.");
+      this.renderer.displayError("Not enough clicks remaining");
       return;
     }
-    
-    if (args.length === 0) {
-      this.renderer.renderError("Please specify a server to run on. Example: run R&D");
+
+    if (this.currentRun) {
+      this.renderer.displayError("Already in a run");
       return;
     }
-    
-    const serverName = args[0];
-    if (!this.servers[serverName]) {
-      this.renderer.renderError(`Invalid server: ${serverName}`);
-      return;
-    }
-    
-    // Initiate a run
+
     this.currentRun = {
       active: true,
+      server: serverName,
       target: serverName,
-      iceIndex: 0,
-      iceEncountered: [],
-      successful: false,
+      phase: 'approach',
+      encounterIndex: 0,
+      bypassNextIce: this.bypassNextIce > 0,
       untraceable: this.nextRunUntraceable
     };
-    
-    // Consume click
+
     this.clicksRemaining--;
-    
-    // Reset the untraceable flag
-    if (this.nextRunUntraceable) {
-      this.nextRunUntraceable = false;
+    this.bypassNextIce = Math.max(0, this.bypassNextIce - 1);
+    this.nextRunUntraceable = false;
+
+    this.renderer.displayMessage(`Starting run on ${serverName}`);
+    this.processRun();
+  }
+
+  /**
+   * Process the current run
+   */
+  private processRun(): void {
+    if (!this.currentRun) {
+      return;
     }
-    
-    // Display run message
-    this.renderer.renderMessage(`Initiating run on ${serverName}...`, 'info');
-    
-    // For this demo, we'll simulate a successful run
-    this.renderer.renderSuccess(`Run on ${serverName} was successful!`);
-    
-    // Set run as successful
-    if (this.currentRun) {
-      this.currentRun.successful = true;
-      this.currentRun.active = false;
+
+    const server = this.servers[this.currentRun.server];
+    switch (this.currentRun.phase) {
+      case "approach":
+        if (server.ice.length > 0) {
+          this.currentRun.phase = "encounter";
+          this.renderer.displayMessage("Encountering ICE...");
+        } else {
+          this.currentRun.phase = "access";
+          this.renderer.displayMessage("Accessing server...");
+        }
+        break;
+
+      case "encounter":
+        if (this.currentRun.bypassNextIce) {
+          this.currentRun.encounterIndex++;
+          if (this.currentRun.encounterIndex >= server.ice.length) {
+            this.currentRun.phase = "access";
+            this.renderer.displayMessage("Accessing server...");
+          }
+        }
+        break;
+
+      case "access":
+        // Handle server access
+        this.accessServer(this.currentRun.server);
+        this.currentRun = null;
+        break;
     }
-    
-    this.updateStatus();
+  }
+
+  /**
+   * Access a server during a run
+   */
+  private accessServer(serverName: ServerName): void {
+    const server = this.servers[serverName];
+    if (!server) {
+      return;
+    }
+
+    this.renderer.displayMessage(`Accessed ${serverName}`);
+    // Additional server access logic here
   }
 
   /**
@@ -750,15 +685,15 @@ export class TerminalGame {
   /**
    * Command handler for 'discard'
    */
-  private cmdDiscard(args: string[]): void {
-    if (args.length === 0) {
+  private cmdDiscard(args: CommandArguments): void {
+    if (args.args.length === 0) {
       this.renderer.renderError("Please specify which card to discard. Example: discard 2");
       return;
     }
     
-    const cardIndex = parseInt(args[0]);
+    const cardIndex = parseInt(args.args[0]);
     if (isNaN(cardIndex) || cardIndex < 0 || cardIndex >= this.handCards.length) {
-      this.renderer.renderError(`Invalid card index: ${args[0]}`);
+      this.renderer.renderError(`Invalid card index: ${args.args[0]}`);
       return;
     }
     
@@ -827,42 +762,17 @@ export class TerminalGame {
   /**
    * Command handler for 'credits'
    */
-  private cmdCredits(_args: string[]): void {
-    this.renderer.renderMessage("\nCredit Account:", 'info');
-    this.renderer.renderMessage(`Available Credits: ${this.playerCredits}`, 'info');
-    
-    // Calculate recurring credits
-    let recurringCredits = 0;
-    
-    // Count recurring income from cards
-    this.playedCards.forEach(card => {
-      if (card.type === 'program' && card.id === 'prog_credit_miner') {
-        recurringCredits += 1;
-      } else if (card.type === 'resource' && card.id === 'res_darknet_contact') {
-        recurringCredits += 1;
-      }
-    });
-    
-    this.renderer.renderMessage(`Recurring Income: ${recurringCredits} per turn`, 'info');
+  private cmdCredits(args: CommandArguments): void {
+    this.renderer.displayMessage(`Credits available: ${this.playerCredits}`);
   }
 
   /**
    * Command handler for 'memory'
    */
-  private cmdMemory(_args: string[]): void {
-    this.renderer.renderMessage("\nMemory Status:", 'info');
-    this.renderer.renderMessage(`Total MU: ${this.memoryUnitsAvailable}`, 'info');
-    this.renderer.renderMessage(`Used MU: ${this.memoryUnitsUsed}`, 'info');
-    this.renderer.renderMessage(`Available MU: ${this.memoryUnitsAvailable - this.memoryUnitsUsed}`, 'info');
-    
-    // List memory usage by program
-    const programs = this.playedCards.filter(card => card.type === 'program' && card.memoryUsage);
-    if (programs.length > 0) {
-      this.renderer.renderMessage("\nMemory Usage by Program:", 'info');
-      programs.forEach(program => {
-        this.renderer.renderMessage(`${program.name}: ${program.memoryUsage} MU`, 'info');
-      });
-    }
+  private cmdMemory(args: CommandArguments): void {
+    this.renderer.displayMessage(
+      `Memory units: ${this.memoryUnitsUsed}/${this.memoryUnitsAvailable} used`
+    );
   }
 
   /**
@@ -885,45 +795,42 @@ export class TerminalGame {
    */
   getGameState(): GameState {
     return {
-      // Player state
-      playerCredits: this.playerCredits,
-      memoryUnitsAvailable: this.memoryUnitsAvailable,
-      memoryUnitsUsed: this.memoryUnitsUsed,
-      playerSide: this.playerSide,
-      opponentSide: this.opponentSide,
-      
-      // Game phases and turns
-      currentPhase: this.currentPhase,
-      clicksRemaining: this.clicksRemaining,
-      maxClicks: this.maxClicks,
-      turnNumber: this.turnNumber,
-      activePlayer: this.activePlayer!,
-      
-      // Win conditions
-      runnerAgendaPoints: this.runnerAgendaPoints,
-      corpAgendaPoints: this.corpAgendaPoints,
-      agendaPointsToWin: this.agendaPointsToWin,
-      runnerCardsRemaining: this.runnerCardsRemaining,
-      corpCardsRemaining: this.corpCardsRemaining,
-      gameOver: this.gameOver,
-      winMessage: this.winMessage,
-      
-      // Card data
-      playerDeck: this.playerDeck,
-      handCards: this.handCards,
-      playedCards: this.playedCards,
-      selectedCardIndex: this.selectedCardIndex,
-      
-      // Special gameplay flags
-      bypassNextIce: this.bypassNextIce,
-      nextRunUntraceable: this.nextRunUntraceable,
-      currentRun: this.currentRun,
-      
-      // Command history
-      commandHistory: this.commandHistory,
-      commandHistoryIndex: this.commandHistoryIndex,
-
-      // Server data
+      resources: {
+        credits: this.playerCredits,
+        memoryAvailable: this.memoryUnitsAvailable,
+        memoryUsed: this.memoryUnitsUsed
+      },
+      turn: {
+        phase: this.currentPhase,
+        clicksRemaining: this.clicksRemaining,
+        maxClicks: this.maxClicks,
+        turnNumber: this.turnNumber,
+        activePlayer: this.activePlayer
+      },
+      win: {
+        runnerAgendaPoints: this.runnerAgendaPoints,
+        corpAgendaPoints: this.corpAgendaPoints,
+        agendaPointsToWin: this.agendaPointsToWin,
+        runnerCardsRemaining: this.runnerCardsRemaining,
+        corpCardsRemaining: this.corpCardsRemaining,
+        gameOver: this.gameOver,
+        winMessage: this.winMessage
+      },
+      cards: {
+        playerDeck: this.playerDeck,
+        handCards: this.handCards,
+        playedCards: this.playedCards,
+        selectedCardIndex: this.selectedCardIndex
+      },
+      run: this.currentRun,
+      command: {
+        history: this.commandHistory,
+        historyIndex: this.commandHistoryIndex
+      },
+      components: {
+        renderer: this.renderer,
+        aiOpponent: this.aiOpponent
+      },
       servers: this.servers
     };
   }
@@ -931,5 +838,166 @@ export class TerminalGame {
   // Public getter for the renderer
   public getRenderer(): ConsoleRenderer {
     return this.renderer;
+  }
+
+  /**
+   * Initialize a new game
+   */
+  public initGame(): void {
+    // Initialize player resources
+    this.playerCredits = 5 as Credits;
+    this.memoryUnitsAvailable = 4 as MemoryUnits;
+    this.memoryUnitsUsed = 0 as MemoryUnits;
+    this.clicksRemaining = 0 as ClickCount;
+    this.maxClicks = 4 as ClickCount;
+    this.turnNumber = 0 as TurnNumber;
+
+    // Initialize win conditions
+    this.runnerAgendaPoints = 0 as AgendaPoints;
+    this.corpAgendaPoints = 0 as AgendaPoints;
+    this.agendaPointsToWin = 7 as AgendaPoints;
+    this.runnerCardsRemaining = 0 as CardCount;
+    this.corpCardsRemaining = 30 as CardCount;
+
+    // Initialize game state
+    this.currentPhase = GamePhase.SETUP;
+    this.activePlayer = null;
+    this.gameOver = false;
+    this.winMessage = "";
+
+    // Initialize card collections
+    this.playerDeck = createStarterDeck();
+    this.handCards = [];
+    this.playedCards = [];
+    this.selectedCardIndex = -1 as CardIndex;
+
+    // Initialize special flags
+    this.bypassNextIce = 0;
+    this.nextRunUntraceable = false;
+    this.currentRun = null;
+
+    // Initialize servers
+    this.initializeServers();
+
+    // Initialize AI opponent
+    this.aiOpponent = new AIOpponent();
+
+    this.renderer.displayMessage("Game initialized");
+  }
+
+  /**
+   * End the current turn
+   */
+  public endTurn(): void {
+    if (this.currentRun) {
+      this.renderer.displayError("Cannot end turn during a run");
+      return;
+    }
+
+    this.currentPhase = GamePhase.CLEANUP;
+    this.clicksRemaining = 0;
+    this.activePlayer = null;
+
+    // Process end of turn effects
+    this.processEndOfTurn();
+
+    this.renderer.displayMessage(`Turn ${this.turnNumber} ended`);
+  }
+
+  /**
+   * Process end of turn effects
+   */
+  private processEndOfTurn(): void {
+    // Process recurring credits
+    this.playedCards.forEach(card => {
+      if (card.recurringCredits) {
+        this.playerCredits = (this.playerCredits + card.recurringCredits) as Credits;
+      }
+    });
+
+    // Check win conditions
+    this.checkWinConditions();
+  }
+
+  // Getters
+  public getPlayerCredits(): number {
+    return this.playerCredits;
+  }
+
+  public getMemoryUnits(): MemoryUnits {
+    return this.memoryUnitsAvailable;
+  }
+
+  public getMemoryUnitsUsed(): number {
+    return this.memoryUnitsUsed;
+  }
+
+  public getPlayerSide(): string {
+    return this.playerSide;
+  }
+
+  public getCurrentPhase(): GamePhase {
+    return this.currentPhase;
+  }
+
+  public getPlayerDeck(): Card[] {
+    return this.playerDeck;
+  }
+
+  public getHandCards(): Card[] {
+    return this.handCards;
+  }
+
+  public getPlayedCards(): PlayedCard[] {
+    return this.playedCards;
+  }
+
+  public getServers(): Record<ServerName, Server> {
+    return this.servers;
+  }
+
+  public getCurrentRun(): RunState | null {
+    return this.currentRun;
+  }
+
+  public getWinMessage(): string {
+    return this.winMessage;
+  }
+
+  // Setters (for testing)
+  public setClicksRemaining(clicks: number): void {
+    this.clicksRemaining = clicks;
+  }
+
+  public setCurrentPhase(phase: GamePhase): void {
+    this.currentPhase = phase;
+  }
+
+  public setHandCards(cards: Card[]): void {
+    this.handCards = cards;
+  }
+
+  public setPlayerDeck(cards: Card[]): void {
+    this.playerDeck = cards;
+  }
+
+  public setRunnerAgendaPoints(points: number): void {
+    this.runnerAgendaPoints = points;
+  }
+
+  public setCorpAgendaPoints(points: number): void {
+    this.corpAgendaPoints = points;
+  }
+
+  public setPlayerCredits(credits: number): void {
+    this.playerCredits = credits;
+  }
+
+  public getClicksRemaining(): ClickCount {
+    return this.clicksRemaining;
+  }
+
+  public isGameOver(): boolean {
+    return this.gameOver;
   }
 } 

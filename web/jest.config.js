@@ -4,7 +4,8 @@ const config = {
   testEnvironment: 'node',
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
-      tsconfig: 'tsconfig.test.json'
+      tsconfig: 'tsconfig.test.json',
+      isolatedModules: true
     }]
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
@@ -21,7 +22,8 @@ const config = {
       preset: 'ts-jest',
       transform: {
         '^.+\\.tsx?$': ['ts-jest', {
-          tsconfig: 'tsconfig.test.json'
+          tsconfig: 'tsconfig.test.json',
+          isolatedModules: true
         }]
       },
     },
@@ -32,7 +34,8 @@ const config = {
       preset: 'ts-jest',
       transform: {
         '^.+\\.tsx?$': ['ts-jest', {
-          tsconfig: 'tsconfig.test.json'
+          tsconfig: 'tsconfig.test.json',
+          isolatedModules: true
         }]
       },
     },
@@ -45,7 +48,8 @@ const config = {
       preset: 'ts-jest',
       transform: {
         '^.+\\.tsx?$': ['ts-jest', {
-          tsconfig: 'tsconfig.test.json'
+          tsconfig: 'tsconfig.test.json',
+          isolatedModules: true
         }]
       },
     },
@@ -58,7 +62,8 @@ const config = {
       preset: 'ts-jest',
       transform: {
         '^.+\\.tsx?$': ['ts-jest', {
-          tsconfig: 'tsconfig.test.json'
+          tsconfig: 'tsconfig.test.json',
+          isolatedModules: true
         }]
       },
     }

@@ -1,7 +1,17 @@
 # Neon Dominance Project Rules
 
+## First of all, I love you, thank you for helping me be creative
+
+## Second, these are some general rules
+
+* if we detect a cycle where we're iterating on something, take a step back assess options before we proceed
+* prfer to change directory absolute over relative, so it works no matter what our working directory is
+* the tests need to be run from the web directory where the Jest configuration is correctly set up.
+When you run the tests from the web directory, Jest properly uses the TypeScript configuration in web/jest.config.js that we saw earlier, which is configured to use ts-jest for TypeScript files.
+
 ## bash commands
 
+* we need to be in the `web` directory to run `npm` commands
 * long timeouts are a symptom of something else going wrong, we need more assertions
 * mock dom is ok, use real objects for everything else
 * run npm from web directory

@@ -1,18 +1,36 @@
 {
   "lint": {
-    "include": ["src/**/*.ts"],
-    "exclude": ["node_modules/", "dist/", "coverage/", "**/__tests__/**"],
     "rules": {
       "tags": ["recommended"],
-      "exclude": ["no-explicit-any", "no-window"]
-    }
+      "include": [
+        "eqeqeq",
+        "no-const-assign",
+        "no-eval",
+        "no-sparse-arrays",
+        "no-throw-literal",
+        "prefer-const"
+      ],
+      "exclude": [
+        "ban-untagged-todo",
+        "camelcase",
+        "default-param-last",
+        "explicit-function-return-type",
+        "explicit-module-boundary-types",
+        "no-external-import",
+        "no-implicit-any",
+        "no-non-null-assertion",
+        "no-unnecessary-type-assertion",
+        "no-unused-vars",
+        "triple-slash-reference"
+      ]
+    },
+    "include": ["src/"]
   },
   "fmt": {
-    "include": ["src/**/*.ts"],
-    "exclude": ["node_modules/", "dist/", "coverage/", "**/__tests__/**"],
+    "include": ["src/"],
     "options": {
       "useTabs": false,
-      "lineWidth": 80,
+      "lineWidth": 100,
       "indentWidth": 2,
       "singleQuote": true,
       "proseWrap": "preserve"

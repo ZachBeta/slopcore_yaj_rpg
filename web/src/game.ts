@@ -131,8 +131,8 @@ class Game {
   }
 }
 
-// Wait for DOM to be ready
-document.addEventListener('DOMContentLoaded', () => {
-  // Initialize the game
-  (window as any).game = new Game();
-}); 
+// Initialize game instance
+if (typeof document !== 'undefined') {
+  // Only initialize in browser environment
+  globalThis.game = new Game();
+} 

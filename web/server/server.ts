@@ -2,6 +2,7 @@ import express, { Express, Request, Response, NextFunction } from 'express';
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import path from 'path';
+import { Color } from '../src/types';
 
 interface Player {
   id: string;
@@ -166,7 +167,20 @@ function generatePlayerColor(): { r: number; g: number; b: number } {
 
   // If all colors are used, return a random one
   const randomColor = colors[Math.floor(Math.random() * colors.length)];
-  return { ...randomColor };
+  return {
+    r: randomColor?.r ?? Math.random(),
+    g: randomColor?.g ?? Math.random(),
+    b: randomColor?.b ?? Math.random()
+  };
+}
+
+function generateRandomColor(): Color {
+  const randomColor: Color = {
+    r: Math.random(),
+    g: Math.random(),
+    b: Math.random()
+  };
+  return randomColor;
 }
 
 // Socket.io event handling
