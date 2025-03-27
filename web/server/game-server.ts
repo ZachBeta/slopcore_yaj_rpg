@@ -499,7 +499,7 @@ export class GameServer {
       });
 
       // Handle client state response
-      socket.on('client_state_response', (clientState: { 
+      socket.on('client_state_response', (_clientState: { 
         position: Position; 
         color: Color;
         timestamp: number;
@@ -803,7 +803,7 @@ export class GameServer {
       });
       
       // Client reports its state for verification
-      socket.on('client_state_response', (clientState: { 
+      socket.on('client_state_response', (_clientState: { 
         position: Position; 
         color: Color;
         timestamp: number;
