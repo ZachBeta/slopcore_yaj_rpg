@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { InputAction } from '../constants/input';
 import { InputManager } from './input-manager';
 import { GROUND_LEVEL, MOVEMENT, ROTATION, WORLD_DIRECTIONS } from '../constants/directions';
-import process from 'node:process';
 
 export class Player {
   private id: string;
@@ -473,8 +472,7 @@ export class Player {
   }
 
   private log(message: string): void {
-    if (process.env.NODE_ENV !== 'test') {
-      console.log(message);
-    }
+    // Always log in non-test environments
+    console.log(message);
   }
 }
