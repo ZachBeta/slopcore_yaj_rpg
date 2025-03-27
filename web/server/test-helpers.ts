@@ -17,8 +17,18 @@ export interface TestServerSetup {
 }
 
 // Constants for testing
-export const CONNECTION_TIMEOUT = 1000; // 1 second
+export const CONNECTION_TIMEOUT = 500; // Shorter timeout (500ms)
 export const DEFAULT_TEST_PORT = 3001;
+
+// Socket event constants
+export const SOCKET_EVENTS = {
+  PLAYER_JOIN: 'player_join',
+  PLAYER_JOINED: 'player_joined',
+  CONNECT: 'connect',
+  CONNECT_ERROR: 'connect_error',
+  DISCONNECT: 'disconnect',
+  REQUEST_PLAYER_DETAILS: 'request_player_details'
+};
 
 // Types for socket events
 export interface PlayerJoinEvent {
@@ -100,8 +110,8 @@ export const setupTestServer = async (
 export const connectAndJoinGame = (
   url: string,
   playerName: string = 'Test Player'
-): Promise<Socket> => {
-  return new Promise<Socket>((resolve, reject) => {
+): Promise<{ client: Socket; player: PlayerJoinedEvent }> => {
+  return new Promise<{ client: Socket; player: PlayerJoinedEvent }>((resolve, reject) => {
     const client = ioc(url, {
       autoConnect: false,
       reconnection: false,
@@ -116,26 +126,25 @@ export const connectAndJoinGame = (
     }, CONNECTION_TIMEOUT);
     
     // Set up event listeners before connecting
-    client.once('self_data', () => {
-      log('Received self_data event');
+    client.once(SOCKET_EVENTS.PLAYER_JOINED, (data: PlayerJoinedEvent) => {
+      log('Received player_joined event:', data);
       clearTimeout(timeout);
-      resolve(client);
+      resolve({ client, player: data });
     });
     
-    client.on('connect', () => {
+    client.on(SOCKET_EVENTS.CONNECT, () => {
       log('Socket connected, sending player_join event');
-      client.emit('player_join', { playerName });
-      client.emit('request_player_details');
+      client.emit(SOCKET_EVENTS.PLAYER_JOIN, { playerName });
     });
     
-    client.on('connect_error', (err: Error) => {
+    client.on(SOCKET_EVENTS.CONNECT_ERROR, (err: Error) => {
       log(`Connection error: ${err}`);
       clearTimeout(timeout);
       client.disconnect();
       reject(err);
     });
     
-    client.on('disconnect', (reason: string) => {
+    client.on(SOCKET_EVENTS.DISCONNECT, (reason: string) => {
       log(`Socket disconnected during connection: ${reason}`);
     });
     
@@ -151,7 +160,7 @@ export const cleanupServer = async (
   server: http.Server,
   gameServer: GameServer
 ): Promise<void> => {
-  return new Promise<void>((resolve, reject) => {
+  return new Promise<void>((resolve) => {
     log('Cleaning up test environment');
     
     try {
@@ -161,18 +170,24 @@ export const cleanupServer = async (
         gameServer.close();
       }
       
+      // Add a safety timeout to close the server in case it hangs
+      const safetyTimeout = setTimeout(() => {
+        log('Server close timed out, forcing resolve');
+        resolve();
+      }, 500);
+      
       server.close((err: Error | undefined) => {
+        clearTimeout(safetyTimeout);
         if (err) {
-          log(`Error closing server: ${err}`);
-          reject(err);
+          log(`Warning during server close: ${err}`);
         } else {
           log('HTTP server closed');
-          resolve();
         }
+        resolve();
       });
     } catch (err) {
       log(`Error during cleanup: ${err}`);
-      reject(err);
+      resolve(); // Always resolve to prevent test hanging
     }
   });
 };

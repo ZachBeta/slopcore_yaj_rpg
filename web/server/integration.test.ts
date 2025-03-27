@@ -1,7 +1,7 @@
 import { GameServer } from './game-server';
 import { Player, Color } from '../src/types';
 import { GameEvent } from '../src/constants';
-import { createSocketTestEnvironment, setupTestServer, connectAndJoinGame, setupTestConsole, wait } from './test-helpers';
+import { createSocketTestEnvironment, setupTestServer, connectAndJoinGame, setupTestConsole, wait, SOCKET_EVENTS } from './test-helpers';
 import type { Socket } from 'socket.io-client';
 import type { TestServerSetup } from './test-helpers';
 import type { ConsoleSilencer } from '../src/test/test-utils';
@@ -53,6 +53,13 @@ interface PlayerData {
   color: { r: number; g: number; b: number };
 }
 
+// Define position type for tests
+interface Position {
+  x: number;
+  y: number;
+  z: number;
+}
+
 describe('Game Server Integration Tests', () => {
   let testSetup: TestServerSetup;
   let consoleControl: ConsoleSilencer;
@@ -70,15 +77,12 @@ describe('Game Server Integration Tests', () => {
     
     // Clean up test server
     await testSetup.cleanup();
-  });
+  }, 5000);
   
   // Skip these tests in CI environment or when socket testing is disabled
   const shouldSkipTest = (): boolean => {
     return process.env.CI === 'true' || process.env.SKIP_SOCKET_TESTS === 'true';
   };
-  
-  // Increase test timeout for socket operations
-  jest.setTimeout(15000);
   
   it('should allow players to join', async () => {
     // Skip in CI environment
@@ -86,19 +90,24 @@ describe('Game Server Integration Tests', () => {
       return;
     }
     
-    let client: Socket | null = null;
+    let socketClient: Socket | null = null;
     
     try {
-      // Use skipCheck to avoid waiting for player_joined event
-      client = await connectAndJoinGame(testSetup.clientUrl, 'TestPlayer', true);
-      expect(client.connected).toBe(true);
+      // Connect client and join game
+      const result = await connectAndJoinGame(testSetup.clientUrl, 'TestPlayer');
+      socketClient = result.client;
       
-      // Disconnect client when done
-      client.disconnect();
-      await wait(100);
+      // Verify player data received
+      expect(result.player).toBeDefined();
+      expect(result.player.id).toBeDefined();
+      expect(result.player.color).toBeDefined();
+      expect(result.player.position).toBeDefined();
+      
+      // Cleanup
+      socketClient.disconnect();
     } catch (err) {
       // Even if the test fails, make sure we clean up
-      if (client) client.disconnect();
+      if (socketClient) socketClient.disconnect();
       throw err;
     }
   });
@@ -109,28 +118,44 @@ describe('Game Server Integration Tests', () => {
       return;
     }
     
-    let client: Socket | null = null;
+    let socketClient: Socket | null = null;
     
     try {
-      // Connect client with skipCheck
-      client = await connectAndJoinGame(testSetup.clientUrl, 'TestPlayer', true);
-      expect(client.connected).toBe(true);
+      // Connect client and join game
+      const result = await connectAndJoinGame(testSetup.clientUrl, 'TestPlayer');
+      socketClient = result.client;
       
-      // Emit a movement event (without waiting for response)
-      client.emit('player_move', {
-        position: { x: 1, y: 0, z: 1 },
-        rotation: { x: 0, y: 0, z: 0 }
+      // New position to send
+      const newPosition: Position = { x: 10, y: 1, z: 10 };
+      const newRotation = { x: 0, y: 1, z: 0 };
+      
+      // Track movement updates received
+      let movementUpdated = false;
+      
+      // Listen for movement updates from server
+      socketClient.once('player_moved', (data) => {
+        movementUpdated = true;
+        expect(data.position).toEqual(newPosition);
+        expect(data.rotation).toEqual(newRotation);
       });
       
-      // Wait briefly to allow event to be processed
-      await wait(100);
+      // Send position update
+      socketClient.emit('position_update', {
+        position: newPosition,
+        rotation: newRotation
+      });
       
-      // Disconnect client when done
-      client.disconnect();
-      await wait(100);
+      // Wait for server to process movement
+      await wait(50);
+      
+      // Verify movement update received
+      expect(movementUpdated).toBe(true);
+      
+      // Cleanup
+      socketClient.disconnect();
     } catch (err) {
       // Even if the test fails, make sure we clean up
-      if (client) client.disconnect();
+      if (socketClient) socketClient.disconnect();
       throw err;
     }
   });
@@ -141,29 +166,42 @@ describe('Game Server Integration Tests', () => {
       return;
     }
     
-    let client1: Socket | null = null;
-    let client2: Socket | null = null;
+    let socketClient1: Socket | null = null;
+    let socketClient2: Socket | null = null;
     
     try {
       // Connect first client
-      client1 = await connectAndJoinGame(testSetup.clientUrl, 'Player1', true);
-      expect(client1.connected).toBe(true);
+      const result1 = await connectAndJoinGame(testSetup.clientUrl, 'Player1');
+      socketClient1 = result1.client;
+      
+      // First player ID
+      const player1Id = result1.player.id;
+      
+      // Setup second client to receive player_joined events
+      let player2JoinedReceived = false;
+      
+      socketClient1.once('player_joined', (playerData) => {
+        player2JoinedReceived = true;
+        expect(playerData.id).not.toBe(player1Id);
+      });
       
       // Connect second client
-      client2 = await connectAndJoinGame(testSetup.clientUrl, 'Player2', true);
-      expect(client2.connected).toBe(true);
+      const result2 = await connectAndJoinGame(testSetup.clientUrl, 'Player2');
+      socketClient2 = result2.client;
       
-      // Wait briefly to allow connections to be processed
-      await wait(100);
+      // Wait for events to propagate
+      await wait(50);
       
-      // Clean up
-      if (client1) client1.disconnect();
-      if (client2) client2.disconnect();
-      await wait(100);
+      // Verify events received
+      expect(player2JoinedReceived).toBe(true);
+      
+      // Cleanup
+      if (socketClient1) socketClient1.disconnect();
+      if (socketClient2) socketClient2.disconnect();
     } catch (err) {
       // Even if the test fails, make sure we clean up
-      if (client1) client1.disconnect();
-      if (client2) client2.disconnect();
+      if (socketClient1) socketClient1.disconnect();
+      if (socketClient2) socketClient2.disconnect();
       throw err;
     }
   });

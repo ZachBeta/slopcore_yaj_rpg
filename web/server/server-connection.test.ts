@@ -1,9 +1,13 @@
 import * as http from 'http';
 import { Server } from 'socket.io';
 import { io as ioc, Socket } from 'socket.io-client';
-import { setupTestServer, connectAndJoinGame, setupTestConsole, wait } from './test-helpers';
+import { setupTestServer, setupTestConsole, SOCKET_EVENTS } from './test-helpers';
 import type { TestServerSetup } from './test-helpers';
 import type { ConsoleSilencer } from '../src/test/test-utils';
+
+// Constants for test configuration
+const CONNECTION_TIMEOUT = 500; // Shorter timeout for tests
+const TEST_PLAYER_NAME = 'TestPlayer';
 
 describe('Server Connection Handling', () => {
   let testSetup: TestServerSetup;
@@ -21,7 +25,6 @@ describe('Server Connection Handling', () => {
   
   it('should emit listening event when server starts', async () => {
     const server = http.createServer();
-    const serverSocket = new Server(server);
     
     await new Promise<void>((resolve) => {
       server.once('listening', () => {
@@ -39,21 +42,21 @@ describe('Server Connection Handling', () => {
     const client = ioc(testSetup.clientUrl, {
       autoConnect: false,
       reconnection: false,
-      timeout: 1000,
+      timeout: CONNECTION_TIMEOUT,
     });
     
     await new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error('Connection timeout'));
-      }, 1000);
+      }, CONNECTION_TIMEOUT);
       
-      client.on('connect', () => {
+      client.on(SOCKET_EVENTS.CONNECT, () => {
         clearTimeout(timeout);
         expect(client.connected).toBe(true);
         resolve();
       });
       
-      client.on('connect_error', (err) => {
+      client.on(SOCKET_EVENTS.CONNECT_ERROR, (err) => {
         clearTimeout(timeout);
         reject(err);
       });
@@ -68,21 +71,21 @@ describe('Server Connection Handling', () => {
     const client = ioc(testSetup.clientUrl, {
       autoConnect: false,
       reconnection: false,
-      timeout: 1000,
+      timeout: CONNECTION_TIMEOUT,
     });
     
     await new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error('Connection timeout'));
-      }, 1000);
+      }, CONNECTION_TIMEOUT);
       
-      client.on('connect', () => {
+      client.on(SOCKET_EVENTS.CONNECT, () => {
         clearTimeout(timeout);
-        client.emit('player_join', { playerName: 'TestPlayer' });
+        client.emit(SOCKET_EVENTS.PLAYER_JOIN, { playerName: TEST_PLAYER_NAME });
         resolve();
       });
       
-      client.on('connect_error', (err) => {
+      client.on(SOCKET_EVENTS.CONNECT_ERROR, (err) => {
         clearTimeout(timeout);
         reject(err);
       });
@@ -97,22 +100,22 @@ describe('Server Connection Handling', () => {
     const client = ioc(testSetup.clientUrl, {
       autoConnect: false,
       reconnection: false,
-      timeout: 1000,
+      timeout: CONNECTION_TIMEOUT,
     });
     
     await new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error('Connection timeout'));
-      }, 1000);
+      }, CONNECTION_TIMEOUT);
       
-      client.on('connect', () => {
+      client.on(SOCKET_EVENTS.CONNECT, () => {
         clearTimeout(timeout);
-        client.emit('player_join', { playerName: 'TestPlayer' });
-        client.emit('request_player_details');
+        client.emit(SOCKET_EVENTS.PLAYER_JOIN, { playerName: TEST_PLAYER_NAME });
+        client.emit(SOCKET_EVENTS.REQUEST_PLAYER_DETAILS);
         resolve();
       });
       
-      client.on('connect_error', (err) => {
+      client.on(SOCKET_EVENTS.CONNECT_ERROR, (err) => {
         clearTimeout(timeout);
         reject(err);
       });
@@ -127,26 +130,26 @@ describe('Server Connection Handling', () => {
     const client = ioc(testSetup.clientUrl, {
       autoConnect: false,
       reconnection: false,
-      timeout: 1000,
+      timeout: CONNECTION_TIMEOUT,
     });
     
     await new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error('Connection timeout'));
-      }, 1000);
+      }, CONNECTION_TIMEOUT);
       
       // Add debug logging for all events
       client.onAny((event, ...args) => {
         console.log(`Received event: ${event}`, args);
       });
       
-      client.on('connect', () => {
+      client.on(SOCKET_EVENTS.CONNECT, () => {
         console.log('Client connected');
-        client.emit('player_join', { playerName: 'TestPlayer' });
+        client.emit(SOCKET_EVENTS.PLAYER_JOIN, { playerName: TEST_PLAYER_NAME });
         console.log('Sent player_join event');
       });
       
-      client.on('player_joined', (data) => {
+      client.on(SOCKET_EVENTS.PLAYER_JOINED, (data) => {
         console.log('Received player_joined event:', data);
         clearTimeout(timeout);
         expect(data).toBeDefined();
@@ -156,13 +159,13 @@ describe('Server Connection Handling', () => {
         resolve();
       });
       
-      client.on('connect_error', (err) => {
+      client.on(SOCKET_EVENTS.CONNECT_ERROR, (err) => {
         console.log('Connection error:', err);
         clearTimeout(timeout);
         reject(err);
       });
       
-      client.on('disconnect', (reason) => {
+      client.on(SOCKET_EVENTS.DISCONNECT, (reason) => {
         console.log('Client disconnected:', reason);
       });
       
@@ -184,23 +187,23 @@ describe('Server Connection Handling', () => {
             const client = ioc(testSetup.clientUrl, {
               autoConnect: false,
               reconnection: false,
-              timeout: 1000,
+              timeout: CONNECTION_TIMEOUT,
             });
             
             clients.push(client);
             
             const timeout = setTimeout(() => {
               reject(new Error('Connection timeout'));
-            }, 1000);
+            }, CONNECTION_TIMEOUT);
             
-            client.on('connect', () => {
+            client.on(SOCKET_EVENTS.CONNECT, () => {
               clearTimeout(timeout);
-              client.emit('player_join', { playerName: `Player${i}` });
-              client.emit('request_player_details');
+              client.emit(SOCKET_EVENTS.PLAYER_JOIN, { playerName: `Player${i}` });
+              client.emit(SOCKET_EVENTS.REQUEST_PLAYER_DETAILS);
               resolve();
             });
             
-            client.on('connect_error', (err) => {
+            client.on(SOCKET_EVENTS.CONNECT_ERROR, (err) => {
               clearTimeout(timeout);
               reject(err);
             });

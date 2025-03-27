@@ -304,9 +304,9 @@ describe('Game Server Core', () => {
     // Restore console
     consoleControl.restore();
     
-    // Cleanup test server
+    // Close server and cleanup
     await testSetup.cleanup();
-  });
+  }, 10000);
 
   afterEach(() => {
     // Disconnect client if connected
