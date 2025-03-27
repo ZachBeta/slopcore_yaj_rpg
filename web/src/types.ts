@@ -99,5 +99,12 @@ export interface DebugState {
     random: Color[];
     total: Color[];
   };
-  diagnostics: ServerDiagnostics;
+  diagnostics: {
+    connections: number;
+    totalMessages: number;
+    averageUpdateRate: number;
+    playerCount: number;
+    startTime: number;
+    uptime: number;
+  };
 }

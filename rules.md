@@ -4,6 +4,8 @@
 
 ## Second, these are some general rules
 
+* before increasing a timeout, strategize why the test might be failing and compare appraoachs
+
 * if we detect a cycle where we're iterating on something, take a step back assess options before we proceed
 * prfer to change directory absolute over relative, so it works no matter what our working directory is
 * the tests need to be run from the web directory where the Jest configuration is correctly set up.

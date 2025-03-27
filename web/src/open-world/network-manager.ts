@@ -49,6 +49,7 @@ export class NetworkManager {
   private debugStateListeners: Set<(state: DebugState) => void> = new Set();
   private diagnosticsInterval: NodeJS.Timeout | null = null;
   private pingIntervalId: NodeJS.Timeout | null = null;
+  private stateVerificationInterval: NodeJS.Timeout | null = null;
 
   // Default server URL for development
   private static readonly DEFAULT_SERVER_URL = 'http://localhost:8080';
@@ -484,7 +485,7 @@ export class NetworkManager {
 
     // Handle position updates
     this.socket.on(
-      GameEvent.POSITION_UPDATE,
+      GameEvent.PLAYER_MOVED,
       (
         data: {
           id: string;
@@ -502,6 +503,9 @@ export class NetworkManager {
         }
       },
     );
+
+    // Add verification functionality
+    this.setupVerification();
   }
 
   /**
@@ -522,7 +526,7 @@ export class NetworkManager {
     this.lastPositionUpdate = now;
 
     // Send position update to server
-    this.socket.emit('position_update', {
+    this.socket.emit(GameEvent.POSITION_UPDATE, {
       position: {
         x: position.x,
         y: position.y,
@@ -720,6 +724,129 @@ export class NetworkManager {
   public destroy(): void {
     this.disconnect();
     this.cleanup();
+
+    // Clear verification interval
+    if (this.stateVerificationInterval) {
+      clearInterval(this.stateVerificationInterval);
+    }
+  }
+
+  /**
+   * Add debugging and verification functionality
+   */
+  private setupVerification(): void {
+    if (!this.socket) return;
+    
+    // Listen for server-initiated state verification requests
+    this.socket.on('state_verification', (data: {
+      expected: {
+        id: string;
+        position: THREE.Vector3;
+        color: THREE.Color;
+      };
+      timestamp: number;
+    }) => {
+      // Get current client state
+      const position = this.localPlayer.getPosition();
+      const color = this.localPlayer.getColor();
+      
+      // Send client state back to server for verification
+      this.socket.emit('client_state_response', {
+        position: {
+          x: position.x,
+          y: position.y,
+          z: position.z
+        },
+        color: {
+          r: color.r,
+          g: color.g,
+          b: color.b
+        },
+        timestamp: data.timestamp
+      });
+    });
+    
+    // Handle verification results and corrections
+    this.socket.on('state_verification_result', (result: {
+      colorDrift: number;
+      positionDrift: number;
+      expectedState: {
+        color: THREE.Color;
+        position: THREE.Vector3;
+      };
+      needsCorrection: boolean;
+      timestamp: number;
+    }) => {
+      // Log any drift detected
+      const now = Date.now();
+      const roundTripTime = now - result.timestamp;
+      
+      console.log(`State verification completed in ${roundTripTime}ms`);
+      
+      if (result.colorDrift > 0 || result.positionDrift > 0) {
+        console.warn('State drift detected:');
+        console.log(`- Color drift: ${result.colorDrift.toFixed(3)}`);
+        console.log(`- Position drift: ${result.positionDrift.toFixed(3)}`);
+        
+        // Add to diagnostics
+        this.addDiagnostic(`Drift detected: color=${result.colorDrift.toFixed(3)}, position=${result.positionDrift.toFixed(3)}`);
+      }
+    });
+    
+    // Handle forced state corrections
+    this.socket.on('force_state_correction', (data: {
+      color: THREE.Color;
+      position: THREE.Vector3;
+    }) => {
+      console.warn('Received forced state correction from server');
+      
+      // Apply the server's authoritative position and color
+      this.localPlayer.setPosition(new THREE.Vector3(
+        data.position.x,
+        data.position.y,
+        data.position.z
+      ));
+      
+      this.localPlayer.setColor(new THREE.Color(
+        data.color.r,
+        data.color.g,
+        data.color.b
+      ));
+      
+      // Update our stored player color
+      this.playerColor = new THREE.Color(
+        data.color.r,
+        data.color.g,
+        data.color.b
+      );
+      
+      this.addDiagnostic('Applied server state correction');
+    });
+    
+    // Periodically verify state with server
+    this.stateVerificationInterval = setInterval(() => {
+      if (this.socket && this.isConnected) {
+        this.socket.emit('verify_player_state');
+      }
+    }, 5000); // Check every 5 seconds
+  }
+
+  /**
+   * Add a diagnostic message to the display
+   */
+  private addDiagnostic(message: string): void {
+    if (!this.diagnosticsDiv) return;
+    
+    const timestamp = new Date().toLocaleTimeString();
+    const div = document.createElement('div');
+    div.textContent = `[${timestamp}] ${message}`;
+    
+    // Limit to last 10 messages
+    while (this.diagnosticsDiv.childElementCount >= 10) {
+      this.diagnosticsDiv.removeChild(this.diagnosticsDiv.firstChild as Node);
+    }
+    
+    this.diagnosticsDiv.appendChild(div);
   }
 }
 

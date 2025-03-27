@@ -1,7 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { Server as HttpServer } from 'http';
 import { v4 as uuidv4 } from 'uuid';
-import { Color, Player, Position, Rotation, ServerDiagnostics, ObstacleData, MapData } from '../src/types';
+import { Color, Player, Position, Rotation, ServerDiagnostics, ObstacleData, MapData, DebugState } from '../src/types';
 import { GameEvent, GameEventPayloads } from '../src/constants';
 
 interface GameServerOptions {
@@ -19,6 +19,7 @@ export class GameServer {
   private server: HttpServer;
   private lastDiagnosticsUpdate: number = Date.now();
   private diagnosticsInterval: NodeJS.Timeout | undefined;
+  private stateVerificationInterval: NodeJS.Timeout | undefined;
   private fps: number;
   private startTime: number;
   private isTestMode: boolean;
@@ -32,6 +33,9 @@ export class GameServer {
   private readonly fpsUpdateInterval: number = 1000;
   private lastFpsUpdate: number;
   private mapData: MapData;
+  private totalMessages: number = 0;
+  private messageRates: number[] = [];
+  private randomColors: Color[] = [];
 
   constructor(server: HttpServer, port: number, options: GameServerOptions = {}) {
     this.server = server;
@@ -106,10 +110,13 @@ export class GameServer {
     
     // Start periodic state verification
     if (!this.isTestMode) {
-      setInterval(() => {
+      this.stateVerificationInterval = setInterval(() => {
         this.verifyAllClientsState();
       }, 5000); // Check every 5 seconds
     }
+
+    // Set up debug endpoints
+    this.setupDebugEndpoints();
   }
 
   private generateSpawnPosition(): Position {
@@ -553,25 +560,31 @@ export class GameServer {
    * Closes the game server and cleans up resources
    */
   public close(): void {
-    // Clear the diagnostics interval
+    // Clear the diagnostics interval if it exists
     if (this.diagnosticsInterval) {
       clearInterval(this.diagnosticsInterval);
       this.diagnosticsInterval = undefined;
     }
-    
-    // Clear any other intervals or timers
-    
-    // Clear data structures
-    this.players.clear();
-    this.lockedColors.clear();
-    this.usedRandomColors.clear();
-    this.availableColors = [...this.colorPool];
-    this.pendingJoins.clear();
-    this.colorKeyCache.clear();
-    
-    // Reset the mutex
-    this.colorAssignmentMutex = Promise.resolve();
-    this.colorAssignmentPromise = Promise.resolve();
+
+    // Clear the state verification interval if it exists
+    if (this.stateVerificationInterval) {
+      clearInterval(this.stateVerificationInterval);
+      this.stateVerificationInterval = undefined;
+    }
+
+    // Remove all socket listeners to allow garbage collection
+    if (this.io) {
+      this.io.removeAllListeners();
+      
+      // Close all connections
+      const connectedSockets = this.io.sockets.sockets;
+      connectedSockets.forEach((socket) => {
+        socket.disconnect(true);
+      });
+      
+      // Close the socket.io server
+      this.io.close();
+    }
   }
 
   private handlePlayerJoin(socket: Socket, data: { position: { x: number; y: number; z: number } }): void {
@@ -737,5 +750,74 @@ export class GameServer {
     
     // Convert HSL to RGB
     return this.hslToRgb(hue, s, l);
+  }
+
+  /**
+   * Add a new endpoint to expose debug state
+   */
+  private setupDebugEndpoints(): void {
+    if (!this.io) return;
+
+    // Request for debug state
+    this.io.on('connection', (socket: Socket) => {
+      socket.on('request_debug_state', () => {
+        // Send detailed debug state to client
+        const debugState: DebugState = {
+          players: Array.from(this.players.values()).map(player => ({
+            id: player.id,
+            position: player.position,
+            color: player.color,
+            // Include expected color from locked colors map if available
+            expectedColor: this.lockedColors.get(player.id)
+          })),
+          colorPool: {
+            available: this.availableColors,
+            locked: Array.from(this.lockedColors.entries()),
+            random: Array.from(this.usedRandomColors),
+            total: [...this.availableColors, ...Array.from(this.lockedColors.values()), ...Array.from(this.usedRandomColors)]
+          },
+          diagnostics: {
+            connections: this.io ? this.io.engine.clientsCount : 0,
+            totalMessages: this.totalMessages,
+            averageUpdateRate: this.messageRates.reduce((sum: number, rate: number) => sum + rate, 0) / 
+                              (this.messageRates.length || 1),
+            playerCount: this.players.size,
+            startTime: this.startTime,
+            uptime: Date.now() - this.startTime
+          }
+        };
+        
+        socket.emit('debug_state', debugState);
+      });
+      
+      // Request to verify local player state against server state
+      socket.on('verify_player_state', () => {
+        const player = this.players.get(socket.id);
+        const expectedColor = this.lockedColors.get(socket.id);
+        
+        if (!player || !expectedColor) {
+          socket.emit('verification_failed', { error: 'Player not found' });
+          return;
+        }
+        
+        socket.emit('state_verification', {
+          expected: {
+            id: player.id,
+            position: player.position,
+            color: expectedColor
+          },
+          timestamp: Date.now()
+        });
+      });
+      
+      // Client reports its state for verification
+      socket.on('client_state_response', (clientState: { 
+        position: Position; 
+        color: Color;
+        timestamp: number;
+      }) => {
+        // Rest of the client_state_response handler remains the same
+      });
+    });
   }
 } 

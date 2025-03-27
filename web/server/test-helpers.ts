@@ -3,6 +3,7 @@ import { Server } from 'socket.io';
 import { io as ioc, Socket } from 'socket.io-client';
 import { GameServer } from './game-server';
 import { silenceConsole } from '../src/test/test-utils';
+import { GameEvent } from '../src/constants';
 
 // Export for use in test files
 export type { ConsoleSilencer } from '../src/test/test-utils';
@@ -20,13 +21,13 @@ export interface TestServerSetup {
 export const CONNECTION_TIMEOUT = 500; // Shorter timeout (500ms)
 export const DEFAULT_TEST_PORT = 3001;
 
-// Socket event constants
+// Socket event constants - Use GameEvent enum for consistency
 export const SOCKET_EVENTS = {
-  PLAYER_JOIN: 'player_join',
-  PLAYER_JOINED: 'player_joined',
-  CONNECT: 'connect',
-  CONNECT_ERROR: 'connect_error',
-  DISCONNECT: 'disconnect',
+  PLAYER_JOIN: GameEvent.PLAYER_JOIN,
+  PLAYER_JOINED: GameEvent.PLAYER_JOINED,
+  CONNECT: 'connect', // Socket.IO built-in event
+  CONNECT_ERROR: 'connect_error', // Socket.IO built-in event
+  DISCONNECT: 'disconnect', // Socket.IO built-in event
   REQUEST_PLAYER_DETAILS: 'request_player_details'
 };
 

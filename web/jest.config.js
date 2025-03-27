@@ -6,8 +6,14 @@ const config = {
     '^.+\\.tsx?$': ['ts-jest', {
       tsconfig: 'tsconfig.test.json',
       isolatedModules: true
+    }],
+    '^.+\\.jsx?$': ['babel-jest', {
+      presets: ['@babel/preset-env']
     }]
   },
+  transformIgnorePatterns: [
+    '/node_modules/(?!uuid)/'
+  ],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   testMatch: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],
   testPathIgnorePatterns: [
@@ -30,8 +36,14 @@ const config = {
         '^.+\\.tsx?$': ['ts-jest', {
           tsconfig: 'tsconfig.test.json',
           isolatedModules: true
+        }],
+        '^.+\\.jsx?$': ['babel-jest', {
+          presets: ['@babel/preset-env']
         }]
       },
+      transformIgnorePatterns: [
+        '/node_modules/(?!uuid)/'
+      ],
       testPathIgnorePatterns: [
         '/node_modules/',
         '/src/test/test-utils.ts',
