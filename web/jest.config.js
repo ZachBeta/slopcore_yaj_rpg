@@ -79,6 +79,26 @@ const config = {
           isolatedModules: true
         }]
       },
+      testPathIgnorePatterns: [
+        '.*-real\\.test\\.(js|jsx|ts|tsx)$'
+      ]
+    },
+    {
+      displayName: 'real-three',
+      testMatch: [
+        '<rootDir>/src/open-world/**/*-real.test.{js,jsx,ts,tsx}'
+      ],
+      testEnvironment: 'jsdom',
+      preset: 'ts-jest',
+      transform: {
+        '^.+\\.tsx?$': ['ts-jest', {
+          tsconfig: 'tsconfig.test.json',
+          isolatedModules: true
+        }]
+      },
+      setupFilesAfterEnv: [
+        '<rootDir>/src/test/setup-real-three.js'
+      ]
     }
   ],
   // Set the test environment to 'test'
