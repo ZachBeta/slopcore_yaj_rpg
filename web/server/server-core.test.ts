@@ -5,27 +5,28 @@ import { createServer, Server as HttpServer } from 'http';
 import { setupTestServer, connectAndJoinGame, setupTestConsole, wait } from './test-helpers';
 import type { Socket } from 'socket.io-client';
 import type { TestServerSetup, ConsoleSilencer } from './test-helpers';
+import process from 'node:process';
 
 // Create a class that extends GameServer but only adds accessor methods
 // to the protected properties without trying to override private methods
 export class TestGameServer extends GameServer {
-  private httpServer: HttpServer;
+  private _httpServer: HttpServer;
 
   constructor() {
     // Use a real HTTP server that won't actually listen on a specific port
-    const httpServer = createServer();
-    super(httpServer, 0, { isTestMode: true });
+    const _httpServer = createServer();
+    super(_httpServer, 0, { isTestMode: true });
     
     // Save reference to the HTTP server for proper cleanup
-    this.httpServer = httpServer;
+    this._httpServer = _httpServer;
     
     // Initialize with a real server, but we won't actually use the network
-    httpServer.listen(0);
+    _httpServer.listen(0);
   }
 
   // Get the port number the server is listening on
   getPort(): number {
-    const address = this.httpServer.address();
+    const address = this._httpServer.address();
     if (!address || typeof address === 'string') {
       return 0;
     }
@@ -38,8 +39,8 @@ export class TestGameServer extends GameServer {
     super.close();
     
     // Then close the HTTP server
-    if (this.httpServer && this.httpServer.listening) {
-      this.httpServer.close();
+    if (this._httpServer && this._httpServer.listening) {
+      this._httpServer.close();
     }
   }
 
@@ -110,12 +111,12 @@ export class TestGameServer extends GameServer {
 }
 
 describe('Game Server Core Logic', () => {
-  let server: HttpServer;
+  let _server: HttpServer;
   let gameServer: TestGameServer;
   let testServer: TestServer;
   
   beforeEach(() => {
-    server = createServer();
+    _server = createServer();
     gameServer = new TestGameServer();
     testServer = new TestServer();
   });
@@ -330,7 +331,7 @@ describe('Game Server Core', () => {
     try {
       client = await connectAndJoinGame(testSetup.clientUrl);
       expect(client.connected).toBe(true);
-    } catch (err) {
+    } catch (_err) {
       // If connection fails, at least check that the server is still running
       expect(testSetup.server.listening).toBe(true);
     }
@@ -351,7 +352,7 @@ describe('Game Server Core', () => {
       await wait(100); // Brief wait to ensure disconnect propagates
       
       expect(client.connected).toBe(false);
-    } catch (err) {
+    } catch (_err) {
       // If connection fails, at least check that the server is still running
       expect(testSetup.server.listening).toBe(true);
     }

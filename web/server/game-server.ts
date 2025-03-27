@@ -230,92 +230,88 @@ export class GameServer {
     return { r, g, b };
   }
 
-  async generatePlayerColor(socketId: string): Promise<Color> {
-    return new Promise((resolve, reject) => {
-      this.colorAssignmentMutex = this.colorAssignmentMutex.then(async () => {
-        try {
-          // Try to get a color from the available pool first
-          if (this.availableColors.length > 0) {
-            const colorIndex = Math.floor(Math.random() * this.availableColors.length);
-            const poolColor = this.availableColors[colorIndex];
-            if (!poolColor) {
-              throw new Error('Color at index is undefined');
-            }
-            const color: Color = {
-              r: poolColor.r,
-              g: poolColor.g,
-              b: poolColor.b
-            };
-            this.availableColors.splice(colorIndex, 1);
-            this.lockedColors.set(socketId, color);
-            resolve(color);
-            return;
+  generatePlayerColor(socketId: string): Promise<Color> {
+    return this.colorAssignmentMutex.then(() => {
+      try {
+        // Try to get a color from the available pool first
+        if (this.availableColors.length > 0) {
+          const colorIndex = Math.floor(Math.random() * this.availableColors.length);
+          const poolColor = this.availableColors[colorIndex];
+          if (!poolColor) {
+            throw new Error('Color at index is undefined');
           }
-
-          const MIN_COLOR_DISTANCE = 0.5;
-          let attempts = 0;
-          const MAX_ATTEMPTS = 2000;
-
-          // Get all used colors (including locked, pool, and random)
-          const allUsedColors = new Set<Color>();
-          for (const [, color] of this.lockedColors) {
-            allUsedColors.add(color);
-          }
-          for (const color of this.colorPool) {
-            allUsedColors.add(color);
-          }
-          for (const color of this.usedRandomColors) {
-            allUsedColors.add(color);
-          }
-
-          // Try to generate a unique random color
-          while (attempts < MAX_ATTEMPTS) {
-            // Generate a color with high saturation and medium brightness
-            const hue = Math.random();
-            const saturation = 0.7 + Math.random() * 0.3; // High saturation
-            const lightness = 0.4 + Math.random() * 0.2; // Medium lightness
-
-            const newColor = this.hslToRgb(hue, saturation, lightness);
-
-            // Check if the color is unique enough from all used colors
-            let isUnique = true;
-            for (const usedColor of allUsedColors) {
-              if (this.getColorDistance(newColor, usedColor) < MIN_COLOR_DISTANCE) {
-                isUnique = false;
-                break;
-              }
-            }
-
-            if (isUnique) {
-              const newColorCopy = { ...newColor };
-              this.usedRandomColors.add(newColorCopy);
-              this.lockedColors.set(socketId, newColorCopy);
-              resolve(newColorCopy);
-              return;
-            }
-
-            attempts++;
-          }
-
-          // Last resort: generate maximally distinct color
-          const newColor: Color = {
-            r: 0.1 + (Math.random() * 0.2),
-            g: 0.1 + (Math.random() * 0.2),
-            b: 0.1 + (Math.random() * 0.2)
+          const color: Color = {
+            r: poolColor.r,
+            g: poolColor.g,
+            b: poolColor.b
           };
-
-          // Randomly choose which component gets the max value
-          const component = Math.random() < 0.33 ? 'r' : Math.random() < 0.5 ? 'g' : 'b';
-          newColor[component as keyof Color] = 1.0;
-
-          const newColorCopy = { ...newColor };
-          this.usedRandomColors.add(newColorCopy);
-          this.lockedColors.set(socketId, newColorCopy);
-          resolve(newColorCopy);
-        } catch (error) {
-          reject(error);
+          this.availableColors.splice(colorIndex, 1);
+          this.lockedColors.set(socketId, color);
+          return color;
         }
-      });
+
+        const MIN_COLOR_DISTANCE = 0.5;
+        let attempts = 0;
+        const MAX_ATTEMPTS = 2000;
+
+        // Get all used colors (including locked, pool, and random)
+        const allUsedColors = new Set<Color>();
+        for (const [, color] of this.lockedColors) {
+          allUsedColors.add(color);
+        }
+        for (const color of this.colorPool) {
+          allUsedColors.add(color);
+        }
+        for (const color of this.usedRandomColors) {
+          allUsedColors.add(color);
+        }
+
+        // Try to generate a unique random color
+        while (attempts < MAX_ATTEMPTS) {
+          // Generate a color with high saturation and medium brightness
+          const hue = Math.random();
+          const saturation = 0.7 + Math.random() * 0.3; // High saturation
+          const lightness = 0.4 + Math.random() * 0.2; // Medium lightness
+
+          const newColor = this.hslToRgb(hue, saturation, lightness);
+
+          // Check if the color is unique enough from all used colors
+          let isUnique = true;
+          for (const usedColor of allUsedColors) {
+            if (this.getColorDistance(newColor, usedColor) < MIN_COLOR_DISTANCE) {
+              isUnique = false;
+              break;
+            }
+          }
+
+          if (isUnique) {
+            const newColorCopy = { ...newColor };
+            this.usedRandomColors.add(newColorCopy);
+            this.lockedColors.set(socketId, newColorCopy);
+            return newColorCopy;
+          }
+
+          attempts++;
+        }
+
+        // Last resort: generate maximally distinct color
+        const newColor: Color = {
+          r: 0.1 + (Math.random() * 0.2),
+          g: 0.1 + (Math.random() * 0.2),
+          b: 0.1 + (Math.random() * 0.2)
+        };
+
+        // Randomly choose which component gets the max value
+        const component = Math.random() < 0.33 ? 'r' : Math.random() < 0.5 ? 'g' : 'b';
+        newColor[component as keyof Color] = 1.0;
+
+        const newColorCopy = { ...newColor };
+        this.usedRandomColors.add(newColorCopy);
+        this.lockedColors.set(socketId, newColorCopy);
+        return newColorCopy;
+      } catch (error) {
+        throw error;
+      }
     });
   }
 
@@ -507,7 +503,7 @@ export class GameServer {
       });
 
       // Handle client state response
-      socket.on('client_state_response', (clientState: { 
+      socket.on('client_state_response', (_clientState: { 
         position: Position; 
         color: Color;
         timestamp: number;
@@ -811,7 +807,7 @@ export class GameServer {
       });
       
       // Client reports its state for verification
-      socket.on('client_state_response', (clientState: { 
+      socket.on('client_state_response', (_clientState: { 
         position: Position; 
         color: Color;
         timestamp: number;

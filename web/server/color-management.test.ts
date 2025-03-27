@@ -2,6 +2,7 @@ import { setupTestServer, connectAndJoinGame, setupTestConsole, wait, SOCKET_EVE
 import type { Socket } from 'socket.io-client';
 import type { TestServerSetup } from './test-helpers';
 import type { ConsoleSilencer } from '../src/test/test-utils';
+import process from 'node:process';
 
 describe('Color Management', () => {
   let testSetup: TestServerSetup;

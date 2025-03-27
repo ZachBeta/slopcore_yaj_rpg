@@ -282,139 +282,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Function to create game instructions panel
-function createGameInstructions(): void {
-  const container = document.createElement('div');
-  container.id = 'game-instructions';
-  container.style.padding = '30px';
-  container.style.fontFamily = 'monospace';
-  container.style.maxWidth = '800px';
-  container.style.margin = '0 auto';
-  container.style.textAlign = 'center';
-  container.style.backgroundColor = '#222';
-  container.style.color = '#fff';
-  container.style.borderRadius = '10px';
-  container.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.5)';
-  container.style.marginTop = '50px';
-
-  const title = document.createElement('h1');
-  title.textContent = 'Neon Dominance - Browser Console Game';
-  title.style.color = '#00ffff';
-  title.style.textShadow = '0 0 10px rgba(0, 255, 255, 0.5)';
-  title.style.fontSize = '28px';
-  title.style.marginBottom = '20px';
-
-  const instructions = document.createElement('p');
-  instructions.style.fontSize = '16px';
-  instructions.style.lineHeight = '1.6';
-  instructions.style.marginBottom = '30px';
-
-  // Create DOM elements instead of using innerHTML for better security
-  const instructionsText = document.createTextNode('This game runs in your browser console!');
-  const strongText = document.createElement('strong');
-  strongText.style.color = '#00ffff';
-  strongText.style.fontSize = '20px';
-  strongText.appendChild(instructionsText);
-
-  instructions.appendChild(strongText);
-  instructions.appendChild(document.createElement('br'));
-  instructions.appendChild(document.createElement('br'));
-
-  // Add instruction steps
-  const steps = [
-    "1. Open your browser's Developer Tools (",
-    'F12',
-    ' or ',
-    'Ctrl+Shift+I',
-    ' / ',
-    'Cmd+Option+I',
-    ')',
-    '2. Navigate to the "',
-    'Console',
-    '" tab',
-    '3. The game has already started in the console',
-    '4. Use the console to enter commands like: ',
-    "processCommand('help')",
-  ];
-
-  for (let i = 0; i < steps.length; i++) {
-    if (i === 1 || i === 3 || i === 5 || i === 8) {
-      const strong = document.createElement('strong');
-      if (i === 8) strong.style.color = '#00ffff';
-      strong.textContent = steps[i];
-      instructions.appendChild(strong);
-    } else if (i === 6 || i === 9 || i === 10 || i === 11) {
-      instructions.appendChild(document.createTextNode(steps[i]));
-      instructions.appendChild(document.createElement('br'));
-    } else if (i === 12) {
-      const code = document.createElement('code');
-      code.style.background = '#333';
-      code.style.padding = '2px 6px';
-      code.style.borderRadius = '4px';
-      code.textContent = steps[i];
-      instructions.appendChild(code);
-    } else {
-      instructions.appendChild(document.createTextNode(steps[i]));
-    }
-  }
-
-  const examples = document.createElement('div');
-  examples.style.marginTop = '20px';
-  examples.style.textAlign = 'left';
-  examples.style.backgroundColor = '#333';
-  examples.style.padding = '20px';
-  examples.style.borderRadius = '5px';
-  examples.style.fontSize = '16px';
-  examples.style.lineHeight = '1.8';
-
-  // Create examples using DOM methods instead of innerHTML
-  const examplesTitle = document.createElement('strong');
-  examplesTitle.style.color = '#00ffff';
-  examplesTitle.style.fontSize = '18px';
-  examplesTitle.textContent = 'Example commands:';
-  examples.appendChild(examplesTitle);
-  examples.appendChild(document.createElement('br'));
-
-  // Create example commands
-  const exampleCommands = [
-    { cmd: "processCommand('help')", desc: ' - List all available commands' },
-    { cmd: "processCommand('draw')", desc: ' - Draw a card' },
-    { cmd: "processCommand('hand')", desc: ' - View your hand' },
-    { cmd: "processCommand('install 0')", desc: ' - Install the first card from your hand' },
-  ];
-
-  exampleCommands.forEach((example) => {
-    const code = document.createElement('code');
-    code.style.display = 'block';
-    code.style.margin = '10px 0';
-    code.style.background = '#222';
-    code.style.padding = '8px';
-    code.style.borderRadius = '4px';
-    code.textContent = example.cmd;
-
-    examples.appendChild(code);
-    examples.appendChild(document.createTextNode(example.desc));
-    examples.appendChild(document.createElement('br'));
-  });
-
-  // Add a reminder button to open console
-  const consoleButton = document.createElement('button');
-  consoleButton.textContent = 'Open Developer Console (F12)';
-  consoleButton.style.backgroundColor = '#00bcd4';
-  consoleButton.style.color = 'white';
-  consoleButton.style.border = 'none';
-  consoleButton.style.padding = '10px 20px';
-  consoleButton.style.borderRadius = '5px';
-  consoleButton.style.cursor = 'pointer';
-  consoleButton.style.fontSize = '16px';
-  consoleButton.style.marginTop = '20px';
-  consoleButton.style.fontWeight = 'bold';
-  consoleButton.onclick = () =>
-    alert('Press F12 (Windows/Linux) or Cmd+Option+I (Mac) to open the developer console');
-
-  container.appendChild(title);
-  container.appendChild(instructions);
-  container.appendChild(examples);
-  container.appendChild(consoleButton);
-
-  document.body.appendChild(container);
+function _createGameInstructions(): void {
+  const instructions = document.createElement('div');
+  instructions.id = 'instructions';
+  instructions.innerHTML = `
+    <h2>Game Instructions</h2>
+    <p>Use WASD to move</p>
+    <p>Use mouse to look around</p>
+    <p>Press E to interact</p>
+    <p>Press ESC to toggle menu</p>
+  `;
+  document.body.appendChild(instructions);
 }

@@ -3,6 +3,27 @@ import { ThreeTestEnvironment } from './three-test-environment';
 import { Player } from '../open-world/player';
 import { GameEvent } from '../constants';
 import { MockSocketServer, MockSocket } from '../../server/mock-socket-server';
+import { EventEmitter as _EventEmitter } from 'events';
+import { Position as _Position, Rotation as _Rotation, Color as _Color } from '../types';
+
+interface PlayerInfo {
+  id: string;
+  position: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  color: {
+    r: number;
+    g: number;
+    b: number;
+  };
+}
+
+interface PlayerDebugInfo {
+  local: PlayerInfo;
+  [playerId: string]: PlayerInfo;
+}
 
 /**
  * Creates a test environment for multiplayer scenarios
@@ -235,16 +256,21 @@ export class MultiplayerTestEnvironment extends ThreeTestEnvironment {
   /**
    * Get details of all current players for debugging
    */
-  getPlayerDebugInfo(): any {
-    const players: any = {};
-    
-    // Local player
-    const localPos = this.localPlayer.getPosition();
-    const localCol = this.localPlayer.getColor();
-    players.local = {
-      id: this.localPlayer.getId(),
-      position: { x: localPos.x, y: localPos.y, z: localPos.z },
-      color: { r: localCol.r, g: localCol.g, b: localCol.b }
+  getPlayerDebugInfo(): PlayerDebugInfo {
+    const players: PlayerDebugInfo = {
+      local: {
+        id: this.localPlayer.getId(),
+        position: {
+          x: this.localPlayer.getPosition().x,
+          y: this.localPlayer.getPosition().y,
+          z: this.localPlayer.getPosition().z
+        },
+        color: {
+          r: this.localPlayer.getColor().r,
+          g: this.localPlayer.getColor().g,
+          b: this.localPlayer.getColor().b
+        }
+      }
     };
     
     // Remote players

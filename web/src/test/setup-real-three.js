@@ -7,15 +7,15 @@
 
 // Make sure we have a window and document in the test environment
 if (typeof window === 'undefined') {
-  global.window = {};
+  globalThis.window = {};
 }
 
 // Basic requestAnimationFrame implementation for animations
-window.requestAnimationFrame = (callback) => {
+globalThis.requestAnimationFrame = (callback) => {
   return setTimeout(callback, 0);
 };
 
-window.cancelAnimationFrame = (id) => {
+globalThis.cancelAnimationFrame = (id) => {
   clearTimeout(id);
 };
 
@@ -46,7 +46,6 @@ class MockCanvasContext {
             putImageData: jest.fn(),
             createImageData: jest.fn(() => ({ data: new Uint8Array(4) })),
             setTransform: jest.fn(),
-            drawImage: jest.fn(),
             save: jest.fn(),
             restore: jest.fn(),
             scale: jest.fn(),
@@ -135,4 +134,22 @@ document.createElement = (tag) => {
 };
 
 // Message to indicate the environment is using real THREE.js
-console.log('Setup real THREE.js test environment'); 
+console.log('Setup real THREE.js test environment');
+
+// Set up a mock window object for THREE.js
+beforeAll(() => {
+  globalThis.window = {};
+  // ... existing code ...
+});
+
+// Set up requestAnimationFrame and cancelAnimationFrame
+beforeEach(() => {
+  globalThis.requestAnimationFrame = (callback) => {
+    return setTimeout(callback, 0);
+  };
+
+  globalThis.cancelAnimationFrame = (id) => {
+    clearTimeout(id);
+  };
+  // ... existing code ...
+}); 

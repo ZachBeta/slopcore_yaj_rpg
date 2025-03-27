@@ -129,7 +129,7 @@ export class AudioControls {
    * Toggle mute state and update the button text
    */
   private toggleMute(): void {
-    const newMuteState = this.audioManager.toggleMute();
+    const _newMuteState = this.audioManager.toggleMute();
     this.updateMuteButtonText();
   }
 

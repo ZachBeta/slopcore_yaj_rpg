@@ -4,6 +4,7 @@ import { io as ioc, Socket } from 'socket.io-client';
 import { GameServer } from './game-server';
 import { silenceConsole } from '../src/test/test-utils';
 import { GameEvent } from '../src/constants';
+import process from 'node:process';
 
 // Export for use in test files
 export type { ConsoleSilencer } from '../src/test/test-utils';
@@ -189,7 +190,7 @@ export const disconnectAll = async (): Promise<void> => {
 /**
  * Clean up the test server
  */
-export const cleanupServer = async (
+export const cleanupServer = (
   server: http.Server,
   gameServer: GameServer
 ): Promise<void> => {

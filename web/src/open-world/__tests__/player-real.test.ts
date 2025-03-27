@@ -3,6 +3,9 @@ import { Player } from '../player';
 import { GameEvent } from '../../constants';
 import { ThreeTestEnvironment, createTestEnvironment } from '../../test/three-test-environment';
 import { InputAction } from '../../constants/input';
+import { EventEmitter as _EventEmitter } from 'events';
+import { InputManager } from '../input-manager';
+import { Position, Rotation } from '../../types';
 
 // Note: Since THREE.CSS2DRenderer requires DOM, we need to mock just that part
 jest.mock('three/examples/jsm/renderers/CSS2DRenderer', () => {
@@ -20,7 +23,7 @@ jest.mock('three/examples/jsm/renderers/CSS2DRenderer', () => {
 });
 
 // Simple mock for InputManager
-class MockInputManager {
+class _MockInputManager {
   private activeActions: Set<InputAction> = new Set();
   
   getActiveActions(): Set<InputAction> {
@@ -40,59 +43,56 @@ class MockInputManager {
   }
 }
 
-// Need to modify the Player class for testing
-class TestPlayer extends Player {
-  private mockInputManager: MockInputManager;
-  
-  constructor(id: string, scene: THREE.Scene, eventEmitter: EventEmitter) {
-    // Override to use our scene and event emitter
-    super(id, true);
-    
-    // Add to scene
-    scene.add(this.getObject());
-    
-    // Store reference to event emitter for tests
-    (this as any).eventEmitter = eventEmitter;
-    
-    // Create a mock input manager
-    this.mockInputManager = new MockInputManager();
-    // Replace the real input manager with our mock
-    (this as any).inputManager = this.mockInputManager;
+interface EventData {
+  position?: Position;
+  rotation?: Rotation;
+  [key: string]: unknown;
+}
+
+interface TestEventEmitter {
+  on(event: string, listener: (data: EventData) => void): this;
+  emit(event: string, data: EventData): boolean;
+  once(event: string, listener: (data: EventData) => void): this;
+  removeListener(event: string, listener: (data: EventData) => void): this;
+  addListener(event: string, listener: (data: EventData) => void): this;
+  removeAllListeners(event?: string): this;
+}
+
+interface TestPlayer extends Player {
+  eventEmitter: TestEventEmitter;
+  inputManager: InputManager;
+  handleMovement(deltaTime: number): void;
+  handleRotation(deltaTime: number): void;
+  updateCollisionEffect(deltaTime: number): void;
+}
+
+class TestPlayerImpl extends Player implements TestPlayer {
+  public eventEmitter: TestEventEmitter;
+  public inputManager: InputManager;
+  private mockInputManager: InputManager;
+
+  constructor(eventEmitter: TestEventEmitter) {
+    super();
+    this.eventEmitter = eventEmitter;
+    this.mockInputManager = {
+      isKeyPressed: jest.fn(),
+      isKeyDown: jest.fn(),
+      isKeyUp: jest.fn(),
+      update: jest.fn(),
+    };
+    this.inputManager = this.mockInputManager;
   }
-  
-  // Override to use our event emitter
-  protected emitEvent(event: string, data: any): void {
-    if ((this as any).eventEmitter) {
-      (this as any).eventEmitter.emit(event, data);
+
+  protected emitEvent(event: string, data: EventData): void {
+    if (this.eventEmitter) {
+      this.eventEmitter.emit(event, data);
     }
   }
-  
-  // Add a method to simulate movement input
-  public simulateMovement(direction: InputAction, value: boolean): void {
-    if (value) {
-      this.mockInputManager.addActiveAction(direction);
-    } else {
-      this.mockInputManager.removeActiveAction(direction);
-    }
-    
-    const event = { type: direction, value };
-    if (value) {
-      super['handleActionDown'](event.type);
-    } else {
-      super['handleActionUp'](event.type);
-    }
-  }
-  
-  public setPositionXYZ(x: number, y: number, z: number): void {
-    this.getObject().position.set(x, y, z);
-  }
-  
-  // Force the update to happen regardless of isLocal flag
-  public forceUpdate(deltaTime: number): void {
-    // Call the private handlers directly to force movement
-    (this as any).handleMovement(deltaTime);
-    (this as any).handleRotation(deltaTime);
-    (this as any).updateCollisionEffect(deltaTime);
+
+  public update(deltaTime: number): void {
+    this.handleMovement(deltaTime);
+    this.handleRotation(deltaTime);
+    this.updateCollisionEffect(deltaTime);
   }
 }
 
@@ -102,7 +102,7 @@ describe('Player with Real THREE.js', () => {
 
   beforeEach(() => {
     // Mock document.createElement for player label
-    document.createElement = jest.fn().mockImplementation((type: string) => {
+    document.createElement = jest.fn().mockImplementation((_type: string) => {
       return {
         style: {},
         textContent: '',
@@ -134,7 +134,7 @@ describe('Player with Real THREE.js', () => {
     testEnv = createTestEnvironment();
     
     // Create a test player with the scene and event emitter
-    player = new TestPlayer('test-player', testEnv.scene, testEnv.eventEmitter);
+    player = new TestPlayerImpl(testEnv.eventEmitter);
   });
 
   afterEach(() => {
@@ -216,6 +216,6 @@ describe('Player with Real THREE.js', () => {
 
 // Helper EventEmitter type for TypeScript
 interface EventEmitter {
-  on(event: string, listener: (...args: any[]) => void): this;
-  emit(event: string, ...args: any[]): boolean;
+  on(event: string, listener: (...args: unknown[]) => void): this;
+  emit(event: string, ...args: unknown[]): boolean;
 } 

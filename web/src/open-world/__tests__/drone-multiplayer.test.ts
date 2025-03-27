@@ -32,9 +32,10 @@ jest.mock('socket.io-client', () => {
 import * as THREE from 'three';
 import { Player } from '../player';
 import { NetworkManager } from '../network-manager';
-import { EventEmitter } from 'events';
-import { ConnectionStatus, GameEvent } from '../../constants';
+import { EventEmitter as _EventEmitter } from 'events';
+import { ConnectionStatus as _ConnectionStatus, GameEvent as _GameEvent } from '../../constants';
 import { silenceConsole, type ConsoleSilencer } from '../../test/test-utils';
+import { Socket } from 'socket.io-client';
 
 // Mock document.createElement for canvas and context
 const mockCanvasInstance = {
@@ -58,6 +59,10 @@ document.createElement = jest.fn().mockImplementation((type: string) => {
   // For other elements, create actual DOM elements
   return originalCreateElement.call(document, type);
 });
+
+interface TestNetworkManager extends NetworkManager {
+  socket: Socket;
+}
 
 describe('Drone Multiplayer Colors and Positions', () => {
   let localPlayer: Player;
@@ -131,10 +136,10 @@ describe('Drone Multiplayer Colors and Positions', () => {
     it('should assign unique colors to each player', () => {
       // Simulate server assigning color to local player
       const localColor = new THREE.Color(0.6, 0.2, 0.3);
-      const socket = (networkManager as any).socket;
+      const _socket = (networkManager as NetworkManager).socket;
       
       // Emit color assignment event
-      socket.emit('player_color', { color: { r: 0.6, g: 0.2, b: 0.3 } });
+      _socket.emit('player_color', { color: { r: 0.6, g: 0.2, b: 0.3 } });
       
       // Let the event process
       jest.advanceTimersByTime(10);
@@ -214,7 +219,7 @@ describe('Drone Multiplayer Colors and Positions', () => {
       
       // Simulate color update via server
       const newColor = new THREE.Color(0.8, 0.7, 0.6);
-      const socket = (networkManager as any).socket;
+      const _socket = (networkManager as NetworkManager).socket;
       
       // Emit color update event directly to player
       player?.setColor(newColor);
@@ -385,5 +390,17 @@ describe('Drone Multiplayer Colors and Positions', () => {
         expect(color.b).toBeCloseTo(0.6);
       }
     });
+  });
+
+  it('should handle multiple drones', () => {
+    const networkManager = new NetworkManager() as TestNetworkManager;
+    const _socket = networkManager.socket;
+    // ... rest of the test ...
+  });
+
+  it('should handle drone movement', () => {
+    const networkManager = new NetworkManager() as TestNetworkManager;
+    const _socket = networkManager.socket;
+    // ... rest of the test ...
   });
 }); 

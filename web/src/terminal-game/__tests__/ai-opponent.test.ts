@@ -57,7 +57,7 @@ describe('AIOpponent', () => {
       const creditsAfterTurn1 = ai.getCredits();
 
       // Take another turn
-      const turn2 = ai.takeTurn();
+      const _turn2 = ai.takeTurn();
       const creditsAfterTurn2 = ai.getCredits();
 
       // Credits should change predictably

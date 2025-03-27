@@ -3,6 +3,7 @@ import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import path from 'path';
 import { Color } from '../src/types';
+import process from 'node:process';
 
 interface Player {
   id: string;
@@ -174,7 +175,7 @@ function generatePlayerColor(): { r: number; g: number; b: number } {
   };
 }
 
-function generateRandomColor(): Color {
+function _generateRandomColor(): Color {
   const randomColor: Color = {
     r: Math.random(),
     g: Math.random(),

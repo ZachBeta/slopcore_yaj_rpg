@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { EventEmitter } from 'events';
+import { EventEmitter as _EventEmitter } from 'events';
 import { ThreeTestEnvironment } from './three-test-environment';
 
 /**
@@ -107,11 +107,11 @@ export function findAllMeshes(scene: THREE.Scene): THREE.Mesh[] {
 export class MockRenderer {
   domElement = document.createElement('div');
   
-  render(scene: THREE.Scene, camera: THREE.Camera): void {
+  render(_scene: THREE.Scene, _camera: THREE.Camera): void {
     // No-op for testing
   }
   
-  setSize(width: number, height: number): void {
+  setSize(_width: number, _height: number): void {
     // No-op for testing
   }
   

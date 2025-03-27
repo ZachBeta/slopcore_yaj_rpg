@@ -2,9 +2,34 @@
  * Multiplayer testing and debugging commands
  * These commands can be executed from the browser console to help diagnose issues
  */
-import * as THREE from 'three';
-import { Socket, io } from 'socket.io-client';
+import * as _THREE from 'three';
+import { io, Socket } from 'socket.io-client';
 import { GameEvent } from '../constants';
+import { Position, Rotation, Color } from '../types';
+
+interface PlayerInfo {
+  id: string;
+  position: Position;
+  color: Color;
+}
+
+interface PlayersInfo {
+  count: number;
+  players: PlayerInfo[];
+}
+
+interface PlayerJoinedEvent {
+  id: string;
+  position: Position;
+  rotation: Rotation;
+  color: Color;
+}
+
+interface PlayerMovedEvent {
+  id: string;
+  position: Position;
+  rotation: Rotation;
+}
 
 /**
  * Class for testing multiplayer sync issues
@@ -14,12 +39,7 @@ export class MultiplayerTester {
   private serverUrl: string;
   private playerId: string = '';
   private isConnected: boolean = false;
-  private connectedPlayers: Map<string, {
-    id: string;
-    position: THREE.Vector3;
-    color: THREE.Color;
-    lastUpdate: number;
-  }> = new Map();
+  private players: Map<string, PlayerInfo> = new Map();
   
   constructor(serverUrl: string = 'http://localhost:3000') {
     this.serverUrl = serverUrl;
@@ -31,13 +51,13 @@ export class MultiplayerTester {
     });
     
     // Set up socket event handlers
-    this.setupEvents();
+    this.setupSocketListeners();
   }
   
   /**
    * Set up socket event handlers
    */
-  private setupEvents(): void {
+  private setupSocketListeners(): void {
     // Connection
     this.socket.on('connect', () => {
       console.log('Connected to server:', this.serverUrl);
@@ -56,53 +76,39 @@ export class MultiplayerTester {
     });
     
     // Player joined
-    this.socket.on(GameEvent.PLAYER_JOINED, (data: any) => {
-      console.log('Player joined:', data.id);
-      
-      // Save player data
-      this.connectedPlayers.set(data.id, {
-        id: data.id,
-        position: new THREE.Vector3(data.position.x, data.position.y, data.position.z),
-        color: new THREE.Color(data.color.r, data.color.g, data.color.b),
-        lastUpdate: Date.now()
-      });
+    this.socket.on(GameEvent.PLAYER_JOINED, (data: PlayerJoinedEvent) => {
+      console.log('Player joined:', data);
+      this.players.set(data.id, data);
     });
     
     // Player list
-    this.socket.on(GameEvent.PLAYERS_LIST, (players: any[]) => {
-      console.log('Received players list:', players.length, 'players');
-      
-      players.forEach(data => {
-        this.connectedPlayers.set(data.id, {
-          id: data.id,
-          position: new THREE.Vector3(data.position.x, data.position.y, data.position.z),
-          color: new THREE.Color(data.color.r, data.color.g, data.color.b),
-          lastUpdate: Date.now()
-        });
+    this.socket.on(GameEvent.PLAYERS_LIST, (players: PlayerInfo[]) => {
+      console.log('Players list:', players);
+      this.players.clear();
+      players.forEach(player => {
+        this.players.set(player.id, player);
       });
-      
-      console.log('Connected players:', Array.from(this.connectedPlayers.keys()));
     });
     
     // Player moved
-    this.socket.on(GameEvent.PLAYER_MOVED, (data: any) => {
-      if (this.connectedPlayers.has(data.id)) {
-        // Update player position
-        const player = this.connectedPlayers.get(data.id)!;
-        player.position.set(data.position.x, data.position.y, data.position.z);
-        player.lastUpdate = Date.now();
+    this.socket.on(GameEvent.PLAYER_MOVED, (data: PlayerMovedEvent) => {
+      console.log('Player moved:', data);
+      const player = this.players.get(data.id);
+      if (player) {
+        player.position = data.position;
+        player.rotation = data.rotation;
       }
     });
     
     // Player left
     this.socket.on(GameEvent.PLAYER_LEFT, (playerId: string) => {
       console.log('Player left:', playerId);
-      this.connectedPlayers.delete(playerId);
+      this.players.delete(playerId);
     });
     
     // Debug state
-    this.socket.on('debug_state', (state: any) => {
-      console.log('Received debug state:', state);
+    this.socket.on('debug_state', (state: { [key: string]: unknown }) => {
+      console.log('Debug state:', state);
     });
   }
   
@@ -164,22 +170,13 @@ export class MultiplayerTester {
   /**
    * Get the list of connected players
    */
-  public getPlayers(): any {
+  public getPlayers(): PlayersInfo {
     return {
-      count: this.connectedPlayers.size,
-      players: Array.from(this.connectedPlayers.values()).map(p => ({
+      count: this.players.size,
+      players: Array.from(this.players.values()).map(p => ({
         id: p.id,
-        position: {
-          x: p.position.x.toFixed(2),
-          y: p.position.y.toFixed(2),
-          z: p.position.z.toFixed(2)
-        },
-        color: {
-          r: p.color.r.toFixed(2),
-          g: p.color.g.toFixed(2),
-          b: p.color.b.toFixed(2)
-        },
-        age: Date.now() - p.lastUpdate
+        position: p.position,
+        color: p.color
       }))
     };
   }
@@ -256,13 +253,15 @@ export class MultiplayerTester {
   }
 }
 
-// Make available in global scope for browser console testing
-(window as any).MultiplayerTester = MultiplayerTester;
-
-// Helper function to create a tester
-export function createTester(serverUrl?: string): MultiplayerTester {
+// Export factory function
+export function createMultiplayerTester(serverUrl: string): MultiplayerTester {
   return new MultiplayerTester(serverUrl);
 }
 
-// Also expose in global scope
-(window as any).createMultiplayerTester = createTester; 
+// Add to global scope for debugging
+declare global {
+  var MultiplayerTester: typeof MultiplayerTester;
+  var createMultiplayerTester: typeof createMultiplayerTester;
+}
+globalThis.MultiplayerTester = MultiplayerTester;
+globalThis.createMultiplayerTester = createMultiplayerTester; 

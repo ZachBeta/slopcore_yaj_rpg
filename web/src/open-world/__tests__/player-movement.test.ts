@@ -2,7 +2,7 @@ import { Player } from '../player';
 import { GROUND_LEVEL } from '../../constants/directions';
 import { InputAction } from '../../constants/input';
 import * as THREE from 'three';
-import { InputManager } from '../input-manager';
+import { InputManager as _InputManager } from '../input-manager';
 import { silenceConsole, type ConsoleSilencer } from '../../test/test-utils';
 
 // Mock document.createElement for canvas and context

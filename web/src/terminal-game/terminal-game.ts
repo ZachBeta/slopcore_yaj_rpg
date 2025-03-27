@@ -10,17 +10,17 @@ import {
   AgendaPoints,
   CardCount,
   CardIndex,
-  CardState,
+  CardState as _CardState,
   CardTrigger,
   ClickCount,
   CommandArguments,
   CommandDoc,
   CommandHandler,
   CommandName,
-  CommandState,
+  CommandState as _CommandState,
   Credits,
-  GameComponents,
-  GameResources,
+  GameComponents as _GameComponents,
+  GameResources as _GameResources,
   GameState,
   MemoryUnits,
   PlayedCard,
@@ -30,9 +30,9 @@ import {
   Server,
   ServerName,
   TurnNumber,
-  TurnState,
+  TurnState as _TurnState,
   validCommands,
-  WinState,
+  WinState as _WinState,
 } from './game-types';
 
 // Command documentation
@@ -441,7 +441,7 @@ export class TerminalGame {
   /**
    * Command handler for 'draw'
    */
-  private cmdDraw(args: CommandArguments): void {
+  private cmdDraw(_args: CommandArguments): void {
     if (this.clicksRemaining < 1) {
       this.renderer.displayError('Not enough clicks remaining');
       return;
@@ -784,14 +784,14 @@ export class TerminalGame {
   /**
    * Command handler for 'credits'
    */
-  private cmdCredits(args: CommandArguments): void {
+  private cmdCredits(_args: CommandArguments): void {
     this.renderer.displayMessage(`Credits available: ${this.playerCredits}`);
   }
 
   /**
    * Command handler for 'memory'
    */
-  private cmdMemory(args: CommandArguments): void {
+  private cmdMemory(_args: CommandArguments): void {
     this.renderer.displayMessage(
       `Memory units: ${this.memoryUnitsUsed}/${this.memoryUnitsAvailable} used`,
     );

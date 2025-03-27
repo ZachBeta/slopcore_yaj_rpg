@@ -1,8 +1,21 @@
 import * as THREE from 'three';
-import { Player } from '../open-world/player';
+import { Player as _Player } from '../open-world/player';
 import { Socket, io } from 'socket.io-client';
 import { GameEvent } from '../constants';
 import { Position, Rotation, Color } from '../types';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+
+interface DebugState {
+  [key: string]: unknown;
+}
+
+interface Material extends THREE.Material {
+  isArrowMaterial?: boolean;
+}
+
+interface ThreeGlobal {
+  OrbitControls: typeof OrbitControls;
+}
 
 /**
  * Debug tool for visualizing multiplayer synchronization issues
@@ -25,7 +38,7 @@ export class MultiplayerDebugger {
   private localPlayerId: string = '';
   private debugInfo: HTMLElement;
   private isRunning: boolean = false;
-  private orbitControls: any; // THREE.OrbitControls
+  private orbitControls: OrbitControls;
 
   constructor(serverUrl: string, containerId: string) {
     // Get or create container
@@ -55,7 +68,7 @@ export class MultiplayerDebugger {
     // Create renderer
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
-    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setPixelRatio(globalThis.devicePixelRatio);
     this.renderer.shadowMap.enabled = true;
     this.container.appendChild(this.renderer.domElement);
     
@@ -92,7 +105,7 @@ export class MultiplayerDebugger {
     this.setupControls();
     
     // Handle window resize
-    window.addEventListener('resize', () => this.handleResize());
+    globalThis.addEventListener('resize', () => this.handleResize());
   }
   
   /**
@@ -120,10 +133,10 @@ export class MultiplayerDebugger {
     // Try to import orbit controls dynamically
     try {
       // Check if OrbitControls is available globally (e.g. from a script tag)
-      const OrbitControls = (window as any).OrbitControls || (THREE as any).OrbitControls;
+      const OrbitControlsClass = (globalThis as unknown as ThreeGlobal).OrbitControls || (THREE as unknown as ThreeGlobal).OrbitControls;
       
-      if (OrbitControls) {
-        this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
+      if (OrbitControlsClass) {
+        this.orbitControls = new OrbitControlsClass(this.camera, this.renderer.domElement);
         this.orbitControls.enableDamping = true;
         this.orbitControls.dampingFactor = 0.05;
       } else {
@@ -199,8 +212,8 @@ export class MultiplayerDebugger {
     });
     
     // Handle debug state updates from server
-    this.socket.on('debug_state', (state: any) => {
-      // Update display with server-side debug information
+    this.socket.on('debug_state', (state: DebugState) => {
+      console.log('Debug state:', state);
       this.updateServerDebugInfo(state);
     });
     
@@ -389,7 +402,7 @@ export class MultiplayerDebugger {
     object.traverse(child => {
       if (child instanceof THREE.Mesh && 
           child.material instanceof THREE.MeshLambertMaterial &&
-          !(child.material as any).isArrowMaterial) {
+          !(child.material as Material).isArrowMaterial) {
         child.material.color.setRGB(color.r, color.g, color.b);
       }
     });
@@ -434,7 +447,7 @@ export class MultiplayerDebugger {
   /**
    * Update debug info with server state
    */
-  private updateServerDebugInfo(state: any): void {
+  private updateServerDebugInfo(state: DebugState): void {
     // Add server state information to the debug panel
     if (!state) return;
     
@@ -532,7 +545,7 @@ export class MultiplayerDebugger {
     this.socket.disconnect();
     
     // Remove event listeners
-    window.removeEventListener('resize', () => this.handleResize());
+    globalThis.removeEventListener('resize', () => this.handleResize());
     
     // Clean up THREE.js resources
     this.playerObjects.forEach(object => {
@@ -566,5 +579,8 @@ export function createMultiplayerDebugger(serverUrl: string, containerId: string
   return debuggerInstance;
 }
 
-// Export a global reference for use in browser console
-(window as any).createMultiplayerDebugger = createMultiplayerDebugger; 
+// Add to global scope for debugging
+declare global {
+  var createMultiplayerDebugger: typeof createMultiplayerDebugger;
+}
+globalThis.createMultiplayerDebugger = createMultiplayerDebugger; 

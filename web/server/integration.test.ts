@@ -1,11 +1,12 @@
-import { GameServer } from './game-server';
-import { Player, Color, Position, Rotation } from '../src/types';
+import { GameServer as _GameServer } from './game-server';
+import { Player as _Player, Color, Position, Rotation } from '../src/types';
 import { GameEvent } from '../src/constants';
 import { setupTestServer, connectAndJoinGame, setupTestConsole, wait, SOCKET_EVENTS, disconnectAll, CONNECTION_TIMEOUT } from './test-helpers';
-import type { Socket, io as SocketIOClient } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
 import type { TestServerSetup } from './test-helpers';
 import type { ConsoleSilencer } from '../src/test/test-utils';
 import { io as ioc } from 'socket.io-client';
+import process from 'node:process';
 
 // NOTE: TestGameServer is kept for future tests that need to access protected properties
 // but is currently unused - uncomment and use when needed
@@ -49,13 +50,6 @@ class TestGameServer extends GameServer {
   }
 }
 */
-
-// Define position type for tests
-interface Position {
-  x: number;
-  y: number;
-  z: number;
-}
 
 // Define player data interface for tests
 interface PlayerData {
@@ -224,7 +218,7 @@ describe('Game Server Integration Tests', () => {
     }
   });
   
-  it('should verify all event constants match socket events', async () => {
+  it('should verify all event constants match socket events', () => {
     // Skip in CI environment
     if (shouldSkipTest()) {
       return;
@@ -269,7 +263,7 @@ describe('Game Server Integration Tests', () => {
       await wait(50);
       
       // Second player ID
-      const player2Id = result2.player.id;
+      const _player2Id = result2.player.id;
       
       // Verify GameEvent constants
       expect(GameEvent.PLAYER_LEFT).toBe('player_left');
@@ -292,7 +286,7 @@ describe('Game Server Integration Tests', () => {
       
       // Verify events received
       expect(playerLeftReceived).toBe(true);
-      expect(disconnectedPlayerId).toBe(player2Id);
+      expect(disconnectedPlayerId).toBe(_player2Id);
       
       // Cleanup
       if (socketClient1) socketClient1.disconnect();
@@ -371,7 +365,7 @@ describe('Game Server Integration Tests', () => {
       // Connect second client
       const result2 = await connectAndJoinGame(testSetup.clientUrl, 'Player2');
       socketClient2 = result2.client;
-      const player2Id = result2.player.id;
+      const _player2Id = result2.player.id;
       
       // Wait for connections to be established
       await wait(50);
@@ -521,7 +515,7 @@ describe('Game Server Integration Tests', () => {
       // Connect second client
       const result2 = await connectAndJoinGame(testSetup.clientUrl, 'Player2');
       socketClient2 = result2.client;
-      const player2Id = result2.player.id;
+      const _player2Id = result2.player.id;
       
       // Wait for connections to be established
       await wait(50);
@@ -532,7 +526,7 @@ describe('Game Server Integration Tests', () => {
       
       // Client 1 listens for client 2's movements
       socketClient1.on(GameEvent.PLAYER_MOVED, (data) => {
-        if (data.id === player2Id) {
+        if (data.id === _player2Id) {
           player1ReceivedUpdates.push({...data.position});
         }
       });
@@ -608,7 +602,7 @@ describe('Game Server Integration Tests', () => {
       });
       
       // Find player 2 in the list
-      const player2InList = finalPlayersList.find(p => p.id === player2Id);
+      const player2InList = finalPlayersList.find(p => p.id === _player2Id);
       expect(player2InList).toBeDefined();
       expect(player2InList?.position).toEqual(client2Positions[client2Positions.length - 1]);
       
