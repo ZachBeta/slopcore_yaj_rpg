@@ -68,7 +68,7 @@ describe('TerminalGame', () => {
 
       // Verify initial values
       expect(game.getPlayerCredits()).toBe(5);
-      expect(game.getMemoryUnitsAvailable()).toBe(4);
+      expect(game.getMemoryUnits()).toBe(4);
       expect(game.getMemoryUnitsUsed()).toBe(0);
       expect(game.getPlayerSide()).toBe('runner');
       expect(game.getCurrentPhase()).toBe(GamePhase.SETUP);
@@ -163,7 +163,7 @@ describe('TerminalGame', () => {
       game.setRunnerAgendaPoints(7);
 
       // Check win conditions
-      game.checkWinConditions();
+      (game as any).checkWinConditions();
 
       // Game should be over with runner win
       expect(game.isGameOver()).toBe(true);
@@ -178,7 +178,7 @@ describe('TerminalGame', () => {
       game.setCorpAgendaPoints(7);
 
       // Check win conditions
-      game.checkWinConditions();
+      (game as any).checkWinConditions();
 
       // Game should be over with corp win
       expect(game.isGameOver()).toBe(true);
@@ -194,7 +194,7 @@ describe('TerminalGame', () => {
       game.setHandCards([]);
 
       // Check win conditions
-      game.checkWinConditions();
+      (game as any).checkWinConditions();
 
       // Game should be over with runner loss
       expect(game.isGameOver()).toBe(true);
@@ -217,7 +217,7 @@ describe('TerminalGame', () => {
           name: 'Test Program',
           type: 'program',
           cost: 3,
-          memoryRequirement: 2,
+          memoryUsage: 2,
           description: 'A test program',
         },
       ]);

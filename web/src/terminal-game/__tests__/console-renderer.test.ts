@@ -2,12 +2,6 @@ import { ConsoleRenderer } from '../console-renderer';
 import { GamePhase } from '../game-phases';
 import { Card } from '../game-types';
 
-interface MockTerminal {
-  write: jest.Mock;
-  clear: jest.Mock;
-  appendChild: jest.Mock;
-}
-
 // Mock DOM methods to avoid errors
 document.createElement = jest.fn().mockImplementation(() => {
   return {
@@ -34,7 +28,7 @@ document.querySelector = jest.fn().mockImplementation(() => {
 describe('ConsoleRenderer', () => {
   let renderer: ConsoleRenderer;
   let mockAppendChildSpy: jest.SpyInstance;
-  let mockTerminal: MockTerminal;
+  let consoleLogSpy: jest.SpyInstance;
 
   beforeEach(() => {
     // Clear all mocks
@@ -42,14 +36,9 @@ describe('ConsoleRenderer', () => {
 
     // Set up spies
     mockAppendChildSpy = jest.spyOn(document.body, 'appendChild');
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
 
-    mockTerminal = {
-      write: jest.fn(),
-      clear: jest.fn(),
-      appendChild: jest.fn(),
-    };
     renderer = new ConsoleRenderer();
-    (renderer as unknown as { terminal: MockTerminal }).terminal = mockTerminal;
   });
 
   describe('initialization', () => {
@@ -64,55 +53,47 @@ describe('ConsoleRenderer', () => {
 
   describe('rendering methods', () => {
     it('should render messages with the right styling', () => {
-      (renderer as unknown as { terminal: MockTerminal }).terminal = mockTerminal;
       renderer.renderMessage('Test message', 'info');
-      expect(mockTerminal.appendChild).toHaveBeenCalled();
+      expect(consoleLogSpy).toHaveBeenCalled();
     });
 
     it('should render errors with the right styling', () => {
-      (renderer as unknown as { terminal: MockTerminal }).terminal = mockTerminal;
       renderer.renderError('Test error');
-      expect(mockTerminal.appendChild).toHaveBeenCalled();
+      expect(consoleLogSpy).toHaveBeenCalled();
     });
 
     it('should render game phases', () => {
-      (renderer as unknown as { terminal: MockTerminal }).terminal = mockTerminal;
       renderer.renderPhase('Action', 1);
-      expect(mockTerminal.appendChild).toHaveBeenCalled();
+      expect(consoleLogSpy).toHaveBeenCalled();
     });
 
     it('should render game stats', () => {
-      (renderer as unknown as { terminal: MockTerminal }).terminal = mockTerminal;
       renderer.renderGameStats({
         credits: 5,
         memory: { total: 4, used: 2 },
         agendaPoints: 0,
         clicksRemaining: 3,
       });
-      expect(mockTerminal.appendChild).toHaveBeenCalled();
+      expect(consoleLogSpy).toHaveBeenCalled();
     });
 
     it('should render system status', () => {
-      (renderer as unknown as { terminal: MockTerminal }).terminal = mockTerminal;
       renderer.renderSystemStatus({
         neuralInterface: 'Active',
         traceDetection: 0,
         securityLevel: 'Low',
       });
-      expect(mockTerminal.appendChild).toHaveBeenCalled();
+      expect(consoleLogSpy).toHaveBeenCalled();
     });
 
     it('should render the game banner', () => {
-      (renderer as unknown as { terminal: MockTerminal }).terminal = mockTerminal;
       renderer.renderBanner();
-      expect(mockTerminal.appendChild).toHaveBeenCalled();
+      expect(consoleLogSpy).toHaveBeenCalled();
     });
   });
 
   describe('card rendering', () => {
     it('should render a hand of cards', () => {
-      (renderer as unknown as { terminal: MockTerminal }).terminal = mockTerminal;
-
       // Create sample cards
       const sampleCards: Card[] = [
         {
@@ -125,27 +106,24 @@ describe('ConsoleRenderer', () => {
       ];
 
       renderer.renderHand(sampleCards);
-      expect(mockTerminal.appendChild).toHaveBeenCalled();
+      expect(consoleLogSpy).toHaveBeenCalled();
     });
   });
 
   describe('help and system', () => {
     it('should render command help', () => {
-      (renderer as unknown as { terminal: MockTerminal }).terminal = mockTerminal;
-      renderer.renderCommandHelp('test', 'Test command description');
-      expect(mockTerminal.appendChild).toHaveBeenCalled();
+      renderer.displayCommandHelp('test', 'Test command description');
+      expect(consoleLogSpy).toHaveBeenCalled();
     });
 
     it('should render command list', () => {
-      (renderer as unknown as { terminal: MockTerminal }).terminal = mockTerminal;
-      renderer.renderCommandList([{ command: 'test', description: 'Test command' }]);
-      expect(mockTerminal.appendChild).toHaveBeenCalled();
+      renderer.renderHelp({ 'test': 'Test command' });
+      expect(consoleLogSpy).toHaveBeenCalled();
     });
 
-    it('should render command examples', () => {
-      (renderer as unknown as { terminal: MockTerminal }).terminal = mockTerminal;
-      renderer.renderCommandExamples([{ command: 'test', example: 'test example' }]);
-      expect(mockTerminal.appendChild).toHaveBeenCalled();
+    it('should render help', () => {
+      renderer.displayHelp({ 'test': 'Test command example' });
+      expect(consoleLogSpy).toHaveBeenCalled();
     });
   });
 });
