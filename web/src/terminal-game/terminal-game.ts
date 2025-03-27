@@ -161,6 +161,9 @@ export class TerminalGame {
     jack_out: (args: string[]) => this.cmdJackOut({ command: 'jack_out', args, options: {} }),
   };
 
+  // Track active timers for cleanup in tests
+  private timers: NodeJS.Timeout[] = [];
+
   constructor(randomSeed: RandomSeed = Math.floor(Math.random() * 100000)) {
     this.randomSeed = randomSeed;
     this.renderer = new ConsoleRenderer();
@@ -675,12 +678,15 @@ export class TerminalGame {
     }
 
     // Wait a moment before starting the player's turn (simulate delay)
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       this.renderer.renderMessage('Corporation ends turn.', 'info');
 
       // Back to runner's turn
       this.startTurn();
     }, 1000);
+    
+    // Track timer for cleanup
+    this.timers.push(timer);
   }
 
   /**
@@ -1015,5 +1021,14 @@ export class TerminalGame {
 
   public isGameOver(): boolean {
     return this.gameOver;
+  }
+
+  /**
+   * Clean up resources (for tests)
+   */
+  public cleanup(): void {
+    // Clear all active timers
+    this.timers.forEach(timer => clearTimeout(timer));
+    this.timers = [];
   }
 }
