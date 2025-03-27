@@ -860,6 +860,23 @@ export class NetworkManager {
     
     this.diagnosticsDiv.appendChild(div);
   }
+
+  /**
+   * Serializes a quaternion into an array of numbers for network transmission
+   */
+  serializeQuaternion(quaternion: THREE.Quaternion): number[] {
+    return [quaternion.x, quaternion.y, quaternion.z, quaternion.w];
+  }
+
+  /**
+   * Deserializes an array of numbers back into a quaternion
+   */
+  deserializeQuaternion(data: number[]): THREE.Quaternion {
+    if (data.length !== 4) {
+      throw new Error('Invalid quaternion data: expected array of length 4');
+    }
+    return new THREE.Quaternion(data[0], data[1], data[2], data[3]);
+  }
 }
 
 // Enable Hot Module Replacement
