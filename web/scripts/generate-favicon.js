@@ -17,4 +17,15 @@ sharp(path.join(publicDir, 'favicon.svg'))
   })
   .catch(err => {
     console.error('Error generating PNG favicon:', err);
+  });
+
+// Convert SVG to ICO
+sharp(path.join(publicDir, 'favicon.svg'))
+  .resize(32, 32)
+  .toFile(path.join(publicDir, 'favicon.ico'))
+  .then(() => {
+    console.log('ICO favicon generated successfully');
+  })
+  .catch(err => {
+    console.error('Error generating ICO favicon:', err);
   }); 

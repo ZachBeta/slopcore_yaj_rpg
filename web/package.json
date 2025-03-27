@@ -18,7 +18,8 @@
     "lint:fix": "deno lint --fix",
     "lint:types": "tsc --noEmit",
     "terminal-game": "ts-node src/terminal-game/main.ts",
-    "board-demo": "ts-node src/terminal-game/board-renderer.ts"
+    "board-demo": "ts-node src/terminal-game/board-renderer.ts",
+    "generate-favicon": "node scripts/generate-favicon.js"
   },
   "keywords": [
     "rpg",

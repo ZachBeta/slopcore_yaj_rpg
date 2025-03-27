@@ -4,6 +4,16 @@ import webpack from 'webpack';
 import { GameServer } from './server/game-server';
 import type { Configuration as WebpackConfig } from 'webpack';
 import type { Configuration as DevServerConfig } from 'webpack-dev-server';
+import { execSync } from 'child_process';
+
+// Generate favicons before webpack starts
+console.log('Generating favicons...');
+try {
+  execSync('node scripts/generate-favicon.js', { stdio: 'inherit' });
+  console.log('Favicons generated successfully');
+} catch (error) {
+  console.error('Failed to generate favicons:', error);
+}
 
 interface WebpackConfigWithDevServer extends WebpackConfig {
   devServer?: DevServerConfig;
