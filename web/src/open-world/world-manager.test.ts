@@ -12,29 +12,53 @@ jest.mock('three', () => {
   };
 
   const mockMesh = {
-    position: { set: jest.fn() },
-    scale: { set: jest.fn(), copy: jest.fn() },
-    rotation: { set: jest.fn(), copy: jest.fn() },
+    position: { 
+      set: jest.fn(),
+      copy: jest.fn()
+    },
+    scale: { 
+      set: jest.fn(), 
+      copy: jest.fn() 
+    },
+    rotation: { 
+      set: jest.fn(), 
+      copy: jest.fn() 
+    },
     castShadow: false,
     receiveShadow: false,
   };
 
   return {
     Scene: jest.fn(() => mockScene),
-    Vector3: jest.fn((x, y, z) => ({ x, y, z, set: jest.fn() })),
+    Vector3: jest.fn((x, y, z) => ({ 
+      x, y, z, 
+      set: jest.fn(),
+      copy: jest.fn()
+    })),
     Mesh: jest.fn(() => mockMesh),
     BoxGeometry: jest.fn(),
     CylinderGeometry: jest.fn(),
     PlaneGeometry: jest.fn(),
     MeshStandardMaterial: jest.fn(),
-    Color: jest.fn((r, g, b) => ({ r, g, b, setHSL: jest.fn() })),
-    GridHelper: jest.fn(),
+    Color: jest.fn((r, g, b) => ({ 
+      r, g, b, 
+      setHSL: jest.fn()
+    })),
+    GridHelper: jest.fn(() => ({
+      position: { y: 0 }
+    })),
     ShaderMaterial: jest.fn(),
     SphereGeometry: jest.fn(),
     BackSide: 1,
     Object3D: jest.fn(() => ({
-      position: { set: jest.fn() },
-      rotation: { set: jest.fn() },
+      position: { 
+        set: jest.fn(),
+        copy: jest.fn()
+      },
+      rotation: { 
+        set: jest.fn(),
+        copy: jest.fn()
+      },
       add: jest.fn(),
     })),
   };

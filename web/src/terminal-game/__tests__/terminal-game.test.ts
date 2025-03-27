@@ -1,7 +1,5 @@
 import { TerminalGame } from '../terminal-game';
 import { GamePhase } from '../game-phases';
-import { ConsoleRenderer } from '../console-renderer';
-import { AIOpponent } from '../ai-opponent';
 
 // Only mock the render methods to avoid DOM interactions
 jest.mock('../console-renderer', () => {
@@ -163,7 +161,7 @@ describe('TerminalGame', () => {
       game.setRunnerAgendaPoints(7);
 
       // Check win conditions
-      (game as any).checkWinConditions();
+      (game as unknown as { checkWinConditions: () => void }).checkWinConditions();
 
       // Game should be over with runner win
       expect(game.isGameOver()).toBe(true);
@@ -178,11 +176,18 @@ describe('TerminalGame', () => {
       game.setCorpAgendaPoints(7);
 
       // Check win conditions
-      (game as any).checkWinConditions();
+      (game as unknown as { checkWinConditions: () => void }).checkWinConditions();
 
       // Game should be over with corp win
       expect(game.isGameOver()).toBe(true);
       expect(game.getWinMessage()).toContain('Corporation has scored');
+
+      // Set up loss condition
+      game.setPlayerDeck([]);
+      game.setHandCards([]);
+
+      // Check win conditions
+      (game as unknown as { checkWinConditions: () => void }).checkWinConditions();
     });
 
     it.skip('should detect runner loss by deck depletion', () => {
@@ -194,7 +199,7 @@ describe('TerminalGame', () => {
       game.setHandCards([]);
 
       // Check win conditions
-      (game as any).checkWinConditions();
+      (game as unknown as { checkWinConditions: () => void }).checkWinConditions();
 
       // Game should be over with runner loss
       expect(game.isGameOver()).toBe(true);

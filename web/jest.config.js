@@ -10,14 +10,20 @@ const config = {
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   testMatch: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],
-  testPathIgnorePatterns: ['/node_modules/', 'setupTests.ts'],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/src/test/test-utils.ts'
+  ],
   // Run integration tests serially
   testSequencer: './jest.sequencer.js',
   // Configure different test environments
   projects: [
     {
       displayName: 'dom',
-      testMatch: ['<rootDir>/src/test/**/*.[jt]s?(x)', '<rootDir>/src/terminal-game/__tests__/console-renderer.test.[jt]s?(x)'],
+      testMatch: [
+        '<rootDir>/src/**/__tests__/*.test.{js,jsx,ts,tsx}',
+        '<rootDir>/src/test/*.test.{js,jsx,ts,tsx}'
+      ],
       testEnvironment: 'jsdom',
       preset: 'ts-jest',
       transform: {
@@ -26,10 +32,17 @@ const config = {
           isolatedModules: true
         }]
       },
+      testPathIgnorePatterns: [
+        '/node_modules/',
+        '/src/test/test-utils.ts',
+        '/src/open-world/'
+      ]
     },
     {
       displayName: 'node',
-      testMatch: ['<rootDir>/server/**/*.test.[jt]s?(x)'],
+      testMatch: [
+        '<rootDir>/server/**/*.test.{js,jsx,ts,tsx}'
+      ],
       testEnvironment: 'node',
       preset: 'ts-jest',
       transform: {
@@ -42,7 +55,7 @@ const config = {
     {
       displayName: 'default',
       testMatch: [
-        '<rootDir>/src/terminal-game/__tests__/!(console-renderer).test.[jt]s?(x)',
+        '<rootDir>/src/terminal-game/**/*.test.{js,jsx,ts,tsx}'
       ],
       testEnvironment: 'node',
       preset: 'ts-jest',
@@ -56,7 +69,7 @@ const config = {
     {
       displayName: 'open-world',
       testMatch: [
-        '<rootDir>/src/open-world/__tests__/**/*.test.[jt]s?(x)'
+        '<rootDir>/src/open-world/**/*.test.{js,jsx,ts,tsx}'
       ],
       testEnvironment: 'jsdom',
       preset: 'ts-jest',

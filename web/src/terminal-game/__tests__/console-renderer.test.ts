@@ -1,5 +1,7 @@
+/**
+ * @jest-environment jsdom
+ */
 import { ConsoleRenderer } from '../console-renderer';
-import { GamePhase } from '../game-phases';
 import { Card } from '../game-types';
 
 // Mock DOM methods to avoid errors
