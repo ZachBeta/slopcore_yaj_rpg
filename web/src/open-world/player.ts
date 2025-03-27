@@ -52,7 +52,7 @@ export class Player {
     this.createDroneModel();
 
     // Add a name tag
-    this.addNameTag(`Drone-${id.substring(0, 4)}`);
+    this.addNameTag(`Drone-${id ? id.substring(0, 4) : 'test'}`);
   }
 
   /**

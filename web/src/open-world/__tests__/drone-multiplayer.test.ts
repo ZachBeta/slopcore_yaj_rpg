@@ -33,7 +33,7 @@ import * as THREE from 'three';
 import { Player } from '../player';
 import { NetworkManager } from '../network-manager';
 import { EventEmitter as _EventEmitter } from 'events';
-import { ConnectionStatus as _ConnectionStatus, GameEvent as _GameEvent } from '../../constants';
+import { ConnectionStatus as _ConnectionStatus, GameEvent } from '../../constants';
 import { silenceConsole, type ConsoleSilencer } from '../../test/test-utils';
 import { Socket } from 'socket.io-client';
 
@@ -393,14 +393,84 @@ describe('Drone Multiplayer Colors and Positions', () => {
   });
 
   it('should handle multiple drones', () => {
-    const networkManager = new NetworkManager() as TestNetworkManager;
+    const networkManager = new NetworkManager(
+      localPlayer,
+      remotePlayerJoinSpy,
+      remotePlayerLeaveSpy,
+      positionUpdateSpy,
+      connectionStatusSpy
+    ) as TestNetworkManager;
+
     const _socket = networkManager.socket;
-    // ... rest of the test ...
+    
+    // Wait for connection
+    jest.advanceTimersByTime(100);
+
+    // Simulate multiple drones joining
+    const droneIds = ['drone1', 'drone2', 'drone3'];
+    droneIds.forEach(id => {
+      _socket.emit(GameEvent.PLAYER_JOINED, {
+        id,
+        position: { x: 0, y: 1, z: 0 },
+        color: { r: 0.5, g: 0.5, b: 0.5 }
+      });
+      // Let each join event process
+      jest.advanceTimersByTime(10);
+    });
+
+    // Let all events process
+    jest.advanceTimersByTime(100);
+
+    // Verify all drones were added
+    expect(remotePlayerJoinSpy).toHaveBeenCalledTimes(droneIds.length);
+    expect(remotePlayers.size).toBe(droneIds.length);
   });
 
   it('should handle drone movement', () => {
-    const networkManager = new NetworkManager() as TestNetworkManager;
+    const networkManager = new NetworkManager(
+      localPlayer,
+      remotePlayerJoinSpy,
+      remotePlayerLeaveSpy,
+      positionUpdateSpy,
+      connectionStatusSpy
+    ) as TestNetworkManager;
+
     const _socket = networkManager.socket;
-    // ... rest of the test ...
+    
+    // Wait for connection
+    jest.advanceTimersByTime(100);
+
+    // Add a drone
+    const droneId = 'drone1';
+    _socket.emit(GameEvent.PLAYER_JOINED, {
+      id: droneId,
+      position: { x: 0, y: 1, z: 0 },
+      color: { r: 0.5, g: 0.5, b: 0.5 }
+    });
+
+    // Let join event process
+    jest.advanceTimersByTime(100);
+
+    // Simulate movement
+    _socket.emit(GameEvent.PLAYER_MOVED, {
+      id: droneId,
+      position: { x: 1, y: 2, z: 3 },
+      rotation: { x: 0, y: 0, z: 0 }
+    });
+
+    // Let movement event process
+    jest.advanceTimersByTime(100);
+
+    // Verify position was updated
+    expect(positionUpdateSpy).toHaveBeenCalledWith(
+      droneId,
+      expect.any(THREE.Vector3)
+    );
+
+    const player = remotePlayers.get(droneId);
+    expect(player).toBeDefined();
+    expect(player?.getPosition().x).toBe(1);
+    expect(player?.getPosition().y).toBe(2);
+    expect(player?.getPosition().z).toBe(3);
   });
 }); 

@@ -41,6 +41,22 @@ class _MockInputManager {
   dispose(): void {
     this.activeActions.clear();
   }
+
+  isKeyPressed(action: InputAction): boolean {
+    return this.activeActions.has(action);
+  }
+
+  isKeyDown(action: InputAction): boolean {
+    return this.activeActions.has(action);
+  }
+
+  isKeyUp(action: InputAction): boolean {
+    return !this.activeActions.has(action);
+  }
+
+  update(): void {
+    // No-op for mock
+  }
 }
 
 interface EventData {
@@ -69,18 +85,11 @@ interface TestPlayer extends Player {
 class TestPlayerImpl extends Player implements TestPlayer {
   public eventEmitter: TestEventEmitter;
   public inputManager: InputManager;
-  private mockInputManager: InputManager;
 
   constructor(eventEmitter: TestEventEmitter) {
     super();
     this.eventEmitter = eventEmitter;
-    this.mockInputManager = {
-      isKeyPressed: jest.fn(),
-      isKeyDown: jest.fn(),
-      isKeyUp: jest.fn(),
-      update: jest.fn(),
-    };
-    this.inputManager = this.mockInputManager;
+    this.inputManager = new _MockInputManager();
   }
 
   protected emitEvent(event: string, data: EventData): void {
@@ -93,6 +102,23 @@ class TestPlayerImpl extends Player implements TestPlayer {
     this.handleMovement(deltaTime);
     this.handleRotation(deltaTime);
     this.updateCollisionEffect(deltaTime);
+  }
+
+  public setPositionXYZ(x: number, y: number, z: number): void {
+    const position = this.getObject().position;
+    position.set(x, y, z);
+  }
+
+  public simulateMovement(action: InputAction, active: boolean): void {
+    if (active) {
+      (this.inputManager as _MockInputManager).addActiveAction(action);
+    } else {
+      (this.inputManager as _MockInputManager).removeActiveAction(action);
+    }
+  }
+
+  public forceUpdate(deltaTime: number): void {
+    this.update(deltaTime);
   }
 }
 
