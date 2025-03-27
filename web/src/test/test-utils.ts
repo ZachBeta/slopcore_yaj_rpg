@@ -68,7 +68,7 @@ export const silenceConsole = (): ConsoleSilencer => {
 export const filterConsole = (filter: (message: string) => boolean): ConsoleSilencer => {
   const originalLog = console.log;
   
-  console.log = (message: string, ...args: any[]) => {
+  console.log = (message: string, ...args: unknown[]) => {
     if (typeof message === 'string' && filter(message)) {
       originalLog(message, ...args);
     }

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { InputAction } from '../constants/input';
 import { InputManager } from './input-manager';
 import { GROUND_LEVEL, MOVEMENT, ROTATION, WORLD_DIRECTIONS } from '../constants/directions';
+import process from 'node:process';
 
 export class Player {
   private id: string;

@@ -1,8 +1,8 @@
 import { TerminalGame } from '../terminal-game';
 
 // Spy on global setTimeout and clearTimeout
-jest.spyOn(global, 'setTimeout');
-jest.spyOn(global, 'clearTimeout');
+jest.spyOn(globalThis, 'setTimeout');
+jest.spyOn(globalThis, 'clearTimeout');
 
 describe('Terminal Game Timer Cleanup', () => {
   let game: TerminalGame;
