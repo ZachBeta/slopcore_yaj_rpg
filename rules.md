@@ -40,3 +40,11 @@ When you run the tests from the web directory, Jest properly uses the TypeScript
 ## OO Design
 * Try to keep the classes as SOLID as possible so that they're easy to reason about, have a reasonable abstraction, and are easy to test
 * Use consistent naming conventions across the codebase
+
+## Rotation Handling
+* Use quaternions for all rotation state and network transmission
+* Only use Euler angles for direct input handling (e.g., keyboard/mouse input)
+* When sending rotations over network, use quaternion components (_x, _y, _z, _w)
+* Maintain consistent rotation order (YXZ) when converting between Euler angles and quaternions
+* Apply rotations using quaternions to avoid gimbal lock issues
+* Store rotations in THREE.Quaternion format for consistency with Three.js

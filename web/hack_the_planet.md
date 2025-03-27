@@ -2,11 +2,9 @@
 
 ## open world game
 
-* dig up favicon - somewhere it got dropped
 * typing and linting 
-* colors are good, position and rotation are not, I think we tried to extract types to help that
+* position and rotation work, but colors are broken - check player renderer
 * consistent map
-* deno lint over eslint
 * we need to keep our test timeouts short
 * we avoid mocks, and use real objects as much as possible
 
