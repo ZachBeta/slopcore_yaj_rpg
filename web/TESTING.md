@@ -84,6 +84,23 @@ private log(message: string): void {
 
 The GitHub workflow has been updated to run tests for each module separately, making it easier to identify which module has failing tests.
 
+## Socket Testing Improvements
+
+We've made several improvements to the socket testing framework:
+
+1. **Constants for Event Names**: Added `SOCKET_EVENTS` object to eliminate string literals for socket events
+2. **Improved Client Tracking**: All socket clients are now tracked and can be cleanly disconnected
+3. **Enhanced Cleanup**: Added `disconnectAll()` helper to ensure all clients are properly disconnected
+4. **Shorter Timeouts**: Reduced timeouts for faster tests and earlier failure detection
+5. **Safety Timeouts**: Added unref'd timeouts to prevent test hangs
+6. **Return Values**: Enhanced `connectAndJoinGame()` to return both client and player data
+7. **Event Matching**: Fixed tests to match actual server behavior (using player_joined instead of self_data)
+
+## Known Issues
+
+- Tests may occasionally report "worker process has failed to exit gracefully" - this is related to Socket.IO's internal timers
+- Running with `--detectOpenHandles` can help identify any resources that aren't being properly closed
+
 ## Best Practices
 
 1. **Use Silent Logging**: Always use the silenceConsole utility or similar approaches to prevent console logs from cluttering test output.
@@ -95,6 +112,16 @@ The GitHub workflow has been updated to run tests for each module separately, ma
 4. **Clean Up After Tests**: Always clean up resources in the afterEach or afterAll blocks to prevent memory leaks.
 
 5. **Focus on Testing Behavior**: Tests should focus on verifying the behavior of the code, not the implementation details.
+
+6. **Always call `disconnectAll()` in afterEach hooks**: This ensures that all socket clients are properly disconnected after each test.
+
+7. **Use the `SOCKET_EVENTS` constants instead of string literals**: This helps prevent typos and makes the code more readable and maintainable.
+
+8. **Keep timeouts short (500ms or less) for faster test runs**: This helps ensure that tests complete quickly and reliably.
+
+9. **Make sure all timeouts are unref'd to allow the process to exit cleanly**: This helps prevent test hangs and ensures that the process can exit cleanly.
+
+10. **Prefer `await` with explicit cleanup over raw Promises**: This helps ensure that resources are properly cleaned up and prevents memory leaks.
 
 ## Troubleshooting
 

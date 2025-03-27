@@ -42,6 +42,9 @@ export interface PlayerJoinedEvent {
   color: { r: number; g: number; b: number };
 }
 
+// Track all clients created for automatic cleanup
+const allClients: Set<Socket> = new Set();
+
 /**
  * Create a test server and socket for testing
  */
@@ -99,6 +102,10 @@ export const setupTestServer = async (
     port: currentPort,
     clientUrl,
     cleanup: async () => {
+      // Make sure all clients are disconnected first
+      await disconnectAll();
+      
+      // Then clean up the server
       return cleanupServer(server, gameServer);
     },
   };
@@ -118,12 +125,18 @@ export const connectAndJoinGame = (
       timeout: CONNECTION_TIMEOUT,
     });
     
+    // Track this client for cleanup
+    allClients.add(client);
+    
     // Set a timeout for connection
     const timeout = setTimeout(() => {
       log('Connection timeout - client connected:', client.connected);
       client.disconnect();
       reject(new Error('Connection timeout - client did not connect'));
     }, CONNECTION_TIMEOUT);
+    
+    // Ensure the timeout doesn't prevent the process from exiting
+    timeout.unref();
     
     // Set up event listeners before connecting
     client.once(SOCKET_EVENTS.PLAYER_JOINED, (data: PlayerJoinedEvent) => {
@@ -154,6 +167,25 @@ export const connectAndJoinGame = (
 };
 
 /**
+ * Disconnect all tracked socket clients - call this in afterEach or afterAll hooks
+ */
+export const disconnectAll = async (): Promise<void> => {
+  log(`Disconnecting ${allClients.size} tracked socket clients`);
+  
+  for (const client of allClients) {
+    if (client.connected) {
+      log(`Disconnecting client: ${client.id}`);
+      client.disconnect();
+    }
+  }
+  
+  allClients.clear();
+  
+  // Wait a moment for the disconnects to be processed
+  await wait(25);
+};
+
+/**
  * Clean up the test server
  */
 export const cleanupServer = async (
@@ -163,32 +195,43 @@ export const cleanupServer = async (
   return new Promise<void>((resolve) => {
     log('Cleaning up test environment');
     
-    try {
-      log('Closing game server');
-      // Use close() instead of cleanup()
-      if (gameServer && typeof gameServer.close === 'function') {
-        gameServer.close();
-      }
-      
-      // Add a safety timeout to close the server in case it hangs
-      const safetyTimeout = setTimeout(() => {
-        log('Server close timed out, forcing resolve');
-        resolve();
-      }, 500);
-      
-      server.close((err: Error | undefined) => {
-        clearTimeout(safetyTimeout);
-        if (err) {
-          log(`Warning during server close: ${err}`);
-        } else {
-          log('HTTP server closed');
+    // First disconnect all tracked socket clients
+    disconnectAll().then(() => {
+      try {
+        log('Closing game server');
+        // Use close() instead of cleanup()
+        if (gameServer && typeof gameServer.close === 'function') {
+          gameServer.close();
         }
-        resolve();
-      });
-    } catch (err) {
-      log(`Error during cleanup: ${err}`);
-      resolve(); // Always resolve to prevent test hanging
-    }
+        
+        // Add a safety timeout to close the server in case it hangs
+        const safetyTimeout = setTimeout(() => {
+          log('Server close timed out, forcing resolve');
+          resolve();
+        }, 500);
+        
+        // Ensure the timeout doesn't prevent the process from exiting
+        safetyTimeout.unref();
+        
+        // Close the server with a tight timeout
+        server.close((err: Error | undefined) => {
+          clearTimeout(safetyTimeout);
+          if (err) {
+            log(`Warning during server close: ${err}`);
+          } else {
+            log('HTTP server closed');
+          }
+          
+          // Give a short delay to allow any remaining events to process
+          setTimeout(() => {
+            resolve();
+          }, 10).unref(); // Unref this timeout too
+        });
+      } catch (err) {
+        log(`Error during cleanup: ${err}`);
+        resolve(); // Always resolve to prevent test hanging
+      }
+    });
   });
 };
 
@@ -212,5 +255,8 @@ export const setupTestConsole = (): ReturnType<typeof silenceConsole> => {
  * Wait for a specific amount of time
  */
 export const wait = (ms: number): Promise<void> => {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => {
+    const timeout = setTimeout(resolve, ms);
+    timeout.unref(); // Ensure this doesn't prevent the process from exiting
+  });
 }; 

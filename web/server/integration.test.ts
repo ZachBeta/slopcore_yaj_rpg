@@ -1,7 +1,7 @@
 import { GameServer } from './game-server';
 import { Player, Color } from '../src/types';
 import { GameEvent } from '../src/constants';
-import { createSocketTestEnvironment, setupTestServer, connectAndJoinGame, setupTestConsole, wait, SOCKET_EVENTS } from './test-helpers';
+import { createSocketTestEnvironment, setupTestServer, connectAndJoinGame, setupTestConsole, wait, SOCKET_EVENTS, disconnectAll } from './test-helpers';
 import type { Socket } from 'socket.io-client';
 import type { TestServerSetup } from './test-helpers';
 import type { ConsoleSilencer } from '../src/test/test-utils';
@@ -70,6 +70,11 @@ describe('Game Server Integration Tests', () => {
     
     // Setup test server
     testSetup = await setupTestServer();
+  });
+  
+  afterEach(async () => {
+    // Ensure all socket clients are disconnected after each test
+    await disconnectAll();
   });
   
   afterAll(async () => {

@@ -1,7 +1,7 @@
 import * as http from 'http';
 import { Server } from 'socket.io';
 import { io as ioc, Socket } from 'socket.io-client';
-import { setupTestServer, setupTestConsole, SOCKET_EVENTS } from './test-helpers';
+import { setupTestServer, setupTestConsole, SOCKET_EVENTS, disconnectAll } from './test-helpers';
 import type { TestServerSetup } from './test-helpers';
 import type { ConsoleSilencer } from '../src/test/test-utils';
 
@@ -18,6 +18,11 @@ describe('Server Connection Handling', () => {
     testSetup = await setupTestServer();
   });
   
+  afterEach(async () => {
+    // Ensure all socket clients are disconnected after each test
+    await disconnectAll();
+  });
+  
   afterAll(async () => {
     consoleControl.restore();
     await testSetup.cleanup();
@@ -25,6 +30,7 @@ describe('Server Connection Handling', () => {
   
   it('should emit listening event when server starts', async () => {
     const server = http.createServer();
+    const io = new Server(server); // Create a Socket.IO server to use the Server import
     
     await new Promise<void>((resolve) => {
       server.once('listening', () => {
@@ -35,6 +41,7 @@ describe('Server Connection Handling', () => {
       server.listen(0); // Use random port
     });
     
+    io.close(); // Close the Socket.IO server
     server.close();
   });
   
