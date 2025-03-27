@@ -95,9 +95,9 @@ export class NetworkManager {
     this.onPositionUpdate = onPositionUpdate;
     this.onConnectionStatus = onConnectionStatus;
 
-    // Don't set the color here, wait for server assignment
+    // Don't set the player color yet, wait for server assignment
     this.playerColor = new THREE.Color(0xCCCCCC); // Temporary gray color
-    this.localPlayer.setColor(this.playerColor);
+    // We'll set the player's color when we receive it from the server
     this.setupDiagnostics();
 
     // Initialize event handlers for all game events
@@ -399,6 +399,17 @@ export class NetworkManager {
 
     // Set up forwarding for all game events
     Object.values(GameEvent).forEach((event) => {
+      // Skip events that have specific handlers
+      if ([
+        GameEvent.MAP_DATA,
+        GameEvent.PLAYERS_LIST,
+        GameEvent.PLAYER_JOINED,
+        GameEvent.PLAYER_LEFT,
+        GameEvent.PLAYER_MOVED
+      ].includes(event)) {
+        return;
+      }
+
       this.socket?.on(event, (payload: unknown) => {
         const handlers = this.eventHandlers.get(event as GameEvent);
         if (handlers) {
@@ -453,7 +464,22 @@ export class NetworkManager {
       GameEvent.PLAYER_JOINED,
       (player: GameEventPayloads[typeof GameEvent.PLAYER_JOINED]) => {
         console.log('Received player_joined event:', player);
-        if (player.id !== this.socket?.id && !this.otherPlayers.has(player.id)) {
+        if (player.id === this.socket?.id) {
+          // This is our own initial data from the server
+          console.log('Received initial player data from server');
+          this.playerColor = new THREE.Color(
+            player.color.r,
+            player.color.g,
+            player.color.b,
+          );
+          this.localPlayer.setColor(this.playerColor);
+          const position = new THREE.Vector3(
+            player.position.x,
+            player.position.y,
+            player.position.z,
+          );
+          this.localPlayer.setPosition(position);
+        } else if (!this.otherPlayers.has(player.id)) {
           this.otherPlayers.set(player.id, true);
           console.log('Adding new player from player_joined:', player.id);
           const position = new THREE.Vector3(
