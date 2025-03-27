@@ -616,4 +616,453 @@ describe('Game Server Integration Tests', () => {
       throw err;
     }
   });
+  
+  it('should synchronize position and rotation updates between clients', async () => {
+    // Skip in CI environment
+    if (shouldSkipTest()) {
+      return;
+    }
+    
+    let socketClient1: Socket | null = null;
+    let socketClient2: Socket | null = null;
+    
+    try {
+      // Connect first client
+      const result1 = await connectAndJoinGame(testSetup.clientUrl, 'Player1');
+      socketClient1 = result1.client;
+      const player1Id = result1.player.id;
+      
+      // Connect second client
+      const result2 = await connectAndJoinGame(testSetup.clientUrl, 'Player2');
+      socketClient2 = result2.client;
+      const player2Id = result2.player.id;
+      
+      // Wait for connections to be established
+      await wait(50);
+      
+      // Track updates received by each client
+      interface MovementUpdate {
+        position: Position;
+        rotation: Rotation;
+      }
+      
+      const player1ReceivedUpdates: MovementUpdate[] = [];
+      const player2ReceivedUpdates: MovementUpdate[] = [];
+      
+      // Client 1 listens for client 2's movements
+      socketClient1.on(GameEvent.PLAYER_MOVED, (data) => {
+        if (data.id === player2Id) {
+          player1ReceivedUpdates.push({
+            position: {...data.position},
+            rotation: {...data.rotation}
+          });
+        }
+      });
+      
+      // Client 2 listens for client 1's movements
+      socketClient2.on(GameEvent.PLAYER_MOVED, (data) => {
+        if (data.id === player1Id) {
+          player2ReceivedUpdates.push({
+            position: {...data.position},
+            rotation: {...data.rotation}
+          });
+        }
+      });
+      
+      // Define a series of movements for client 1
+      const client1Updates = [
+        {
+          position: { x: 5, y: 1, z: 5 },
+          rotation: { x: 0, y: Math.PI / 4, z: 0 }
+        },
+        {
+          position: { x: 10, y: 2, z: 10 },
+          rotation: { x: Math.PI / 8, y: Math.PI / 2, z: 0 }
+        },
+        {
+          position: { x: 15, y: 3, z: 15 },
+          rotation: { x: 0, y: Math.PI, z: Math.PI / 4 }
+        }
+      ];
+      
+      // Define a series of movements for client 2
+      const client2Updates = [
+        {
+          position: { x: -5, y: 1, z: -5 },
+          rotation: { x: 0, y: -Math.PI / 4, z: 0 }
+        },
+        {
+          position: { x: -10, y: 2, z: -10 },
+          rotation: { x: -Math.PI / 8, y: -Math.PI / 2, z: 0 }
+        },
+        {
+          position: { x: -15, y: 3, z: -15 },
+          rotation: { x: 0, y: -Math.PI, z: -Math.PI / 4 }
+        }
+      ];
+      
+      // Send updates from client 1
+      for (const update of client1Updates) {
+        socketClient1.emit(GameEvent.POSITION_UPDATE, update);
+        await wait(20);
+      }
+      
+      // Send updates from client 2
+      for (const update of client2Updates) {
+        socketClient2.emit(GameEvent.POSITION_UPDATE, update);
+        await wait(20);
+      }
+      
+      // Wait for all updates to be processed
+      await wait(50);
+      
+      // Verify client 1 received all of client 2's updates
+      expect(player1ReceivedUpdates.length).toBe(client2Updates.length);
+      client2Updates.forEach((update, index) => {
+        expect(player1ReceivedUpdates[index].position).toEqual(update.position);
+        expect(player1ReceivedUpdates[index].rotation).toEqual(update.rotation);
+      });
+      
+      // Verify client 2 received all of client 1's updates
+      expect(player2ReceivedUpdates.length).toBe(client1Updates.length);
+      client1Updates.forEach((update, index) => {
+        expect(player2ReceivedUpdates[index].position).toEqual(update.position);
+        expect(player2ReceivedUpdates[index].rotation).toEqual(update.rotation);
+      });
+      
+      // Additional test: Latest state should be correctly stored on server
+      // Request the current players list
+      let finalPlayersList: PlayerData[] = [];
+      
+      // Create a new connection to get the latest state
+      const result3 = await connectAndJoinGame(testSetup.clientUrl, 'Player3');
+      const socketClient3 = result3.client;
+      
+      try {
+        await new Promise<void>(resolve => {
+          socketClient3.once(GameEvent.PLAYERS_LIST, (playersList: PlayerData[]) => {
+            finalPlayersList = playersList;
+            resolve();
+          });
+        });
+        
+        // Find both players in the list and verify their final states
+        const player1InList = finalPlayersList.find(p => p.id === player1Id);
+        const player2InList = finalPlayersList.find(p => p.id === player2Id);
+        
+        expect(player1InList).toBeDefined();
+        expect(player2InList).toBeDefined();
+        
+        // Verify final positions and rotations
+        expect(player1InList?.position).toEqual(client1Updates[client1Updates.length - 1].position);
+        expect(player1InList?.rotation).toEqual(client1Updates[client1Updates.length - 1].rotation);
+        expect(player2InList?.position).toEqual(client2Updates[client2Updates.length - 1].position);
+        expect(player2InList?.rotation).toEqual(client2Updates[client2Updates.length - 1].rotation);
+        
+        // Cleanup the third client
+        socketClient3.disconnect();
+      } catch (err) {
+        if (socketClient3) socketClient3.disconnect();
+        throw err;
+      }
+      
+      // Cleanup original clients
+      if (socketClient1) socketClient1.disconnect();
+      if (socketClient2) socketClient2.disconnect();
+    } catch (err) {
+      // Even if the test fails, make sure we clean up
+      if (socketClient1) socketClient1.disconnect();
+      if (socketClient2) socketClient2.disconnect();
+      throw err;
+    }
+  }, 10000); // Increase timeout to 10 seconds
+  
+  it('should handle comprehensive position and rotation synchronization scenarios', async () => {
+    // Skip in CI environment
+    if (shouldSkipTest()) return;
+
+    let socketClient1: Socket | null = null;
+    let socketClient2: Socket | null = null;
+
+    try {
+      // Connect first client
+      const result1 = await connectAndJoinGame(testSetup.clientUrl, 'Player1');
+      socketClient1 = result1.client;
+      const player1Id = result1.player.id;
+
+      // Connect second client
+      const result2 = await connectAndJoinGame(testSetup.clientUrl, 'Player2');
+      socketClient2 = result2.client;
+
+      // Wait for connections to be established
+      await wait(50);
+
+      // Track updates received by each client
+      interface MovementUpdate {
+        position: Position;
+        rotation: Rotation;
+      }
+
+      const receivedUpdates: MovementUpdate[] = [];
+      socketClient2.on(GameEvent.PLAYER_MOVED, (data) => {
+        if (data.id === player1Id) {
+          receivedUpdates.push({
+            position: {...data.position},
+            rotation: {...data.rotation}
+          });
+        }
+      });
+
+      // Define test scenarios that cover key cases
+      const updates = [
+        // Precise floating point values
+        {
+          position: { x: 1.23456789, y: 2.34567891, z: 3.45678912 },
+          rotation: { x: 0.12345678, y: 0.23456789, z: 0.34567891 }
+        },
+        // Mathematical constants
+        {
+          position: { x: Math.PI, y: Math.E, z: Math.SQRT2 },
+          rotation: { x: Math.PI / 6, y: Math.PI / 4, z: Math.PI / 3 }
+        },
+        // Edge case positions
+        {
+          position: { x: 1e8, y: 1e8, z: 1e8 },
+          rotation: { x: 0, y: Math.PI * 2, z: 0 }
+        },
+        // Negative values
+        {
+          position: { x: -1e8, y: -1e8, z: -1e8 },
+          rotation: { x: -Math.PI / 2, y: -Math.PI, z: -Math.PI / 4 }
+        },
+        // Realistic gameplay - looking up while moving forward
+        {
+          position: { x: 0, y: 1.75, z: -5 },
+          rotation: { x: -Math.PI / 4, y: 0, z: 0 }
+        },
+        // Realistic gameplay - strafing right while looking left
+        {
+          position: { x: 5, y: 1.75, z: 0 },
+          rotation: { x: 0, y: -Math.PI / 2, z: 0 }
+        }
+      ];
+
+      // Send updates with minimal but realistic delays
+      for (const update of updates) {
+        socketClient1.emit(GameEvent.POSITION_UPDATE, update);
+        await wait(20); // Simulate 50fps
+      }
+
+      // Wait for all updates to be processed
+      await wait(50);
+
+      // Verify number of updates received
+      expect(receivedUpdates.length).toBe(updates.length);
+
+      // Verify each update was received correctly
+      receivedUpdates.forEach((received, index) => {
+        const expected = updates[index];
+
+        // For precise floating point values, use toBeCloseTo
+        ['x', 'y', 'z'].forEach(coord => {
+          // Position checks
+          expect(received.position[coord as keyof Position]).toBeCloseTo(
+            expected.position[coord as keyof Position],
+            8
+          );
+          // Rotation checks
+          expect(received.rotation[coord as keyof Rotation]).toBeCloseTo(
+            expected.rotation[coord as keyof Rotation],
+            8
+          );
+        });
+      });
+
+      // Verify final state on server by having a third client join
+      const result3 = await connectAndJoinGame(testSetup.clientUrl, 'Player3');
+      const socketClient3 = result3.client;
+
+      try {
+        // Wait for players list
+        const finalState = await new Promise<PlayerData[]>(resolve => {
+          socketClient3.once(GameEvent.PLAYERS_LIST, resolve);
+        });
+
+        // Find player1 in the list
+        const player1FinalState = finalState.find(p => p.id === player1Id);
+        expect(player1FinalState).toBeDefined();
+
+        // Verify final position and rotation match last update
+        const lastUpdate = updates[updates.length - 1];
+        ['x', 'y', 'z'].forEach(coord => {
+          expect(player1FinalState?.position[coord as keyof Position]).toBeCloseTo(
+            lastUpdate.position[coord as keyof Position],
+            8
+          );
+          expect(player1FinalState?.rotation[coord as keyof Rotation]).toBeCloseTo(
+            lastUpdate.rotation[coord as keyof Rotation],
+            8
+          );
+        });
+      } finally {
+        socketClient3.disconnect();
+      }
+    } finally {
+      if (socketClient1) socketClient1.disconnect();
+      if (socketClient2) socketClient2.disconnect();
+    }
+  }, 10000); // Increase timeout to 10 seconds just in case
+
+  it('should correctly synchronize rotation updates with proper Euler order', async () => {
+    // Skip in CI environment
+    if (shouldSkipTest()) return;
+
+    let socketClient1: Socket | null = null;
+    let socketClient2: Socket | null = null;
+
+    try {
+      // Connect first client
+      const result1 = await connectAndJoinGame(testSetup.clientUrl, 'Player1');
+      socketClient1 = result1.client;
+      const player1Id = result1.player.id;
+
+      // Connect second client
+      const result2 = await connectAndJoinGame(testSetup.clientUrl, 'Player2');
+      socketClient2 = result2.client;
+
+      // Wait for connections to be established
+      await wait(50);
+
+      // Track received rotations with timestamps
+      interface RotationUpdate {
+        rotation: Rotation;
+        timestamp: number;
+      }
+
+      const receivedRotations: RotationUpdate[] = [];
+      socketClient2.on(GameEvent.PLAYER_MOVED, (data) => {
+        if (data.id === player1Id) {
+          console.log('Received rotation update:', {
+            rotation: data.rotation,
+            timestamp: Date.now()
+          });
+          receivedRotations.push({
+            rotation: {...data.rotation},
+            timestamp: Date.now()
+          });
+        }
+      });
+
+      // Test specific rotation scenarios
+      const rotationTests = [
+        // Test 1: Pure yaw (y-axis) rotation
+        {
+          rotation: { x: 0, y: Math.PI / 2, z: 0 },
+          description: 'Pure yaw 90 degrees'
+        },
+        // Test 2: Pure pitch (x-axis) rotation
+        {
+          rotation: { x: Math.PI / 4, y: 0, z: 0 },
+          description: 'Pure pitch 45 degrees'
+        },
+        // Test 3: Pure roll (z-axis) rotation
+        {
+          rotation: { x: 0, y: 0, z: Math.PI / 4 },
+          description: 'Pure roll 45 degrees'
+        },
+        // Test 4: Combined rotation (realistic looking around corner)
+        {
+          rotation: { x: -Math.PI / 6, y: Math.PI / 2, z: 0 },
+          description: 'Looking around corner (yaw + pitch)'
+        },
+        // Test 5: Full combined rotation
+        {
+          rotation: { x: Math.PI / 6, y: Math.PI / 3, z: Math.PI / 6 },
+          description: 'Combined rotation all axes'
+        }
+      ];
+
+      console.log('Starting rotation synchronization test');
+
+      // Send each rotation update with a delay
+      for (const test of rotationTests) {
+        console.log(`Sending rotation: ${test.description}`, test.rotation);
+        
+        socketClient1.emit(GameEvent.POSITION_UPDATE, {
+          position: { x: 0, y: 0, z: 0 },
+          rotation: test.rotation
+        });
+        
+        // Wait between updates to ensure proper ordering
+        await wait(100);
+      }
+
+      // Wait for all updates to be processed
+      await wait(200);
+
+      // Verify number of updates received
+      expect(receivedRotations.length).toBe(rotationTests.length);
+      console.log(`Received ${receivedRotations.length} rotation updates`);
+
+      // Verify each rotation was received correctly
+      receivedRotations.forEach((received, index) => {
+        const expected = rotationTests[index];
+        console.log(`Verifying rotation ${index + 1}: ${expected.description}`);
+        console.log('Expected:', expected.rotation);
+        console.log('Received:', received.rotation);
+
+        // Check each axis with high precision
+        ['x', 'y', 'z'].forEach(axis => {
+          const receivedValue = received.rotation[axis as keyof Rotation];
+          const expectedValue = expected.rotation[axis as keyof Rotation];
+          
+          // Use a smaller epsilon for more precise comparison
+          expect(receivedValue).toBeCloseTo(expectedValue, 6);
+          
+          // Log the difference for debugging
+          const diff = Math.abs(receivedValue - expectedValue);
+          console.log(`${axis}-axis difference: ${diff}`);
+        });
+      });
+
+      // Verify final state on server
+      const result3 = await connectAndJoinGame(testSetup.clientUrl, 'Player3');
+      const socketClient3 = result3.client;
+
+      try {
+        // Get final state
+        const finalState = await new Promise<PlayerData[]>(resolve => {
+          socketClient3.once(GameEvent.PLAYERS_LIST, resolve);
+        });
+
+        // Find player1 in the list
+        const player1FinalState = finalState.find(p => p.id === player1Id);
+        expect(player1FinalState).toBeDefined();
+
+        // Verify final rotation matches last update
+        const lastRotation = rotationTests[rotationTests.length - 1].rotation;
+        console.log('Final server state rotation check:');
+        console.log('Expected final rotation:', lastRotation);
+        console.log('Server stored rotation:', player1FinalState?.rotation);
+
+        ['x', 'y', 'z'].forEach(axis => {
+          const serverValue = player1FinalState?.rotation[axis as keyof Rotation];
+          const expectedValue = lastRotation[axis as keyof Rotation];
+          expect(serverValue).toBeCloseTo(expectedValue, 6);
+          
+          // Log the difference
+          const diff = Math.abs((serverValue || 0) - expectedValue);
+          console.log(`Final ${axis}-axis difference: ${diff}`);
+        });
+
+        socketClient3.disconnect();
+      } catch (err) {
+        if (socketClient3) socketClient3.disconnect();
+        throw err;
+      }
+    } finally {
+      if (socketClient1) socketClient1.disconnect();
+      if (socketClient2) socketClient2.disconnect();
+    }
+  }, 10000);
 }); 

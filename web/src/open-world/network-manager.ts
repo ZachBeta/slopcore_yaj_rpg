@@ -24,7 +24,7 @@ export class NetworkManager {
   private localPlayer: Player;
   private onPlayerJoin: (id: string, position: THREE.Vector3, color: THREE.Color) => void;
   private onPlayerLeave: (id: string) => void;
-  private onPositionUpdate: (id: string, position: THREE.Vector3) => void;
+  private onPositionUpdate: (id: string, position: THREE.Vector3, rotation: THREE.Quaternion) => void;
   private onConnectionStatus: (status: ConnectionStatus, error?: Error) => void;
   private lastPositionUpdate: number = 0;
   private updateInterval: number = 1000 / 30; // 30 updates per second
@@ -80,7 +80,7 @@ export class NetworkManager {
     localPlayer: Player,
     onPlayerJoin: (id: string, position: THREE.Vector3, color: THREE.Color) => void,
     onPlayerLeave: (id: string) => void,
-    onPositionUpdate: (id: string, position: THREE.Vector3) => void,
+    onPositionUpdate: (id: string, position: THREE.Vector3, rotation: THREE.Quaternion) => void,
     onConnectionStatus: (status: ConnectionStatus, error?: Error) => void,
   ) {
     // Clean up any existing diagnostics div from previous instances
@@ -490,7 +490,7 @@ export class NetworkManager {
         data: {
           id: string;
           position: { x: number; y: number; z: number };
-          rotation: { x: number; y: number; z: number };
+          rotation: { _x: number; _y: number; _z: number; _w: number };
         },
       ) => {
         if (data.id !== this.socket?.id) {
@@ -499,7 +499,13 @@ export class NetworkManager {
             data.position.y,
             data.position.z,
           );
-          this.onPositionUpdate(data.id, position);
+          const rotation = new THREE.Quaternion(
+            data.rotation._x,
+            data.rotation._y,
+            data.rotation._z,
+            data.rotation._w
+          );
+          this.onPositionUpdate(data.id, position, rotation);
         }
       },
     );
@@ -525,6 +531,7 @@ export class NetworkManager {
 
     this.lastPositionUpdate = now;
 
+    const rotation = this.localPlayer.getRotation();
     // Send position update to server
     this.socket.emit(GameEvent.POSITION_UPDATE, {
       position: {
@@ -532,7 +539,12 @@ export class NetworkManager {
         y: position.y,
         z: position.z,
       },
-      rotation: this.localPlayer.getRotation(),
+      rotation: {
+        _x: rotation.x,
+        _y: rotation.y,
+        _z: rotation.z,
+        _w: rotation.w
+      },
     });
   }
 

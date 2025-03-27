@@ -26,9 +26,10 @@ export interface Position {
 }
 
 export interface Rotation {
-  x: Degree;
-  y: Degree;
-  z: Degree;
+  _x: number;  // Quaternion components
+  _y: number;
+  _z: number;
+  _w: number;
 }
 
 export interface Player {

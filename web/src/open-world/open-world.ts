@@ -131,7 +131,7 @@ export class OpenWorldGame {
       (id: string, position: THREE.Vector3, color: THREE.Color) =>
         this.handlePlayerJoin(id, position, color),
       (id: string) => this.handlePlayerLeave(id),
-      (id: string, position: THREE.Vector3) => this.updatePlayerPosition(id, position),
+      (id: string, position: THREE.Vector3, rotation: THREE.Quaternion) => this.updatePlayerPosition(id, position, rotation),
       (status: ConnectionStatus, error?: Error) => this.handleConnectionStatus(status, error),
     );
 
@@ -277,9 +277,7 @@ export class OpenWorldGame {
     this.mainCamera.position.y += 0.5;
 
     // Apply player rotation directly to camera
-    this.mainCamera.quaternion.setFromEuler(
-      new THREE.Euler(playerRotation.x, playerRotation.y, playerRotation.z, 'YXZ'),
-    );
+    this.mainCamera.quaternion.copy(playerRotation);
 
     // Update chase camera (behind player)
     const cameraDistance = 10;
@@ -291,7 +289,7 @@ export class OpenWorldGame {
     );
 
     // Apply the rotation to the chase camera offset
-    cameraOffset.applyEuler(new THREE.Euler(0, playerRotation.y, 0));
+    cameraOffset.applyQuaternion(playerRotation);
 
     // Set the chase camera position
     this.chaseCamera.position.copy(playerPosition).add(cameraOffset);
@@ -352,11 +350,12 @@ export class OpenWorldGame {
   /**
    * Update player position from network data
    */
-  private updatePlayerPosition(id: string, position: THREE.Vector3): void {
+  private updatePlayerPosition(id: string, position: THREE.Vector3, rotation: THREE.Quaternion): void {
     if (this.players.has(id)) {
       const player = this.players.get(id);
       if (player) {
         player.setPosition(position);
+        player.setRotation(rotation);
       }
     }
   }

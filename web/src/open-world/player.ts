@@ -388,8 +388,8 @@ export class Player {
   /**
    * Get the player's rotation
    */
-  public getRotation(): THREE.Euler {
-    return this.lookEuler.clone();
+  public getRotation(): THREE.Quaternion {
+    return this.rotation.clone();
   }
 
   /**
@@ -398,6 +398,8 @@ export class Player {
   public setRotation(rotation: THREE.Quaternion): void {
     this.rotation.copy(rotation);
     this.object.quaternion.copy(this.rotation);
+    // Update look euler for input handling
+    this.lookEuler.setFromQuaternion(this.rotation, 'YXZ');
   }
 
   /**
